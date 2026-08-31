@@ -473,14 +473,14 @@ h1,h2,h3,p{ margin:0; }
   }
 
   function buildLineMessage(lesson){
-    // フォーマット：「◯月◯日（◯）は（時間） （リンクの場所）で（種類/教室名）です。よろしくお願いいたします」
+    // フォーマット：「◯月◯日（◯）は（時間） （リンクの場所）で（種類/教室名）です。よろしくお願いいたします。」
     var typePhrase;
     if(lesson.type === 'kyoshitsu'){
       typePhrase = (lesson.student && lesson.student.trim()) ? lesson.student.trim() : '教室レッスン';
     } else {
       typePhrase = LESSON_TYPES[lesson.type].label;
     }
-    return fmtDateJp(lesson.date) + 'は ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で ' + typePhrase + 'です。よろしくお願いいたします';
+    return fmtDateJp(lesson.date) + 'は ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で ' + typePhrase + 'です。よろしくお願いいたします。';
   }
 
   /* ============================================================
