@@ -1,0 +1,1042 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>トレペタ - for Figure Skating Coaches -</title>
+<meta name="theme-color" content="#0B2545">
+<style>
+/* ============================================================
+   トレペタ｜Vanilla CSS（外部ライブラリ・CDN一切なし）
+   ============================================================ */
+:root{
+  --snow:#F5F9FC;
+  --snow-deep:#E7F0F6;
+  --ice:#2FB6E0;
+  --ice-deep:#1590B8;
+  --ice-bg:#E1F4FA;
+  --navy:#0B2545;
+  --navy-soft:#173763;
+  --line-gray:#D6DEE6;
+  --panel-gray:#EEF2F6;
+  --personal:#2D6CDF;
+  --personal-bg:#E8F0FE;
+  --group:#1E8E5A;
+  --group-bg:#E5F6EC;
+  --rental:#D9720C;
+  --rental-bg:#FCEEDC;
+  --danger:#C4291C;
+  --danger-bg:#FBE9E7;
+  --ok:#1E8E5A;
+  --ok-bg:#E5F6EC;
+  --advice:#8A6D00;
+  --advice-bg:#FFF9E6;
+  --advice-border:#F0D060;
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  color:var(--navy);
+  background:
+    radial-gradient(circle at 10% 0%, #ffffff 0%, transparent 45%),
+    linear-gradient(180deg, var(--snow) 0%, var(--snow-deep) 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+button, input, textarea{ font-family:inherit; }
+button{ border:none; background:none; padding:0; cursor:pointer; -webkit-appearance:none; appearance:none; }
+input, textarea{ background:#fff; color:var(--navy); }
+h1,h2,h3,p{ margin:0; }
+::-webkit-scrollbar{ display:none; }
+*{ scrollbar-width:none; }
+
+.mono{ font-variant-numeric:tabular-nums; font-family: "SFMono-Regular", Consolas, Menlo, monospace; }
+.tappable{ transition: transform .12s ease, background-color .12s ease, box-shadow .12s ease; touch-action:manipulation; }
+.tappable:active{ transform:scale(.96); }
+.min-tap{ min-height:44px; min-width:44px; }
+
+/* ---- レイアウト骨格 ---- */
+.app{ max-width:560px; margin:0 auto; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; position:relative; }
+
+/* ---- ヘッダー ---- */
+.app-header{
+  position:sticky; top:0; z-index:40;
+  padding:14px 20px 8px;
+  padding-top:calc(14px + env(safe-area-inset-top));
+  background:linear-gradient(180deg, var(--navy) 0%, var(--navy-soft) 100%);
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.app-header__brand{ display:flex; align-items:center; gap:10px; min-width:0; }
+.app-header__logo{ width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.15); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.app-header__title{ color:#fff; font-size:17px; font-weight:900; line-height:1.15; letter-spacing:-.01em; white-space:nowrap; }
+.app-header__subtitle{ color:rgba(255,255,255,.62); font-size:10px; font-weight:700; margin-top:2px; white-space:nowrap; }
+.app-header__alert{ flex-shrink:0; background:rgba(255,255,255,.16); color:#fff; font-size:11px; font-weight:700; padding:7px 10px; border-radius:12px; white-space:nowrap; }
+
+/* ---- 日付ストリップ ---- */
+.date-strip{
+  position:sticky; top:0; z-index:30;
+  display:flex; gap:8px; overflow-x:auto; padding:12px 16px;
+  background:var(--navy-soft);
+}
+.date-chip{
+  flex-shrink:0; width:56px; padding:8px 0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  border-radius:16px; border:2px solid transparent; background:#fff;
+}
+.date-chip.is-selected{ background:var(--navy); border-color:var(--navy); }
+.date-chip__weekday{ font-size:11px; font-weight:700; color:var(--navy-soft); }
+.date-chip__weekday.is-sun{ color:var(--danger); }
+.date-chip__weekday.is-sat{ color:var(--personal); }
+.date-chip.is-selected .date-chip__weekday{ color:rgba(255,255,255,.7); }
+.date-chip__day{ font-size:17px; font-weight:900; color:var(--navy); }
+.date-chip.is-selected .date-chip__day{ color:#fff; }
+.date-chip__today-dot{ width:6px; height:6px; border-radius:50%; background:var(--ice); }
+.date-chip__count{ font-size:9px; font-weight:800; color:var(--ice-deep); }
+.date-chip.is-selected .date-chip__count{ color:#fff; }
+
+/* ---- 本文セクション ---- */
+.main-scroll{ flex:1; }
+.section-heading{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px 4px; }
+.section-heading__title{ font-size:15px; font-weight:900; }
+.section-heading__meta{ font-size:12px; font-weight:700; color:var(--navy-soft); }
+
+.lesson-list{ padding:4px 16px 112px; display:flex; flex-direction:column; gap:12px; }
+
+.empty-state{ text-align:center; padding:60px 20px; }
+.empty-state__icon{ font-size:40px; }
+.empty-state__text{ font-size:13px; font-weight:700; color:var(--navy-soft); margin-top:8px; }
+.empty-state__btn{ margin-top:16px; padding:10px 20px; border-radius:16px; font-weight:800; font-size:13px; color:#fff; background:var(--navy); display:inline-block; }
+
+/* ---- レッスンタイル ---- */
+.lesson-tile{ position:relative; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(11,37,69,.06), 0 6px 16px -8px rgba(11,37,69,.14); }
+.lesson-tile__accent{ position:absolute; left:0; top:0; bottom:0; width:6px; }
+.lesson-tile__main{ width:100%; text-align:left; padding:12px 12px 10px 20px; display:flex; align-items:flex-start; gap:12px; }
+.lesson-tile__time{ width:52px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; padding-top:4px; }
+.lesson-tile__time-start{ font-size:15px; font-weight:800; color:var(--navy); line-height:1; }
+.lesson-tile__time-end{ font-size:10px; color:var(--navy-soft); margin-top:4px; }
+.lesson-tile__body{ flex:1; min-width:0; }
+.lesson-tile__title-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.lesson-tile__student{ font-size:15px; font-weight:800; max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lesson-tile__type-label{ font-size:10px; font-weight:800; padding:2px 6px; border-radius:8px; flex-shrink:0; }
+.lesson-tile__sub{ font-size:12px; color:var(--navy-soft); margin-top:2px; }
+.lesson-tile__badges{ display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.lesson-tile__tagcount{ font-size:11px; color:var(--navy-soft); }
+.lesson-tile__actions{ padding:0 12px 12px 20px; }
+
+/* ---- 種別バッジ（CUD：色＋形＋アイコン） ---- */
+.type-badge{ flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:20px; border-width:2px; border-style:solid; }
+.type-badge--sm{ width:32px; height:32px; font-size:15px; }
+.type-badge--md{ width:44px; height:44px; }
+.type-badge.shape-circle{ border-radius:50%; }
+.type-badge.shape-round{ border-radius:14px; }
+.type-badge.shape-hex{ border-radius:6px; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%); }
+.type-personal{ color:var(--personal); background:var(--personal-bg); border-color:var(--personal); }
+.type-group{ color:var(--group); background:var(--group-bg); border-color:var(--group); }
+.type-rental{ color:var(--rental); background:var(--rental-bg); border-color:var(--rental); }
+
+/* ---- ステータスバッジ ---- */
+.status-pill{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; border:1px solid var(--line-gray); background:var(--panel-gray); color:var(--navy-soft); }
+.status-pill__dot{ width:8px; height:8px; border-radius:50%; background:#9AA9B8; flex-shrink:0; }
+.status-pill--contact.is-on{ color:var(--ice-deep); background:var(--ice-bg); border-color:var(--ice-deep); }
+.status-pill--contact.is-on .status-pill__dot{ background:var(--ice-deep); }
+.status-pill--payment.is-on{ color:var(--ok); background:var(--ok-bg); border-color:var(--ok); }
+.status-pill--payment.is-on .status-pill__dot{ background:var(--ok); }
+
+/* ---- LINEボタン ---- */
+.btn-line{ width:100%; min-height:44px; border-radius:14px; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:7px; color:#fff; background:#06C755; }
+.btn-line.is-done{ background:var(--panel-gray); color:var(--navy-soft); }
+
+/* ---- FAB ---- */
+.fab{ position:fixed; z-index:50; width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:28px; background:var(--ice); box-shadow:0 10px 24px -6px rgba(11,37,69,.4); right:max(20px, calc(50vw - 260px)); bottom:calc(96px + env(safe-area-inset-bottom)); }
+
+/* ---- ボトムナビ ---- */
+.bottom-nav{ position:fixed; left:0; right:0; bottom:0; z-index:40; max-width:560px; margin:0 auto; background:#fff; border-top:1px solid rgba(23,55,99,.1); display:flex; padding-bottom:env(safe-area-inset-bottom); }
+.nav-btn{ flex:1; padding:10px 0 8px; display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--navy-soft); }
+.nav-btn.is-active{ color:var(--ice-deep); }
+.nav-btn__icon{ font-size:20px; }
+.nav-btn__label{ font-size:11px; font-weight:800; }
+.nav-btn__indicator{ width:22px; height:3px; border-radius:999px; margin-top:2px; background:transparent; }
+.nav-btn.is-active .nav-btn__indicator{ background:var(--ice); }
+
+/* ---- シート／モーダル共通 ---- */
+.sheet-overlay{ position:fixed; inset:0; z-index:100; display:flex; align-items:flex-end; }
+.sheet-backdrop{ position:absolute; inset:0; background:rgba(11,37,69,.42); backdrop-filter:blur(1px); -webkit-backdrop-filter:blur(1px); }
+.sheet{ position:relative; width:100%; max-width:560px; margin:0 auto; max-height:92vh; background:#fff; border-radius:24px 24px 0 0; box-shadow:0 -8px 30px rgba(11,37,69,.25); display:flex; flex-direction:column; animation:sheetSlideUp .26s cubic-bezier(.22,.9,.32,1); }
+@keyframes sheetSlideUp{ from{ transform:translateY(100%);} to{ transform:translateY(0);} }
+.sheet__grabber-row{ display:flex; justify-content:center; padding:10px 0 4px; flex-shrink:0; }
+.sheet__grabber{ width:40px; height:6px; border-radius:999px; background:rgba(23,55,99,.22); }
+.sheet__header{ padding:0 20px 12px; display:flex; align-items:center; gap:12px; border-bottom:1px solid rgba(23,55,99,.1); flex-shrink:0; }
+.sheet__header-text{ flex:1; min-width:0; }
+.sheet__header-title{ font-size:16px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sheet__header-sub{ font-size:12px; color:var(--navy-soft); margin-top:2px; }
+.sheet__close{ width:36px; height:36px; border-radius:50%; background:var(--panel-gray); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.sheet__body{ overflow-y:auto; flex:1; padding:16px 20px; display:flex; flex-direction:column; gap:20px; }
+.sheet__footer{ padding:16px 20px; padding-bottom:calc(16px + env(safe-area-inset-bottom)); border-top:1px solid rgba(23,55,99,.1); flex-shrink:0; }
+.sheet__submit{ width:100%; min-height:48px; border-radius:16px; font-weight:900; font-size:15px; color:#fff; background:var(--navy); }
+.sheet__submit:disabled{ opacity:.4; }
+
+.field-label{ font-size:13px; font-weight:900; margin-bottom:8px; }
+.text-input, .select-like, .date-input{ width:100%; border-radius:16px; border:2px solid rgba(23,55,99,.15); padding:12px; font-size:15px; }
+.text-input:focus, .date-input:focus{ outline:none; border-color:var(--ice); }
+.grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+
+/* --- 前回アドバイス --- */
+.advice-box{ border-radius:16px; padding:14px; border:2px solid var(--advice-border); background:var(--advice-bg); }
+.advice-box__title{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:900; color:var(--advice); }
+.advice-box__text{ font-size:13.5px; margin-top:6px; line-height:1.6; color:#5C4900; }
+
+/* --- アクションボタン2連 --- */
+.action-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.action-btn{ min-height:44px; border-radius:16px; padding:12px 6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-weight:800; font-size:13px; border:2px solid transparent; }
+.action-btn__icon{ font-size:20px; }
+.action-btn--line{ background:#06C755; color:#fff; }
+.action-btn--line.is-done{ background:var(--panel-gray); color:var(--navy-soft); }
+.action-btn--pay{ background:var(--panel-gray); color:var(--navy-soft); }
+.action-btn--pay.is-done{ background:var(--ok-bg); color:var(--ok); border-color:var(--ok); }
+
+/* --- お金ボックス --- */
+.money-box{ border-radius:16px; background:var(--snow-deep); padding:14px; }
+.money-row{ display:flex; align-items:center; justify-content:between; justify-content:space-between; }
+.money-row + .money-row{ margin-top:12px; padding-top:12px; border-top:1px solid rgba(23,55,99,.1); }
+.money-row__label{ font-size:13px; font-weight:800; color:var(--navy-soft); }
+.money-row__value{ display:flex; align-items:center; gap:4px; }
+.fee-input{ width:100px; text-align:right; font-size:16px; font-weight:800; border:none; background:transparent; border-bottom:2px solid rgba(23,55,99,.3); border-radius:0; padding:2px 0; }
+.fee-input:focus{ outline:none; border-color:var(--ice); }
+.stepper{ display:flex; align-items:center; gap:8px; }
+.stepper__btn{ width:32px; height:32px; border-radius:50%; background:#fff; font-weight:900; display:flex; align-items:center; justify-content:center; }
+.split-input{ width:32px; text-align:center; font-weight:800; border:none; background:transparent; padding:0; }
+.per-person-note{ margin-top:8px; font-size:12px; font-weight:800; color:var(--rental); }
+
+/* --- タグチップ --- */
+.tag-wrap{ display:flex; flex-wrap:wrap; gap:8px; }
+.tag-chip{ min-height:44px; padding:9px 14px; border-radius:14px; font-size:13px; font-weight:800; border:2px solid var(--line-gray); background:#fff; color:var(--navy); }
+.tag-chip.is-selected{ background:var(--navy); border-color:var(--navy); color:#fff; }
+
+/* --- 音声メモ --- */
+.notes-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.mic-btn{ width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; background:var(--ice); }
+.mic-btn.is-recording{ background:var(--danger); animation:micPulse 1.4s infinite; }
+@keyframes micPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(196,41,28,.45);} 50%{ box-shadow:0 0 0 12px rgba(196,41,28,0);} }
+.mic-unsupported{ font-size:11px; color:var(--navy-soft); }
+.recording-hint{ font-size:11px; font-weight:800; color:var(--danger); margin-bottom:6px; }
+.notes-textarea{ width:100%; min-height:96px; border-radius:16px; border:2px solid rgba(23,55,99,.15); padding:12px; font-size:14px; line-height:1.6; resize:vertical; }
+.notes-textarea:focus{ outline:none; border-color:var(--ice); }
+
+.delete-link{ text-align:center; font-size:13px; font-weight:800; color:var(--danger); padding:8px 0; width:100%; }
+
+/* --- 種別選択（追加シート） --- */
+.type-select-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.type-select-btn{ min-height:44px; border-radius:16px; padding:12px 4px; display:flex; flex-direction:column; align-items:center; gap:6px; border:2px solid #E3E9EE; background:#fff; }
+.type-select-btn.is-selected.sel-personal{ border-color:var(--personal); background:var(--personal-bg); }
+.type-select-btn.is-selected.sel-group{ border-color:var(--group); background:var(--group-bg); }
+.type-select-btn.is-selected.sel-rental{ border-color:var(--rental); background:var(--rental-bg); }
+.type-select-btn__icon{ width:36px; height:36px; display:flex; align-items:center; justify-content:center; }
+.type-select-btn__label{ font-size:11px; font-weight:800; }
+
+.rink-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.rink-btn{ min-height:44px; padding:10px 14px; border-radius:14px; font-size:13px; font-weight:800; border:2px solid #E3E9EE; background:#fff; color:var(--navy); }
+.rink-btn.is-selected{ background:var(--navy); border-color:var(--navy); color:#fff; }
+
+/* ---- 収支タブ ---- */
+.finance-view{ padding:8px 16px 112px; }
+.finance-year{ display:flex; align-items:center; justify-content:space-between; padding:4px 4px 12px; }
+.year-nav{ display:flex; align-items:center; gap:8px; }
+.year-nav__btn{ width:36px; height:36px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(11,37,69,.08); font-weight:900; display:flex; align-items:center; justify-content:center; }
+.year-nav__label{ font-size:18px; font-weight:900; }
+.btn-csv{ min-height:44px; padding:10px 16px; border-radius:16px; font-size:13px; font-weight:900; color:#fff; background:var(--ice-deep); display:flex; align-items:center; gap:6px; }
+
+.summary-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.summary-card{ border-radius:16px; padding:14px; background:#fff; box-shadow:0 1px 2px rgba(11,37,69,.06), 0 6px 16px -8px rgba(11,37,69,.12); border:2px solid; }
+.summary-card--paid{ border-color:var(--ok); }
+.summary-card--unpaid{ border-color:var(--danger); }
+.summary-card__label{ font-size:12px; font-weight:800; color:var(--navy-soft); }
+.summary-card__value{ font-size:22px; font-weight:900; margin-top:4px; }
+.summary-card--paid .summary-card__value{ color:var(--ok); }
+.summary-card--unpaid .summary-card__value{ color:var(--danger); }
+.summary-card__count{ font-size:11px; color:var(--navy-soft); margin-top:2px; }
+
+.list-title{ font-size:13px; font-weight:900; margin:0 4px 8px; }
+.unpaid-empty{ text-align:center; padding:40px 20px; font-size:13px; font-weight:700; color:var(--navy-soft); background:#fff; border-radius:16px; box-shadow:0 1px 2px rgba(11,37,69,.06); }
+.unpaid-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+.unpaid-row{ width:100%; background:#fff; border-radius:16px; box-shadow:0 1px 2px rgba(11,37,69,.06); padding:10px 12px; display:flex; align-items:center; gap:12px; }
+.unpaid-row__body{ flex:1; min-width:0; text-align:left; }
+.unpaid-row__name{ font-size:13.5px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.unpaid-row__date{ font-size:11px; color:var(--navy-soft); margin-top:1px; }
+.unpaid-row__right{ text-align:right; flex-shrink:0; }
+.unpaid-row__fee{ font-size:14px; font-weight:900; }
+.unpaid-row__cta{ font-size:10px; font-weight:800; color:var(--danger); margin-top:1px; }
+
+.breakdown-card{ background:#fff; border-radius:16px; box-shadow:0 1px 2px rgba(11,37,69,.06); padding:14px; display:flex; flex-direction:column; gap:10px; }
+.breakdown-row{ display:flex; align-items:center; gap:10px; }
+.breakdown-row__icon{ width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
+.breakdown-row__label{ font-size:13px; font-weight:800; flex:1; }
+.breakdown-row__count{ font-size:12px; color:var(--navy-soft); }
+.breakdown-row__sum{ font-size:13px; font-weight:900; width:84px; text-align:right; }
+
+/* ---- トースト ---- */
+#toast-root{ position:fixed; left:0; right:0; bottom:92px; z-index:200; display:flex; justify-content:center; pointer-events:none; }
+.toast{ pointer-events:auto; max-width:88vw; padding:12px 16px; border-radius:16px; color:#fff; font-size:14px; font-weight:800; box-shadow:0 -8px 30px rgba(11,37,69,.25); animation:toastIn .2s ease-out; }
+@keyframes toastIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
+.toast--navy{ background:var(--navy); }
+.toast--ok{ background:var(--ok); }
+.toast--danger{ background:var(--danger); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div id="root"></div>
+</div>
+<div id="overlay-root"></div>
+<div id="toast-root"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     0. ローカルファースト・ストレージ
+     （try/catchでエラーを起こさず、失敗時はメモリ上で継続動作）
+     ============================================================ */
+  var STORAGE_KEY = 'torepeta_lessons_v1';
+  var memStore = {};
+  function loadLessons(){
+    try{
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if(raw !== null && raw !== undefined) return JSON.parse(raw);
+    }catch(e){ /* localStorageが使えない環境ではメモリにフォールバック */ }
+    return memStore[STORAGE_KEY] || null;
+  }
+  function saveLessons(lessons){
+    memStore[STORAGE_KEY] = lessons;
+    try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lessons)); }catch(e){ /* 保存不可でもメモリには残る */ }
+  }
+
+  /* ============================================================
+     1. マスタデータ（CUD：色＋形状＋アイコンの三重化）
+     ============================================================ */
+  var LESSON_TYPES = {
+    personal: { label:'個人レッスン', short:'個人', cls:'type-personal', shape:'shape-circle', icon:'👤' },
+    group:    { label:'グループレッスン', short:'グループ', cls:'type-group', shape:'shape-round', icon:'👥' },
+    rental:   { label:'貸切・振付', short:'貸切/振付', cls:'type-rental', shape:'shape-hex', icon:'⛸️' }
+  };
+
+  var TAG_PRESETS = [
+    '1A','2Lo','2Lz','2F','2A','3T','3S','3Lo','3Lz',
+    'FSSp','CSSp','LSp','StSq','ChSq',
+    '軸の意識','フリー脚','エッジ','踏切','タイミング','腕の使い方','体幹','ジャンプ矯正',
+    '曲かけ','振付確認','基礎練習','試合前チェック'
+  ];
+
+  var RINKS = ['メインリンク','サブリンク','外部リンク'];
+
+  /* ============================================================
+     2. ユーティリティ
+     ============================================================ */
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function todayStr(){
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+  }
+  function addDays(dateStr, n){
+    var d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+  }
+  function fmtDateJp(dateStr){
+    var d = new Date(dateStr + 'T00:00:00');
+    var w = ['日','月','火','水','木','金','土'][d.getDay()];
+    return (d.getMonth()+1) + '月' + d.getDate() + '日（' + w + '）';
+  }
+  function yen(n){ return '¥' + Number(n||0).toLocaleString('ja-JP'); }
+  function esc(str){
+    return String(str==null ? '' : str).replace(/[&<>"']/g, function(ch){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch];
+    });
+  }
+
+  /* ============================================================
+     3. 初期サンプルデータ（初回起動時のみ）
+     ============================================================ */
+  function seedData(){
+    var t = todayStr();
+    var tmr = addDays(t, 1);
+    return [
+      { id: uid(), date:t, start:'09:00', end:'09:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:['3T','軸の意識'], notes:'踏切のタイミングが早い。助走から意識づけを継続。', homework:'家で片足立ちの軸バランス練習を毎日5分。', createdAt: Date.now()-1000 },
+      { id: uid(), date:t, start:'10:00', end:'10:45', type:'group', student:'ジュニアクラス（4名）', rink:'サブリンク', fee:2500, splitCount:1,
+        contactStatus:'連絡済', paymentStatus:'回収済', tags:['基礎練習','StSq'], notes:'', homework:'', createdAt: Date.now()-2000 },
+      { id: uid(), date:t, start:'13:00', end:'14:00', type:'rental', student:'鈴木 蓮 / 高橋 陸', rink:'メインリンク', fee:9000, splitCount:2,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:['曲かけ','振付確認'], notes:'', homework:'', createdAt: Date.now()-3000 },
+      { id: uid(), date:tmr, start:'16:00', end:'16:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now() }
+    ];
+  }
+
+  /* ============================================================
+     4. アプリ状態
+     ============================================================ */
+  var lessons = loadLessons() || seedData();
+  var selectedDate = todayStr();
+  var currentTab = 'schedule'; // 'schedule' | 'finance'
+  var financeYear = new Date().getFullYear();
+  var toastTimer = null;
+
+  var rootEl = document.getElementById('root');
+  var overlayRoot = document.getElementById('overlay-root');
+  var toastRoot = document.getElementById('toast-root');
+
+  function persist(){ saveLessons(lessons); }
+
+  /* ============================================================
+     5. クリップボードコピー（フォールバック付き）
+     ============================================================ */
+  function copyToClipboard(text){
+    return new Promise(function(resolve){
+      if(navigator.clipboard && window.isSecureContext){
+        navigator.clipboard.writeText(text).then(function(){ resolve(true); }).catch(function(){ resolve(fallbackCopy(text)); });
+      } else {
+        resolve(fallbackCopy(text));
+      }
+    });
+  }
+  function fallbackCopy(text){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }catch(e){ return false; }
+  }
+
+  function buildLineMessage(lesson, fee, splitCount){
+    var d = new Date(lesson.date + 'T00:00:00');
+    var t = LESSON_TYPES[lesson.type];
+    var feeLine = '料金：' + yen(fee);
+    if(lesson.type === 'rental' && splitCount > 1){
+      var per = Math.ceil(fee / splitCount);
+      feeLine = '料金：' + yen(fee) + '（' + splitCount + '名で割り勘 / お一人 ' + yen(per) + '）';
+    }
+    return (d.getMonth()+1) + '月' + d.getDate() + '日 ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で' + t.label + '（' + feeLine + '）\nよろしくお願いいたします。';
+  }
+
+  /* ============================================================
+     6. トースト
+     ============================================================ */
+  function showToast(msg, tone){
+    tone = tone || 'navy';
+    toastRoot.innerHTML = '<div class="toast toast--' + tone + '">' + esc(msg) + '</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastRoot.innerHTML = ''; }, 2200);
+  }
+
+  /* ============================================================
+     7. 描画：日付ストリップ
+     ============================================================ */
+  function renderDateStrip(){
+    var html = '<div class="date-strip" id="date-strip">';
+    for(var i=-2;i<14;i++){
+      var key = addDays(todayStr(), i);
+      var d = new Date(key + 'T00:00:00');
+      var w = ['日','月','火','水','木','金','土'][d.getDay()];
+      var wCls = w==='日' ? 'is-sun' : (w==='土' ? 'is-sat' : '');
+      var isSel = key === selectedDate;
+      var isToday = key === todayStr();
+      var count = lessons.filter(function(l){ return l.date===key; }).length;
+      html += '<button class="date-chip tappable min-tap' + (isSel?' is-selected':'') + '" data-action="select-date" data-date="' + key + '">';
+      html += '<span class="date-chip__weekday ' + wCls + '">' + w + '</span>';
+      html += '<span class="date-chip__day">' + d.getDate() + '</span>';
+      if(isToday && !isSel) html += '<span class="date-chip__today-dot"></span>';
+      if(count>0) html += '<span class="date-chip__count">' + (isSel ? count + '件' : '●'.repeat(Math.min(count,3))) + '</span>';
+      html += '</button>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  /* ============================================================
+     8. 描画：レッスンタイル
+     ============================================================ */
+  function renderTypeBadge(type, size){
+    var t = LESSON_TYPES[type];
+    return '<div class="type-badge type-badge--' + (size||'md') + ' ' + t.shape + ' ' + t.cls + '">' + t.icon + '</div>';
+  }
+
+  function renderLessonTile(l){
+    var t = LESSON_TYPES[l.type];
+    var contactOn = l.contactStatus === '連絡済';
+    var paidOn = l.paymentStatus === '回収済';
+    var html = '<div class="lesson-tile">';
+    html += '<div class="lesson-tile__accent" style="background:var(--' + (l.type==='personal'?'personal':l.type==='group'?'group':'rental') + ')"></div>';
+    html += '<button class="lesson-tile__main tappable" data-action="open-lesson" data-id="' + l.id + '">';
+    html += '<div class="lesson-tile__time"><span class="lesson-tile__time-start mono">' + esc(l.start) + '</span><span class="lesson-tile__time-end">〜' + esc(l.end) + '</span></div>';
+    html += renderTypeBadge(l.type, 'md');
+    html += '<div class="lesson-tile__body">';
+    html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + '</span><span class="lesson-tile__type-label" style="color:var(--' + (l.type==='personal'?'personal':l.type==='group'?'group':'rental') + ');background:var(--' + (l.type==='personal'?'personal-bg':l.type==='group'?'group-bg':'rental-bg') + ')">' + t.short + '</span></div>';
+    html += '<div class="lesson-tile__sub">' + esc(l.rink) + ' ・ ' + yen(l.fee) + '</div>';
+    html += '<div class="lesson-tile__badges">';
+    html += '<span class="status-pill status-pill--contact' + (contactOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (contactOn?'連絡済':'未連絡') + '</span>';
+    html += '<span class="status-pill status-pill--payment' + (paidOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (paidOn?'回収済':'未回収') + '</span>';
+    if(l.tags && l.tags.length>0) html += '<span class="lesson-tile__tagcount">🏷 ' + l.tags.length + '件</span>';
+    html += '</div></div></button>';
+    html += '<div class="lesson-tile__actions"><button class="btn-line tappable min-tap' + (contactOn?' is-done':'') + '" data-action="quick-line" data-id="' + l.id + '"><span>💬</span><span>' + (contactOn?'LINE文をコピー':'LINE連絡') + '</span></button></div>';
+    html += '</div>';
+    return html;
+  }
+
+  /* ============================================================
+     9. 描画：スケジュール画面
+     ============================================================ */
+  function renderScheduleView(){
+    var dayLessons = lessons.filter(function(l){ return l.date===selectedDate; }).sort(function(a,b){ return a.start.localeCompare(b.start); });
+    var html = renderDateStrip();
+    html += '<div class="section-heading"><span class="section-heading__title">' + fmtDateJp(selectedDate) + '</span><span class="section-heading__meta">' + dayLessons.length + '件の予定</span></div>';
+    if(dayLessons.length === 0){
+      html += '<div class="lesson-list"><div class="empty-state"><div class="empty-state__icon">🧊</div><div class="empty-state__text">この日の予定はまだありません</div><button class="empty-state__btn tappable" data-action="open-add">＋ 予定を追加</button></div></div>';
+    } else {
+      html += '<div class="lesson-list">';
+      dayLessons.forEach(function(l){ html += renderLessonTile(l); });
+      html += '</div>';
+    }
+    return html;
+  }
+
+  /* ============================================================
+     10. 描画：収支画面
+     ============================================================ */
+  function renderFinanceView(){
+    var yearLessons = lessons.filter(function(l){ return l.date.indexOf(String(financeYear))===0; });
+    var unpaid = yearLessons.filter(function(l){ return l.paymentStatus==='未回収'; });
+    var paid = yearLessons.filter(function(l){ return l.paymentStatus==='回収済'; });
+    var unpaidSum = unpaid.reduce(function(s,l){ return s+Number(l.fee||0); },0);
+    var paidSum = paid.reduce(function(s,l){ return s+Number(l.fee||0); },0);
+
+    var html = '<div class="finance-view">';
+    html += '<div class="finance-year"><div class="year-nav">';
+    html += '<button class="year-nav__btn tappable" data-action="year-prev">‹</button>';
+    html += '<span class="year-nav__label mono">' + financeYear + '年</span>';
+    html += '<button class="year-nav__btn tappable" data-action="year-next">›</button>';
+    html += '</div><button class="btn-csv tappable" data-action="export-csv"><span>⬇️</span><span>確定申告用CSV出力</span></button></div>';
+
+    html += '<div class="summary-grid">';
+    html += '<div class="summary-card summary-card--paid"><div class="summary-card__label">回収済 合計</div><div class="summary-card__value mono">' + yen(paidSum) + '</div><div class="summary-card__count">' + paid.length + '件</div></div>';
+    html += '<div class="summary-card summary-card--unpaid"><div class="summary-card__label">未回収 合計</div><div class="summary-card__value mono">' + yen(unpaidSum) + '</div><div class="summary-card__count">' + unpaid.length + '件</div></div>';
+    html += '</div>';
+
+    html += '<div class="list-title">未回収の一覧（タップで回収済みに）</div>';
+    if(unpaid.length === 0){
+      html += '<div class="unpaid-empty" style="margin-bottom:20px;">未回収のレッスンはありません 🎉</div>';
+    } else {
+      html += '<div class="unpaid-list">';
+      unpaid.sort(function(a,b){ return a.date.localeCompare(b.date); }).forEach(function(l){
+        html += '<button class="unpaid-row tappable" data-action="toggle-payment" data-id="' + l.id + '">';
+        html += renderTypeBadge(l.type,'sm');
+        html += '<div class="unpaid-row__body"><div class="unpaid-row__name">' + esc(l.student) + '</div><div class="unpaid-row__date mono">' + esc(l.date) + ' ' + esc(l.start) + '</div></div>';
+        html += '<div class="unpaid-row__right"><div class="unpaid-row__fee mono">' + yen(l.fee) + '</div><div class="unpaid-row__cta">タップで回収済へ →</div></div>';
+        html += '</button>';
+      });
+      html += '</div>';
+    }
+
+    html += '<div class="list-title">種別ごとの内訳</div><div class="breakdown-card">';
+    Object.keys(LESSON_TYPES).forEach(function(key){
+      var t = LESSON_TYPES[key];
+      var sub = yearLessons.filter(function(l){ return l.type===key; });
+      var sum = sub.reduce(function(s,l){ return s+Number(l.fee||0); },0);
+      html += '<div class="breakdown-row"><div class="breakdown-row__icon ' + t.shape + ' ' + t.cls + '">' + t.icon + '</div><span class="breakdown-row__label">' + t.label + '</span><span class="breakdown-row__count">' + sub.length + '件</span><span class="breakdown-row__sum mono">' + yen(sum) + '</span></div>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  /* ============================================================
+     11. 描画：ヘッダー／ナビ／FAB／シェル全体
+     ============================================================ */
+  function renderHeader(){
+    var todayUncontacted = lessons.filter(function(l){ return l.date===todayStr() && l.contactStatus==='未連絡'; }).length;
+    var html = '<header class="app-header">';
+    html += '<div class="app-header__brand"><div class="app-header__logo">⛸️</div><div><div class="app-header__title">トレペタ</div><div class="app-header__subtitle">for Figure Skating Coaches</div></div></div>';
+    if(currentTab==='schedule' && todayUncontacted>0){
+      html += '<div class="app-header__alert">本日 未連絡 ' + todayUncontacted + '件</div>';
+    }
+    html += '</header>';
+    return html;
+  }
+
+  function renderBottomNav(){
+    var items = [ { key:'schedule', label:'予定', icon:'🗓️' }, { key:'finance', label:'収支・確定申告', icon:'💰' } ];
+    var html = '<nav class="bottom-nav">';
+    items.forEach(function(it){
+      var active = currentTab === it.key;
+      html += '<button class="nav-btn tappable min-tap' + (active?' is-active':'') + '" data-action="switch-tab" data-tab="' + it.key + '">';
+      html += '<span class="nav-btn__icon">' + it.icon + '</span><span class="nav-btn__label">' + it.label + '</span><span class="nav-btn__indicator"></span>';
+      html += '</button>';
+    });
+    html += '</nav>';
+    return html;
+  }
+
+  function renderFab(){
+    if(currentTab !== 'schedule') return '';
+    return '<button class="fab tappable" data-action="open-add">＋</button>';
+  }
+
+  function renderShell(){
+    var html = renderHeader();
+    html += '<main class="main-scroll">';
+    html += (currentTab === 'schedule') ? renderScheduleView() : renderFinanceView();
+    html += '</main>';
+    html += renderFab();
+    html += renderBottomNav();
+    rootEl.innerHTML = html;
+    if(currentTab === 'schedule'){
+      var strip = document.getElementById('date-strip');
+      var sel = strip && strip.querySelector('.date-chip.is-selected');
+      if(sel) sel.scrollIntoView({ inline:'center', block:'nearest' });
+    }
+  }
+
+  /* ============================================================
+     12. アクション：日付・タブ・支払い・LINE
+     ============================================================ */
+  function selectDate(dateKey){ selectedDate = dateKey; renderShell(); }
+  function switchTab(tab){ currentTab = tab; renderShell(); }
+
+  function quickLine(id){
+    var lesson = lessons.find(function(l){ return l.id===id; });
+    if(!lesson) return;
+    var msg = buildLineMessage(lesson, lesson.fee, lesson.splitCount);
+    copyToClipboard(msg).then(function(ok){
+      if(ok){
+        lesson.contactStatus = '連絡済';
+        persist();
+        renderShell();
+        showToast('LINE文をコピーしました📋', 'ok');
+      } else {
+        showToast('コピーに失敗しました。手動で共有してください', 'danger');
+      }
+    });
+  }
+
+  function togglePaymentFromFinance(id){
+    var lesson = lessons.find(function(l){ return l.id===id; });
+    if(!lesson) return;
+    lesson.paymentStatus = lesson.paymentStatus === '回収済' ? '未回収' : '回収済';
+    persist();
+    renderShell();
+    showToast('回収済みにしました', 'ok');
+  }
+
+  function changeFinanceYear(delta){ financeYear += delta; renderShell(); }
+
+  /* ============================================================
+     13. CSV出力（確定申告用／BOM付きUTF-8）
+     ============================================================ */
+  function exportCsv(){
+    var rows = lessons.filter(function(l){ return l.date.indexOf(String(financeYear))===0; });
+    if(rows.length === 0){ showToast(financeYear + '年のデータがありません', 'danger'); return; }
+    var header = ['日付','開始','終了','種別','生徒名/グループ名','リンク','料金','割り勘人数','入金状況','連絡状況','カルテタグ'];
+    rows = rows.slice().sort(function(a,b){ return a.date.localeCompare(b.date) || a.start.localeCompare(b.start); });
+    var lines = rows.map(function(l){
+      return [ l.date, l.start, l.end, LESSON_TYPES[l.type].label, l.student, l.rink, l.fee, l.splitCount||1, l.paymentStatus, l.contactStatus, (l.tags||[]).join('/') ];
+    });
+    var totalAll = rows.reduce(function(s,l){ return s+Number(l.fee||0); },0);
+    var totalPaid = rows.filter(function(l){ return l.paymentStatus==='回収済'; }).reduce(function(s,l){ return s+Number(l.fee||0); },0);
+    lines.push([]);
+    lines.push(['', '', '', '', '', '年間合計', totalAll, '', '回収済合計:' + totalPaid, '', '']);
+
+    function escCsv(v){
+      var s = String(v==null ? '' : v);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+    }
+    var csv = [header].concat(lines).map(function(row){ return row.map(escCsv).join(','); }).join('\r\n');
+    var blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'トレペタ_確定申告用_' + financeYear + '年.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(financeYear + '年分のCSVを出力しました', 'ok');
+  }
+
+  /* ============================================================
+     14. 音声入力（Web Speech API／非対応でも安全にフォールバック）
+     ============================================================ */
+  function createRecognizer(onFinalText){
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR) return null;
+    var rec = new SR();
+    rec.lang = 'ja-JP';
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.onresult = function(e){
+      var finalTxt = '';
+      for(var i=e.resultIndex; i<e.results.length; i++){
+        if(e.results[i].isFinal) finalTxt += e.results[i][0].transcript;
+      }
+      if(finalTxt) onFinalText(finalTxt);
+    };
+    return rec;
+  }
+
+  /* ============================================================
+     15. 前回の宿題・アドバイス検索
+     ============================================================ */
+  function findPrevAdvice(lesson){
+    var candidates = lessons.filter(function(l){
+      return l.student === lesson.student && l.id !== lesson.id && (l.homework || l.notes) &&
+        (l.date + 'T' + (l.start||'00:00')) < (lesson.date + 'T' + (lesson.start||'00:00'));
+    });
+    candidates.sort(function(a,b){ return (b.date+'T'+b.start).localeCompare(a.date+'T'+a.start); });
+    return candidates[0] || null;
+  }
+
+  /* ============================================================
+     16. レッスン詳細シート
+     ============================================================ */
+  function openLessonModal(id){
+    var lesson = lessons.find(function(l){ return l.id===id; });
+    if(!lesson) return;
+    var t = LESSON_TYPES[lesson.type];
+    var prev = findPrevAdvice(lesson);
+    var perPersonInit = (lesson.type==='rental' && lesson.splitCount>1) ? Math.ceil(lesson.fee/lesson.splitCount) : null;
+
+    var html = '<div class="sheet-overlay" id="lesson-overlay">';
+    html += '<div class="sheet-backdrop" data-action="close-sheet"></div>';
+    html += '<div class="sheet">';
+    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
+    html += '<div class="sheet__header">' + renderTypeBadge(lesson.type,'md') + '<div class="sheet__header-text"><div class="sheet__header-title">' + esc(lesson.student) + '</div><div class="sheet__header-sub mono">' + fmtDateJp(lesson.date) + ' ' + esc(lesson.start) + '〜' + esc(lesson.end) + ' ・ ' + esc(lesson.rink) + '</div></div><button class="sheet__close tappable" data-action="close-sheet">✕</button></div>';
+    html += '<div class="sheet__body">';
+
+    if(prev){
+      html += '<div class="advice-box"><div class="advice-box__title"><span>📌</span><span>前回（' + fmtDateJp(prev.date) + '）の宿題・アドバイス</span></div><div class="advice-box__text">' + esc(prev.homework || prev.notes) + '</div></div>';
+    }
+
+    html += '<div class="action-grid">';
+    html += '<button class="action-btn action-btn--line tappable min-tap' + (lesson.contactStatus==='連絡済'?' is-done':'') + '" id="btn-line" data-action="modal-line"><span class="action-btn__icon">💬</span><span>' + (lesson.contactStatus==='連絡済'?'連絡済（再コピー）':'LINE連絡文をコピー') + '</span></button>';
+    html += '<button class="action-btn action-btn--pay tappable min-tap' + (lesson.paymentStatus==='回収済'?' is-done':'') + '" id="btn-pay" data-action="modal-pay"><span class="action-btn__icon">' + (lesson.paymentStatus==='回収済'?'✅':'💴') + '</span><span>' + (lesson.paymentStatus==='回収済'?'回収済み':'未回収 → タップで回収') + '</span></button>';
+    html += '</div>';
+
+    html += '<div class="money-box">';
+    html += '<div class="money-row"><span class="money-row__label">料金</span><span class="money-row__value"><span class="mono">¥</span><input type="number" id="fee-input" class="fee-input mono" value="' + Number(lesson.fee||0) + '"></span></div>';
+    if(lesson.type === 'rental'){
+      html += '<div class="money-row"><span class="money-row__label">割り勘人数</span><div class="stepper"><button class="stepper__btn tappable" id="split-minus">−</button><input type="number" id="split-input" class="split-input mono" min="1" value="' + (lesson.splitCount||1) + '"><button class="stepper__btn tappable" id="split-plus">＋</button></div></div>';
+    }
+    html += '<div class="per-person-note" id="per-person-note" style="' + (perPersonInit===null?'display:none':'') + '">お一人あたり ' + (perPersonInit!==null ? yen(perPersonInit) : '') + '</div>';
+    html += '</div>';
+
+    html += '<div><div class="field-label">カルテタグ（タップで選択）</div><div class="tag-wrap" id="tag-wrap">';
+    TAG_PRESETS.forEach(function(tag){
+      var on = lesson.tags && lesson.tags.indexOf(tag) !== -1;
+      html += '<button class="tag-chip tappable min-tap' + (on?' is-selected':'') + '" data-tag="' + esc(tag) + '">' + esc(tag) + '</button>';
+    });
+    html += '</div></div>';
+
+    html += '<div><div class="notes-header"><span class="field-label" style="margin-bottom:0;">本日のメモ</span><button class="mic-btn tappable" id="mic-btn"><span>🎤</span></button></div>';
+    html += '<div class="recording-hint" id="recording-hint" style="display:none;">● 音声を聞き取り中…</div>';
+    html += '<textarea class="notes-textarea" id="notes-textarea" placeholder="タップして入力、またはマイクで音声入力">' + esc(lesson.notes||'') + '</textarea></div>';
+
+    html += '<div><div class="field-label">次回への宿題・アドバイス（次回自動表示）</div><textarea class="notes-textarea" id="homework-textarea" placeholder="次回の頭に表示される宿題を書いておく" style="min-height:76px;">' + esc(lesson.homework||'') + '</textarea></div>';
+
+    html += '<button class="delete-link tappable" id="btn-delete">この予定を削除する</button>';
+    html += '</div>';
+    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-save-lesson">カルテを保存</button></div>';
+    html += '</div></div>';
+
+    overlayRoot.innerHTML = html;
+    attachLessonModalListeners(lesson);
+  }
+
+  function closeModal(){ overlayRoot.innerHTML = ''; }
+
+  function attachLessonModalListeners(lesson){
+    var overlay = document.getElementById('lesson-overlay');
+    overlay.addEventListener('click', function(e){
+      var actionEl = e.target.closest('[data-action]');
+      if(actionEl && actionEl.dataset.action === 'close-sheet' && (actionEl === e.target || actionEl.classList.contains('sheet-backdrop'))){
+        closeModal();
+      }
+    });
+
+    var feeInput = document.getElementById('fee-input');
+    var splitInput = document.getElementById('split-input');
+    var perPersonNote = document.getElementById('per-person-note');
+
+    function recalcPerPerson(){
+      if(!splitInput) return;
+      var fee = Number(feeInput.value) || 0;
+      var split = Math.max(1, Number(splitInput.value) || 1);
+      if(split > 1){
+        perPersonNote.style.display = '';
+        perPersonNote.textContent = 'お一人あたり ' + yen(Math.ceil(fee/split));
+      } else {
+        perPersonNote.style.display = 'none';
+      }
+    }
+    if(feeInput) feeInput.addEventListener('input', recalcPerPerson);
+    if(splitInput){
+      splitInput.addEventListener('input', recalcPerPerson);
+      document.getElementById('split-minus').addEventListener('click', function(){
+        splitInput.value = Math.max(1, (Number(splitInput.value)||1) - 1);
+        recalcPerPerson();
+      });
+      document.getElementById('split-plus').addEventListener('click', function(){
+        splitInput.value = (Number(splitInput.value)||1) + 1;
+        recalcPerPerson();
+      });
+    }
+
+    var tagWrap = document.getElementById('tag-wrap');
+    tagWrap.addEventListener('click', function(e){
+      var chip = e.target.closest('.tag-chip');
+      if(!chip) return;
+      chip.classList.toggle('is-selected');
+    });
+
+    function currentTags(){
+      return Array.prototype.slice.call(tagWrap.querySelectorAll('.tag-chip.is-selected')).map(function(el){ return el.dataset.tag; });
+    }
+    function currentFee(){ return Number(feeInput.value) || 0; }
+    function currentSplit(){ return splitInput ? Math.max(1, Number(splitInput.value)||1) : 1; }
+
+    document.getElementById('btn-line').addEventListener('click', function(){
+      var msg = buildLineMessage(lesson, currentFee(), currentSplit());
+      copyToClipboard(msg).then(function(ok){
+        if(ok){
+          lesson.contactStatus = '連絡済';
+          lesson.fee = currentFee();
+          lesson.splitCount = currentSplit();
+          persist();
+          renderShell();
+          var btn = document.getElementById('btn-line');
+          btn.classList.add('is-done');
+          btn.innerHTML = '<span class="action-btn__icon">💬</span><span>連絡済（再コピー）</span>';
+          showToast('LINE文をコピーしました📋', 'ok');
+        } else {
+          showToast('コピーに失敗しました', 'danger');
+        }
+      });
+    });
+
+    document.getElementById('btn-pay').addEventListener('click', function(){
+      lesson.paymentStatus = lesson.paymentStatus === '回収済' ? '未回収' : '回収済';
+      persist();
+      renderShell();
+      var btn = document.getElementById('btn-pay');
+      var isDone = lesson.paymentStatus === '回収済';
+      btn.classList.toggle('is-done', isDone);
+      btn.innerHTML = '<span class="action-btn__icon">' + (isDone?'✅':'💴') + '</span><span>' + (isDone?'回収済み':'未回収 → タップで回収') + '</span>';
+      showToast(isDone ? '入金済みにしました' : '未回収に戻しました', 'navy');
+    });
+
+    var micBtn = document.getElementById('mic-btn');
+    var recordingHint = document.getElementById('recording-hint');
+    var notesTextarea = document.getElementById('notes-textarea');
+    var recognizing = false;
+    var recognizer = createRecognizer(function(text){
+      notesTextarea.value = (notesTextarea.value ? notesTextarea.value + ' ' : '') + text;
+    });
+    if(!recognizer){
+      micBtn.outerHTML = '<span class="mic-unsupported">🎤 音声入力非対応</span>';
+    } else {
+      recognizer.onend = function(){ recognizing = false; micBtn.classList.remove('is-recording'); recordingHint.style.display = 'none'; };
+      recognizer.onerror = function(){ recognizing = false; micBtn.classList.remove('is-recording'); recordingHint.style.display = 'none'; };
+      micBtn.addEventListener('click', function(){
+        if(recognizing){
+          recognizer.stop();
+          recognizing = false;
+          micBtn.classList.remove('is-recording');
+          recordingHint.style.display = 'none';
+        } else {
+          try{
+            recognizer.start();
+            recognizing = true;
+            micBtn.classList.add('is-recording');
+            recordingHint.style.display = '';
+          }catch(e){ /* 既に開始中などのエラーは無視して安全側に倒す */ }
+        }
+      });
+    }
+
+    document.getElementById('btn-delete').addEventListener('click', function(){
+      if(window.confirm('この予定を削除しますか？')){
+        lessons = lessons.filter(function(l){ return l.id !== lesson.id; });
+        persist();
+        closeModal();
+        renderShell();
+        showToast('予定を削除しました', 'navy');
+      }
+    });
+
+    document.getElementById('btn-save-lesson').addEventListener('click', function(){
+      lesson.fee = currentFee();
+      lesson.splitCount = currentSplit();
+      lesson.tags = currentTags();
+      lesson.notes = notesTextarea.value;
+      lesson.homework = document.getElementById('homework-textarea').value;
+      persist();
+      renderShell();
+      closeModal();
+      showToast('カルテを保存しました', 'ok');
+    });
+  }
+
+  /* ============================================================
+     17. 新規予定追加シート
+     ============================================================ */
+  function openAddSheet(){
+    var defaultType = 'personal';
+    var html = '<div class="sheet-overlay" id="add-overlay">';
+    html += '<div class="sheet-backdrop" data-action="close-sheet"></div>';
+    html += '<div class="sheet">';
+    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">新しい予定を追加</div></div><button class="sheet__close tappable" data-action="close-sheet">✕</button></div>';
+    html += '<div class="sheet__body">';
+
+    html += '<div><div class="field-label">レッスン種別</div><div class="type-select-grid" id="type-select-grid">';
+    Object.keys(LESSON_TYPES).forEach(function(key){
+      var t = LESSON_TYPES[key];
+      var selCls = key==='personal' ? 'sel-personal' : (key==='group' ? 'sel-group' : 'sel-rental');
+      var isSel = key === defaultType;
+      html += '<button class="type-select-btn tappable min-tap' + (isSel?' is-selected '+selCls:'') + '" data-type="' + key + '" data-selcls="' + selCls + '">';
+      html += '<div class="type-select-btn__icon type-badge ' + t.shape + ' ' + t.cls + '" style="width:36px;height:36px;font-size:16px;">' + t.icon + '</div>';
+      html += '<span class="type-select-btn__label" style="color:' + (key==='personal'?'var(--personal)':key==='group'?'var(--group)':'var(--rental)') + '">' + t.short + '</span>';
+      html += '</button>';
+    });
+    html += '</div></div>';
+
+    html += '<div><div class="field-label">生徒名 / グループ名</div><input type="text" id="add-student" class="text-input" placeholder="例：佐藤 ひなた"></div>';
+
+    html += '<div class="grid-3">';
+    html += '<div><div class="field-label">日付</div><input type="date" id="add-date" class="date-input" value="' + selectedDate + '"></div>';
+    html += '<div><div class="field-label">開始</div><input type="time" id="add-start" class="date-input" value="09:00"></div>';
+    html += '<div><div class="field-label">終了</div><input type="time" id="add-end" class="date-input" value="09:30"></div>';
+    html += '</div>';
+
+    html += '<div><div class="field-label">リンク</div><div class="rink-row" id="rink-row">';
+    RINKS.forEach(function(r, idx){
+      html += '<button class="rink-btn tappable min-tap' + (idx===0?' is-selected':'') + '" data-rink="' + esc(r) + '">' + esc(r) + '</button>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="money-box">';
+    html += '<div class="money-row"><span class="money-row__label">料金</span><span class="money-row__value"><span class="mono">¥</span><input type="number" id="add-fee" class="fee-input mono" value="4000"></span></div>';
+    html += '<div class="money-row" id="add-split-row" style="display:none;"><span class="money-row__label">割り勘人数</span><div class="stepper"><button class="stepper__btn tappable" id="add-split-minus">−</button><input type="number" id="add-split" class="split-input mono" min="1" value="1"><button class="stepper__btn tappable" id="add-split-plus">＋</button></div></div>';
+    html += '</div>';
+
+    html += '</div>';
+    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-create-lesson" disabled>この内容で追加する</button></div>';
+    html += '</div></div>';
+
+    overlayRoot.innerHTML = html;
+    attachAddSheetListeners();
+  }
+
+  function attachAddSheetListeners(){
+    var overlay = document.getElementById('add-overlay');
+    var selectedType = 'personal';
+
+    overlay.addEventListener('click', function(e){
+      var actionEl = e.target.closest('[data-action]');
+      if(actionEl && actionEl.dataset.action === 'close-sheet'){ closeModal(); }
+    });
+
+    var typeGrid = document.getElementById('type-select-grid');
+    var splitRow = document.getElementById('add-split-row');
+    typeGrid.addEventListener('click', function(e){
+      var btn = e.target.closest('.type-select-btn');
+      if(!btn) return;
+      Array.prototype.forEach.call(typeGrid.querySelectorAll('.type-select-btn'), function(el){
+        el.classList.remove('is-selected','sel-personal','sel-group','sel-rental');
+      });
+      btn.classList.add('is-selected', btn.dataset.selcls);
+      selectedType = btn.dataset.type;
+      splitRow.style.display = (selectedType === 'rental') ? '' : 'none';
+    });
+
+    var rinkRow = document.getElementById('rink-row');
+    rinkRow.addEventListener('click', function(e){
+      var btn = e.target.closest('.rink-btn');
+      if(!btn) return;
+      Array.prototype.forEach.call(rinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
+      btn.classList.add('is-selected');
+    });
+
+    var addSplit = document.getElementById('add-split');
+    document.getElementById('add-split-minus').addEventListener('click', function(){ addSplit.value = Math.max(1,(Number(addSplit.value)||1)-1); });
+    document.getElementById('add-split-plus').addEventListener('click', function(){ addSplit.value = (Number(addSplit.value)||1)+1; });
+
+    var studentInput = document.getElementById('add-student');
+    var submitBtn = document.getElementById('btn-create-lesson');
+    studentInput.addEventListener('input', function(){ submitBtn.disabled = studentInput.value.trim().length === 0; });
+
+    submitBtn.addEventListener('click', function(){
+      if(studentInput.value.trim().length === 0) return;
+      var rinkBtn = rinkRow.querySelector('.rink-btn.is-selected');
+      var newLesson = {
+        id: uid(),
+        date: document.getElementById('add-date').value || todayStr(),
+        start: document.getElementById('add-start').value || '09:00',
+        end: document.getElementById('add-end').value || '09:30',
+        type: selectedType,
+        student: studentInput.value.trim(),
+        rink: rinkBtn ? rinkBtn.dataset.rink : RINKS[0],
+        fee: Number(document.getElementById('add-fee').value) || 0,
+        splitCount: Math.max(1, Number(addSplit.value)||1),
+        contactStatus: '未連絡',
+        paymentStatus: '未回収',
+        tags: [],
+        notes: '',
+        homework: '',
+        createdAt: Date.now()
+      };
+      lessons.push(newLesson);
+      persist();
+      selectedDate = newLesson.date;
+      closeModal();
+      renderShell();
+      showToast('予定を追加しました', 'ok');
+    });
+  }
+
+  /* ============================================================
+     18. ルート委任イベント（シェル側の全クリックをここで処理）
+     ============================================================ */
+  rootEl.addEventListener('click', function(e){
+    var el = e.target.closest('[data-action]');
+    if(!el) return;
+    var action = el.dataset.action;
+    if(action === 'select-date') selectDate(el.dataset.date);
+    else if(action === 'switch-tab') switchTab(el.dataset.tab);
+    else if(action === 'open-lesson') openLessonModal(el.dataset.id);
+    else if(action === 'quick-line') quickLine(el.dataset.id);
+    else if(action === 'toggle-payment') togglePaymentFromFinance(el.dataset.id);
+    else if(action === 'open-add') openAddSheet();
+    else if(action === 'export-csv') exportCsv();
+    else if(action === 'year-prev') changeFinanceYear(-1);
+    else if(action === 'year-next') changeFinanceYear(1);
+  });
+
+  /* ============================================================
+     19. 起動
+     ============================================================ */
+  renderShell();
+
+})();
+</script>
+</body>
+</html>
