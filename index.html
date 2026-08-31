@@ -6,6 +6,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <title>トレペタ - for Figure Skating Coaches -</title>
 <meta name="theme-color" content="#0B2545">
+<!-- PWA: ホーム画面追加時にアドレスバーなしの全画面（Standalone）で起動するための設定 -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="トレペタ">
+<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoi44OI44Os44Oa44K/IC0gZm9yIEZpZ3VyZSBTa2F0aW5nIENvYWNoZXMgLSIsInNob3J0X25hbWUiOiLjg4jjg6zjg5rjgr8iLCJzdGFydF91cmwiOiIuLyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwQjI1NDUiLCJ0aGVtZV9jb2xvciI6IiMwQjI1NDUifQ==">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxODAnIGhlaWdodD0nMTgwJz48cmVjdCB3aWR0aD0nMTgwJyBoZWlnaHQ9JzE4MCcgcng9JzM2JyBmaWxsPScjMEIyNTQ1Jy8+PHRleHQgeD0nOTAnIHk9JzExOCcgZm9udC1zaXplPScxMDQnIHRleHQtYW5jaG9yPSdtaWRkbGUnPuKbuO+4jzwvdGV4dD48L3N2Zz4=">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxODAnIGhlaWdodD0nMTgwJz48cmVjdCB3aWR0aD0nMTgwJyBoZWlnaHQ9JzE4MCcgcng9JzM2JyBmaWxsPScjMEIyNTQ1Jy8+PHRleHQgeD0nOTAnIHk9JzExOCcgZm9udC1zaXplPScxMDQnIHRleHQtYW5jaG9yPSdtaWRkbGUnPuKbuO+4jzwvdGV4dD48L3N2Zz4=">
 <style>
 /* ============================================================
    トレペタ｜Vanilla CSS（外部ライブラリ・CDN一切なし）
@@ -26,6 +34,8 @@
   --group-bg:#E5F6EC;
   --rental:#D9720C;
   --rental-bg:#FCEEDC;
+  --kyoshitsu:#6B46C1;
+  --kyoshitsu-bg:#EDE7FB;
   --danger:#C4291C;
   --danger-bg:#FBE9E7;
   --ok:#1E8E5A;
@@ -99,6 +109,32 @@ h1,h2,h3,p{ margin:0; }
 .date-chip__count{ font-size:9px; font-weight:800; color:var(--ice-deep); }
 .date-chip.is-selected .date-chip__count{ color:#fff; }
 
+/* ---- 表示切替（日表示／月表示） ---- */
+.view-toggle{ display:flex; gap:8px; padding:10px 16px 2px; }
+.view-toggle__btn{ flex:1; min-height:40px; border-radius:12px; font-size:12.5px; font-weight:800; background:var(--panel-gray); color:var(--navy-soft); display:flex; align-items:center; justify-content:center; }
+.view-toggle__btn.is-active{ background:var(--navy); color:#fff; }
+
+/* ---- 月間カレンダー（グリッド表示） ---- */
+.month-calendar{ padding:8px 16px 4px; }
+.month-calendar__nav{ display:flex; align-items:center; justify-content:space-between; padding:2px 2px 12px; }
+.month-calendar__nav-btn{ width:34px; height:34px; border-radius:50%; background:var(--panel-gray); font-weight:900; font-size:15px; display:flex; align-items:center; justify-content:center; }
+.month-calendar__label{ font-size:15px; font-weight:900; }
+.month-calendar__weekdays{ display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:6px; }
+.month-calendar__weekday{ font-size:11px; font-weight:800; color:var(--navy-soft); padding:4px 0; }
+.month-calendar__weekday.is-sun{ color:var(--danger); }
+.month-calendar__weekday.is-sat{ color:var(--personal); }
+.month-calendar__grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.month-calendar__cell{ aspect-ratio:1/1; border-radius:12px; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:2px solid transparent; box-shadow:0 1px 2px rgba(11,37,69,.05); }
+.month-calendar__cell.is-empty{ background:transparent; box-shadow:none; }
+.month-calendar__cell.is-today{ border-color:var(--ice); }
+.month-calendar__cell.is-selected{ background:var(--navy); border-color:var(--navy); }
+.month-calendar__cell-day{ font-size:13px; font-weight:800; color:var(--navy); }
+.month-calendar__cell-day.is-sun{ color:var(--danger); }
+.month-calendar__cell-day.is-sat{ color:var(--personal); }
+.month-calendar__cell.is-selected .month-calendar__cell-day{ color:#fff; }
+.month-calendar__cell-dot{ width:5px; height:5px; border-radius:50%; background:var(--ice-deep); }
+.month-calendar__cell.is-selected .month-calendar__cell-dot{ background:#fff; }
+
 /* ---- 本文セクション ---- */
 .main-scroll{ flex:1; }
 .section-heading{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px 4px; }
@@ -135,9 +171,17 @@ h1,h2,h3,p{ margin:0; }
 .type-badge.shape-circle{ border-radius:50%; }
 .type-badge.shape-round{ border-radius:14px; }
 .type-badge.shape-hex{ border-radius:6px; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%); }
+.type-badge.shape-square{ border-radius:6px; }
 .type-personal{ color:var(--personal); background:var(--personal-bg); border-color:var(--personal); }
 .type-group{ color:var(--group); background:var(--group-bg); border-color:var(--group); }
 .type-rental{ color:var(--rental); background:var(--rental-bg); border-color:var(--rental); }
+.type-kyoshitsu{ color:var(--kyoshitsu); background:var(--kyoshitsu-bg); border-color:var(--kyoshitsu); }
+
+/* ---- レッスンタイル アクセントバー（種別ごとの単色） ---- */
+.accent-personal{ background:var(--personal); }
+.accent-group{ background:var(--group); }
+.accent-rental{ background:var(--rental); }
+.accent-kyoshitsu{ background:var(--kyoshitsu); }
 
 /* ---- ステータスバッジ ---- */
 .status-pill{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; border:1px solid var(--line-gray); background:var(--panel-gray); color:var(--navy-soft); }
@@ -230,13 +274,14 @@ h1,h2,h3,p{ margin:0; }
 .delete-link{ text-align:center; font-size:13px; font-weight:800; color:var(--danger); padding:8px 0; width:100%; }
 
 /* --- 種別選択（追加シート） --- */
-.type-select-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-.type-select-btn{ min-height:44px; border-radius:16px; padding:12px 4px; display:flex; flex-direction:column; align-items:center; gap:6px; border:2px solid #E3E9EE; background:#fff; }
+.type-select-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+.type-select-btn{ min-height:44px; border-radius:16px; padding:12px 4px; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:8px; border:2px solid #E3E9EE; background:#fff; }
 .type-select-btn.is-selected.sel-personal{ border-color:var(--personal); background:var(--personal-bg); }
 .type-select-btn.is-selected.sel-group{ border-color:var(--group); background:var(--group-bg); }
 .type-select-btn.is-selected.sel-rental{ border-color:var(--rental); background:var(--rental-bg); }
-.type-select-btn__icon{ width:36px; height:36px; display:flex; align-items:center; justify-content:center; }
-.type-select-btn__label{ font-size:11px; font-weight:800; }
+.type-select-btn.is-selected.sel-kyoshitsu{ border-color:var(--kyoshitsu); background:var(--kyoshitsu-bg); }
+.type-select-btn__icon{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.type-select-btn__label{ font-size:12px; font-weight:800; }
 
 .rink-row{ display:flex; flex-wrap:wrap; gap:8px; }
 .rink-btn{ min-height:44px; padding:10px 14px; border-radius:14px; font-size:13px; font-weight:800; border:2px solid #E3E9EE; background:#fff; color:var(--navy); }
@@ -321,10 +366,12 @@ h1,h2,h3,p{ margin:0; }
      1. マスタデータ（CUD：色＋形状＋アイコンの三重化）
      ============================================================ */
   var LESSON_TYPES = {
-    personal: { label:'個人レッスン', short:'個人', cls:'type-personal', shape:'shape-circle', icon:'👤' },
-    group:    { label:'グループレッスン', short:'グループ', cls:'type-group', shape:'shape-round', icon:'👥' },
-    rental:   { label:'貸切・振付', short:'貸切/振付', cls:'type-rental', shape:'shape-hex', icon:'⛸️' }
+    personal:  { label:'個人レッスン', short:'個人', cls:'type-personal', shape:'shape-circle', icon:'👤' },
+    group:     { label:'グループレッスン', short:'グループ', cls:'type-group', shape:'shape-round', icon:'👥' },
+    rental:    { label:'貸切・振付', short:'貸切/振付', cls:'type-rental', shape:'shape-hex', icon:'⛸️' },
+    kyoshitsu: { label:'教室', short:'教室', cls:'type-kyoshitsu', shape:'shape-square', icon:'🏫' }
   };
+  var TYPE_ORDER = ['personal','group','rental','kyoshitsu'];
 
   var TAG_PRESETS = [
     '1A','2Lo','2Lz','2F','2A','3T','3S','3Lo','3Lz',
@@ -375,7 +422,9 @@ h1,h2,h3,p{ margin:0; }
       { id: uid(), date:t, start:'13:00', end:'14:00', type:'rental', student:'鈴木 蓮 / 高橋 陸', rink:'メインリンク', fee:9000, splitCount:2,
         contactStatus:'未連絡', paymentStatus:'未回収', tags:['曲かけ','振付確認'], notes:'', homework:'', createdAt: Date.now()-3000 },
       { id: uid(), date:tmr, start:'16:00', end:'16:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
-        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now() }
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now() },
+      { id: uid(), date:tmr, start:'18:00', end:'19:00', type:'kyoshitsu', student:'大人スケート教室', rink:'サブリンク', fee:1500, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now()+1 }
     ];
   }
 
@@ -385,6 +434,9 @@ h1,h2,h3,p{ margin:0; }
   var lessons = loadLessons() || seedData();
   var selectedDate = todayStr();
   var currentTab = 'schedule'; // 'schedule' | 'finance'
+  var viewMode = 'day'; // 'day' | 'month'
+  var calYear = new Date().getFullYear();
+  var calMonth = new Date().getMonth(); // 0-11
   var financeYear = new Date().getFullYear();
   var toastTimer = null;
 
@@ -420,15 +472,15 @@ h1,h2,h3,p{ margin:0; }
     }catch(e){ return false; }
   }
 
-  function buildLineMessage(lesson, fee, splitCount){
-    var d = new Date(lesson.date + 'T00:00:00');
-    var t = LESSON_TYPES[lesson.type];
-    var feeLine = '料金：' + yen(fee);
-    if(lesson.type === 'rental' && splitCount > 1){
-      var per = Math.ceil(fee / splitCount);
-      feeLine = '料金：' + yen(fee) + '（' + splitCount + '名で割り勘 / お一人 ' + yen(per) + '）';
+  function buildLineMessage(lesson){
+    // フォーマット：「◯月◯日（◯）は（時間） （リンクの場所）で（種類/教室名）です。よろしくお願いいたします」
+    var typePhrase;
+    if(lesson.type === 'kyoshitsu'){
+      typePhrase = (lesson.student && lesson.student.trim()) ? lesson.student.trim() : '教室レッスン';
+    } else {
+      typePhrase = LESSON_TYPES[lesson.type].label;
     }
-    return (d.getMonth()+1) + '月' + d.getDate() + '日 ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で' + t.label + '（' + feeLine + '）\nよろしくお願いいたします。';
+    return fmtDateJp(lesson.date) + 'は ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で ' + typePhrase + 'です。よろしくお願いいたします';
   }
 
   /* ============================================================
@@ -478,12 +530,12 @@ h1,h2,h3,p{ margin:0; }
     var contactOn = l.contactStatus === '連絡済';
     var paidOn = l.paymentStatus === '回収済';
     var html = '<div class="lesson-tile">';
-    html += '<div class="lesson-tile__accent" style="background:var(--' + (l.type==='personal'?'personal':l.type==='group'?'group':'rental') + ')"></div>';
+    html += '<div class="lesson-tile__accent accent-' + l.type + '"></div>';
     html += '<button class="lesson-tile__main tappable" data-action="open-lesson" data-id="' + l.id + '">';
     html += '<div class="lesson-tile__time"><span class="lesson-tile__time-start mono">' + esc(l.start) + '</span><span class="lesson-tile__time-end">〜' + esc(l.end) + '</span></div>';
     html += renderTypeBadge(l.type, 'md');
     html += '<div class="lesson-tile__body">';
-    html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + '</span><span class="lesson-tile__type-label" style="color:var(--' + (l.type==='personal'?'personal':l.type==='group'?'group':'rental') + ');background:var(--' + (l.type==='personal'?'personal-bg':l.type==='group'?'group-bg':'rental-bg') + ')">' + t.short + '</span></div>';
+    html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + '</span><span class="lesson-tile__type-label ' + t.cls + '">' + t.short + '</span></div>';
     html += '<div class="lesson-tile__sub">' + esc(l.rink) + ' ・ ' + yen(l.fee) + '</div>';
     html += '<div class="lesson-tile__badges">';
     html += '<span class="status-pill status-pill--contact' + (contactOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (contactOn?'連絡済':'未連絡') + '</span>';
@@ -498,9 +550,47 @@ h1,h2,h3,p{ margin:0; }
   /* ============================================================
      9. 描画：スケジュール画面
      ============================================================ */
+  function renderViewToggle(){
+    var html = '<div class="view-toggle">';
+    html += '<button class="view-toggle__btn tappable min-tap' + (viewMode==='day'?' is-active':'') + '" data-action="set-view" data-view="day">日表示</button>';
+    html += '<button class="view-toggle__btn tappable min-tap' + (viewMode==='month'?' is-active':'') + '" data-action="set-view" data-view="month">月表示</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderMonthCalendar(){
+    var year = calYear, month = calMonth;
+    var startWeekday = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month+1, 0).getDate();
+    var html = '<div class="month-calendar">';
+    html += '<div class="month-calendar__nav"><button class="month-calendar__nav-btn tappable" data-action="cal-prev-month">‹</button><span class="month-calendar__label">' + year + '年' + (month+1) + '月</span><button class="month-calendar__nav-btn tappable" data-action="cal-next-month">›</button></div>';
+    html += '<div class="month-calendar__weekdays">';
+    ['日','月','火','水','木','金','土'].forEach(function(w, idx){
+      var cls = idx===0 ? 'is-sun' : (idx===6 ? 'is-sat' : '');
+      html += '<span class="month-calendar__weekday ' + cls + '">' + w + '</span>';
+    });
+    html += '</div><div class="month-calendar__grid">';
+    for(var i=0;i<startWeekday;i++){ html += '<div class="month-calendar__cell is-empty"></div>'; }
+    for(var day=1; day<=daysInMonth; day++){
+      var dateKey = year + '-' + pad2(month+1) + '-' + pad2(day);
+      var isSel = dateKey === selectedDate;
+      var isToday = dateKey === todayStr();
+      var count = lessons.filter(function(l){ return l.date===dateKey; }).length;
+      var wd = new Date(year, month, day).getDay();
+      var wdCls = wd===0 ? 'is-sun' : (wd===6 ? 'is-sat' : '');
+      html += '<button class="month-calendar__cell tappable' + (isSel?' is-selected':'') + (isToday&&!isSel?' is-today':'') + '" data-action="select-date" data-date="' + dateKey + '">';
+      html += '<span class="month-calendar__cell-day ' + wdCls + '">' + day + '</span>';
+      if(count>0) html += '<span class="month-calendar__cell-dot"></span>';
+      html += '</button>';
+    }
+    html += '</div></div>';
+    return html;
+  }
+
   function renderScheduleView(){
     var dayLessons = lessons.filter(function(l){ return l.date===selectedDate; }).sort(function(a,b){ return a.start.localeCompare(b.start); });
-    var html = renderDateStrip();
+    var html = renderViewToggle();
+    html += (viewMode === 'month') ? renderMonthCalendar() : renderDateStrip();
     html += '<div class="section-heading"><span class="section-heading__title">' + fmtDateJp(selectedDate) + '</span><span class="section-heading__meta">' + dayLessons.length + '件の予定</span></div>';
     if(dayLessons.length === 0){
       html += '<div class="lesson-list"><div class="empty-state"><div class="empty-state__icon">🧊</div><div class="empty-state__text">この日の予定はまだありません</div><button class="empty-state__btn tappable" data-action="open-add">＋ 予定を追加</button></div></div>';
@@ -600,7 +690,7 @@ h1,h2,h3,p{ margin:0; }
     html += renderFab();
     html += renderBottomNav();
     rootEl.innerHTML = html;
-    if(currentTab === 'schedule'){
+    if(currentTab === 'schedule' && viewMode === 'day'){
       var strip = document.getElementById('date-strip');
       var sel = strip && strip.querySelector('.date-chip.is-selected');
       if(sel) sel.scrollIntoView({ inline:'center', block:'nearest' });
@@ -612,11 +702,22 @@ h1,h2,h3,p{ margin:0; }
      ============================================================ */
   function selectDate(dateKey){ selectedDate = dateKey; renderShell(); }
   function switchTab(tab){ currentTab = tab; renderShell(); }
+  function setViewMode(mode){
+    viewMode = mode;
+    if(mode === 'month'){
+      var d = new Date(selectedDate + 'T00:00:00');
+      calYear = d.getFullYear();
+      calMonth = d.getMonth();
+    }
+    renderShell();
+  }
+  function calPrevMonth(){ calMonth--; if(calMonth<0){ calMonth=11; calYear--; } renderShell(); }
+  function calNextMonth(){ calMonth++; if(calMonth>11){ calMonth=0; calYear++; } renderShell(); }
 
   function quickLine(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
     if(!lesson) return;
-    var msg = buildLineMessage(lesson, lesson.fee, lesson.splitCount);
+    var msg = buildLineMessage(lesson);
     copyToClipboard(msg).then(function(ok){
       if(ok){
         lesson.contactStatus = '連絡済';
@@ -814,12 +915,12 @@ h1,h2,h3,p{ margin:0; }
     function currentSplit(){ return splitInput ? Math.max(1, Number(splitInput.value)||1) : 1; }
 
     document.getElementById('btn-line').addEventListener('click', function(){
-      var msg = buildLineMessage(lesson, currentFee(), currentSplit());
+      lesson.fee = currentFee();
+      lesson.splitCount = currentSplit();
+      var msg = buildLineMessage(lesson);
       copyToClipboard(msg).then(function(ok){
         if(ok){
           lesson.contactStatus = '連絡済';
-          lesson.fee = currentFee();
-          lesson.splitCount = currentSplit();
           persist();
           renderShell();
           var btn = document.getElementById('btn-line');
@@ -908,18 +1009,18 @@ h1,h2,h3,p{ margin:0; }
     html += '<div class="sheet__body">';
 
     html += '<div><div class="field-label">レッスン種別</div><div class="type-select-grid" id="type-select-grid">';
-    Object.keys(LESSON_TYPES).forEach(function(key){
+    TYPE_ORDER.forEach(function(key){
       var t = LESSON_TYPES[key];
-      var selCls = key==='personal' ? 'sel-personal' : (key==='group' ? 'sel-group' : 'sel-rental');
+      var selCls = 'sel-' + key;
       var isSel = key === defaultType;
       html += '<button class="type-select-btn tappable min-tap' + (isSel?' is-selected '+selCls:'') + '" data-type="' + key + '" data-selcls="' + selCls + '">';
-      html += '<div class="type-select-btn__icon type-badge ' + t.shape + ' ' + t.cls + '" style="width:36px;height:36px;font-size:16px;">' + t.icon + '</div>';
-      html += '<span class="type-select-btn__label" style="color:' + (key==='personal'?'var(--personal)':key==='group'?'var(--group)':'var(--rental)') + '">' + t.short + '</span>';
+      html += '<div class="type-select-btn__icon type-badge ' + t.shape + ' ' + t.cls + '" style="width:32px;height:32px;font-size:15px;">' + t.icon + '</div>';
+      html += '<span class="type-select-btn__label ' + t.cls + '" style="background:none;border:none;">' + t.short + '</span>';
       html += '</button>';
     });
     html += '</div></div>';
 
-    html += '<div><div class="field-label">生徒名 / グループ名</div><input type="text" id="add-student" class="text-input" placeholder="例：佐藤 ひなた"></div>';
+    html += '<div><div class="field-label" id="add-student-label">生徒名 / グループ名</div><input type="text" id="add-student" class="text-input" placeholder="例：佐藤 ひなた"></div>';
 
     html += '<div class="grid-3">';
     html += '<div><div class="field-label">日付</div><input type="date" id="add-date" class="date-input" value="' + selectedDate + '"></div>';
@@ -957,15 +1058,25 @@ h1,h2,h3,p{ margin:0; }
 
     var typeGrid = document.getElementById('type-select-grid');
     var splitRow = document.getElementById('add-split-row');
+    var studentLabel = document.getElementById('add-student-label');
+    var studentInputEl = document.getElementById('add-student');
+    var allSelCls = TYPE_ORDER.map(function(k){ return 'sel-' + k; });
     typeGrid.addEventListener('click', function(e){
       var btn = e.target.closest('.type-select-btn');
       if(!btn) return;
       Array.prototype.forEach.call(typeGrid.querySelectorAll('.type-select-btn'), function(el){
-        el.classList.remove('is-selected','sel-personal','sel-group','sel-rental');
+        el.classList.remove.apply(el.classList, ['is-selected'].concat(allSelCls));
       });
       btn.classList.add('is-selected', btn.dataset.selcls);
       selectedType = btn.dataset.type;
       splitRow.style.display = (selectedType === 'rental') ? '' : 'none';
+      if(selectedType === 'kyoshitsu'){
+        studentLabel.textContent = '教室名 / レッスン内容';
+        studentInputEl.placeholder = '例：〇〇スケート教室 / 大人クラス初級';
+      } else {
+        studentLabel.textContent = '生徒名 / グループ名';
+        studentInputEl.placeholder = '例：佐藤 ひなた';
+      }
     });
 
     var rinkRow = document.getElementById('rink-row');
@@ -1029,6 +1140,9 @@ h1,h2,h3,p{ margin:0; }
     else if(action === 'export-csv') exportCsv();
     else if(action === 'year-prev') changeFinanceYear(-1);
     else if(action === 'year-next') changeFinanceYear(1);
+    else if(action === 'set-view') setViewMode(el.dataset.view);
+    else if(action === 'cal-prev-month') calPrevMonth();
+    else if(action === 'cal-next-month') calNextMonth();
   });
 
   /* ============================================================
