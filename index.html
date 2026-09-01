@@ -11,7 +11,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="トレペタ">
-<link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjoi44OI44Os44Oa44K/IC0gZm9yIEZpZ3VyZSBTa2F0aW5nIENvYWNoZXMgLSIsInNob3J0X25hbWUiOiLjg4jjg6zjg5rjgr8iLCJzdGFydF91cmwiOiIuLyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwQjI1NDUiLCJ0aGVtZV9jb2xvciI6IiMwQjI1NDUifQ==">
+<!-- manifestはhrefなしのプレースホルダとして配置し、JS側でBlob URLを生成して差し込む（Chromeのショートカットバッジ対策） -->
+<link id="manifest-placeholder" rel="manifest">
 <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxODAnIGhlaWdodD0nMTgwJz48cmVjdCB3aWR0aD0nMTgwJyBoZWlnaHQ9JzE4MCcgcng9JzM2JyBmaWxsPScjMEIyNTQ1Jy8+PHRleHQgeD0nOTAnIHk9JzExOCcgZm9udC1zaXplPScxMDQnIHRleHQtYW5jaG9yPSdtaWRkbGUnPuKbuO+4jzwvdGV4dD48L3N2Zz4=">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxODAnIGhlaWdodD0nMTgwJz48cmVjdCB3aWR0aD0nMTgwJyBoZWlnaHQ9JzE4MCcgcng9JzM2JyBmaWxsPScjMEIyNTQ1Jy8+PHRleHQgeD0nOTAnIHk9JzExOCcgZm9udC1zaXplPScxMDQnIHRleHQtYW5jaG9yPSdtaWRkbGUnPuKbuO+4jzwvdGV4dD48L3N2Zz4=">
 <style>
@@ -86,6 +87,8 @@ h1,h2,h3,p{ margin:0; }
 .app-header__title{ color:#fff; font-size:17px; font-weight:900; line-height:1.15; letter-spacing:-.01em; white-space:nowrap; }
 .app-header__subtitle{ color:rgba(255,255,255,.62); font-size:10px; font-weight:700; margin-top:2px; white-space:nowrap; }
 .app-header__alert{ flex-shrink:0; background:rgba(255,255,255,.16); color:#fff; font-size:11px; font-weight:700; padding:7px 10px; border-radius:12px; white-space:nowrap; }
+.app-header__right{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.header-gear{ width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.16); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
 
 /* ---- 日付ストリップ ---- */
 .date-strip{
@@ -228,6 +231,27 @@ h1,h2,h3,p{ margin:0; }
 .text-input, .select-like, .date-input{ width:100%; border-radius:16px; border:2px solid rgba(23,55,99,.15); padding:12px; font-size:15px; }
 .text-input:focus, .date-input:focus{ outline:none; border-color:var(--ice); }
 .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.grid-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+
+/* --- プルダウン（教室選択） --- */
+.select-wrap{ position:relative; }
+.select-wrap::after{ content:'▾'; position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--navy-soft); font-size:13px; pointer-events:none; }
+.select-input{ width:100%; border-radius:16px; border:2px solid rgba(23,55,99,.15); padding:12px; padding-right:36px; font-size:14px; background:#fff; color:var(--navy); appearance:none; -webkit-appearance:none; -moz-appearance:none; }
+.select-input:focus{ outline:none; border-color:var(--ice); }
+.classroom-manage-link{ display:inline-block; margin-top:8px; font-size:12px; font-weight:800; color:var(--ice-deep); text-decoration:underline; text-underline-offset:3px; padding:4px 2px; }
+
+/* --- 教室マスタ管理 --- */
+.classroom-row{ display:flex; align-items:center; gap:10px; background:#fff; border-radius:14px; padding:10px 12px; box-shadow:0 1px 2px rgba(11,37,69,.06); }
+.classroom-row__body{ flex:1; min-width:0; }
+.classroom-row__name{ font-size:14px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.classroom-row__meta{ font-size:11px; color:var(--navy-soft); margin-top:2px; }
+.classroom-row__actions{ display:flex; gap:6px; flex-shrink:0; }
+.icon-btn{ width:36px; height:36px; border-radius:50%; background:var(--panel-gray); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+.icon-btn--danger{ color:var(--danger); }
+.classroom-list{ display:flex; flex-direction:column; gap:8px; }
+.classroom-empty{ text-align:center; padding:22px; font-size:13px; font-weight:700; color:var(--navy-soft); background:#fff; border-radius:14px; }
+.classroom-form-title{ font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:space-between; }
+.classroom-cancel-edit{ font-size:12px; font-weight:800; color:var(--navy-soft); text-decoration:underline; text-underline-offset:2px; }
 
 /* --- 前回アドバイス --- */
 .advice-box{ border-radius:16px; padding:14px; border:2px solid var(--advice-border); background:var(--advice-bg); }
@@ -338,6 +362,7 @@ h1,h2,h3,p{ margin:0; }
   <div id="root"></div>
 </div>
 <div id="overlay-root"></div>
+<div id="classroom-overlay-root"></div>
 <div id="toast-root"></div>
 
 <script>
@@ -360,6 +385,19 @@ h1,h2,h3,p{ margin:0; }
   function saveLessons(lessons){
     memStore[STORAGE_KEY] = lessons;
     try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lessons)); }catch(e){ /* 保存不可でもメモリには残る */ }
+  }
+
+  var CLASSROOM_STORAGE_KEY = 'torepeta_classrooms_v1';
+  function loadClassrooms(){
+    try{
+      var raw = window.localStorage.getItem(CLASSROOM_STORAGE_KEY);
+      if(raw !== null && raw !== undefined) return JSON.parse(raw);
+    }catch(e){ /* フォールバック */ }
+    return memStore[CLASSROOM_STORAGE_KEY] || null;
+  }
+  function saveClassrooms(list){
+    memStore[CLASSROOM_STORAGE_KEY] = list;
+    try{ window.localStorage.setItem(CLASSROOM_STORAGE_KEY, JSON.stringify(list)); }catch(e){ /* 保存不可でもメモリには残る */ }
   }
 
   /* ============================================================
@@ -428,10 +466,18 @@ h1,h2,h3,p{ margin:0; }
     ];
   }
 
+  function seedClassrooms(){
+    return [
+      { id: uid(), name:'大人スケート教室', start:'18:00', end:'19:00', rink:'サブリンク' },
+      { id: uid(), name:'キッズスケート教室 初級', start:'16:30', end:'17:15', rink:'メインリンク' }
+    ];
+  }
+
   /* ============================================================
      4. アプリ状態
      ============================================================ */
   var lessons = loadLessons() || seedData();
+  var classroomMaster = loadClassrooms() || seedClassrooms();
   var selectedDate = todayStr();
   var currentTab = 'schedule'; // 'schedule' | 'finance'
   var viewMode = 'day'; // 'day' | 'month'
@@ -442,9 +488,11 @@ h1,h2,h3,p{ margin:0; }
 
   var rootEl = document.getElementById('root');
   var overlayRoot = document.getElementById('overlay-root');
+  var classroomOverlayRoot = document.getElementById('classroom-overlay-root');
   var toastRoot = document.getElementById('toast-root');
 
   function persist(){ saveLessons(lessons); }
+  function persistClassrooms(){ saveClassrooms(classroomMaster); }
 
   /* ============================================================
      5. クリップボードコピー（フォールバック付き）
@@ -473,14 +521,14 @@ h1,h2,h3,p{ margin:0; }
   }
 
   function buildLineMessage(lesson){
-    // フォーマット：「◯月◯日（◯）は（時間） （リンクの場所）で（種類/教室名）です。よろしくお願いいたします。」
+    // フォーマット：「◯月◯日（◯）は（時間） （リンクの場所）で（種類/教室名）です。よろしくお願いいたします」
     var typePhrase;
     if(lesson.type === 'kyoshitsu'){
       typePhrase = (lesson.student && lesson.student.trim()) ? lesson.student.trim() : '教室レッスン';
     } else {
       typePhrase = LESSON_TYPES[lesson.type].label;
     }
-    return fmtDateJp(lesson.date) + 'は ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で ' + typePhrase + 'です。よろしくお願いいたします。';
+    return fmtDateJp(lesson.date) + 'は ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で ' + typePhrase + 'です。よろしくお願いいたします';
   }
 
   /* ============================================================
@@ -657,9 +705,12 @@ h1,h2,h3,p{ margin:0; }
     var todayUncontacted = lessons.filter(function(l){ return l.date===todayStr() && l.contactStatus==='未連絡'; }).length;
     var html = '<header class="app-header">';
     html += '<div class="app-header__brand"><div class="app-header__logo">⛸️</div><div><div class="app-header__title">トレペタ</div><div class="app-header__subtitle">for Figure Skating Coaches</div></div></div>';
+    html += '<div class="app-header__right">';
     if(currentTab==='schedule' && todayUncontacted>0){
       html += '<div class="app-header__alert">本日 未連絡 ' + todayUncontacted + '件</div>';
     }
+    html += '<button class="header-gear tappable min-tap" data-action="open-classroom-master" title="教室マスタを管理">⚙️</button>';
+    html += '</div>';
     html += '</header>';
     return html;
   }
@@ -1020,6 +1071,12 @@ h1,h2,h3,p{ margin:0; }
     });
     html += '</div></div>';
 
+    html += '<div id="classroom-select-block" style="display:none;">';
+    html += '<div class="field-label">登録済みの教室から選択（任意）</div>';
+    html += '<div class="select-wrap"><select id="add-classroom-select" class="select-input">' + buildClassroomOptions() + '</select></div>';
+    html += '<button type="button" class="classroom-manage-link tappable" data-action="open-classroom-master">＋ 教室マスタを編集する</button>';
+    html += '</div>';
+
     html += '<div><div class="field-label" id="add-student-label">生徒名 / グループ名</div><input type="text" id="add-student" class="text-input" placeholder="例：佐藤 ひなた"></div>';
 
     html += '<div class="grid-3">';
@@ -1053,11 +1110,14 @@ h1,h2,h3,p{ margin:0; }
 
     overlay.addEventListener('click', function(e){
       var actionEl = e.target.closest('[data-action]');
-      if(actionEl && actionEl.dataset.action === 'close-sheet'){ closeModal(); }
+      if(!actionEl) return;
+      if(actionEl.dataset.action === 'close-sheet'){ closeModal(); }
+      else if(actionEl.dataset.action === 'open-classroom-master'){ openClassroomMasterModal(); }
     });
 
     var typeGrid = document.getElementById('type-select-grid');
     var splitRow = document.getElementById('add-split-row');
+    var classroomBlock = document.getElementById('classroom-select-block');
     var studentLabel = document.getElementById('add-student-label');
     var studentInputEl = document.getElementById('add-student');
     var allSelCls = TYPE_ORDER.map(function(k){ return 'sel-' + k; });
@@ -1071,9 +1131,11 @@ h1,h2,h3,p{ margin:0; }
       selectedType = btn.dataset.type;
       splitRow.style.display = (selectedType === 'rental') ? '' : 'none';
       if(selectedType === 'kyoshitsu'){
+        classroomBlock.style.display = '';
         studentLabel.textContent = '教室名 / レッスン内容';
         studentInputEl.placeholder = '例：〇〇スケート教室 / 大人クラス初級';
       } else {
+        classroomBlock.style.display = 'none';
         studentLabel.textContent = '生徒名 / グループ名';
         studentInputEl.placeholder = '例：佐藤 ひなた';
       }
@@ -1087,12 +1149,28 @@ h1,h2,h3,p{ margin:0; }
       btn.classList.add('is-selected');
     });
 
+    var classroomSelect = document.getElementById('add-classroom-select');
+    classroomSelect.addEventListener('change', function(){
+      var val = classroomSelect.value;
+      if(!val) return;
+      var c = classroomMaster.find(function(x){ return x.id === val; });
+      if(!c) return;
+      studentInputEl.value = c.name;
+      document.getElementById('add-start').value = c.start;
+      document.getElementById('add-end').value = c.end;
+      Array.prototype.forEach.call(rinkRow.querySelectorAll('.rink-btn'), function(el){
+        el.classList.toggle('is-selected', el.dataset.rink === c.rink);
+      });
+      submitBtnRef.disabled = studentInputEl.value.trim().length === 0;
+    });
+
     var addSplit = document.getElementById('add-split');
     document.getElementById('add-split-minus').addEventListener('click', function(){ addSplit.value = Math.max(1,(Number(addSplit.value)||1)-1); });
     document.getElementById('add-split-plus').addEventListener('click', function(){ addSplit.value = (Number(addSplit.value)||1)+1; });
 
     var studentInput = document.getElementById('add-student');
-    var submitBtn = document.getElementById('btn-create-lesson');
+    var submitBtnRef = document.getElementById('btn-create-lesson');
+    var submitBtn = submitBtnRef;
     studentInput.addEventListener('input', function(){ submitBtn.disabled = studentInput.value.trim().length === 0; });
 
     submitBtn.addEventListener('click', function(){
@@ -1125,6 +1203,135 @@ h1,h2,h3,p{ margin:0; }
   }
 
   /* ============================================================
+     17.5 教室マスタ（登録・プルダウン選択）
+     ============================================================ */
+  function buildClassroomOptions(){
+    var opts = '<option value="">— 選択してください —</option>';
+    classroomMaster.forEach(function(c){
+      opts += '<option value="' + c.id + '">' + esc(c.name) + '（' + esc(c.start) + '〜' + esc(c.end) + ' ' + esc(c.rink) + '）</option>';
+    });
+    return opts;
+  }
+
+  function refreshClassroomSelect(){
+    var sel = document.getElementById('add-classroom-select');
+    if(!sel) return;
+    var current = sel.value;
+    sel.innerHTML = buildClassroomOptions();
+    if(classroomMaster.some(function(c){ return c.id === current; })) sel.value = current;
+  }
+
+  function openClassroomMasterModal(){ renderClassroomMasterModal(null); }
+
+  function closeClassroomMasterModal(){
+    classroomOverlayRoot.innerHTML = '';
+    refreshClassroomSelect();
+  }
+
+  function renderClassroomMasterModal(editId){
+    var editing = editId ? classroomMaster.find(function(c){ return c.id === editId; }) : null;
+
+    var html = '<div class="sheet-overlay" id="classroom-master-overlay">';
+    html += '<div class="sheet-backdrop" data-action="close-classroom-master"></div>';
+    html += '<div class="sheet">';
+    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">教室マスタを管理</div><div class="sheet__header-sub">名称・時間・場所を登録しておくと予定作成が早くなります</div></div><button class="sheet__close tappable" data-action="close-classroom-master">✕</button></div>';
+    html += '<div class="sheet__body">';
+
+    html += '<div><div class="field-label">登録済みの教室</div>';
+    if(classroomMaster.length === 0){
+      html += '<div class="classroom-empty">まだ登録がありません</div>';
+    } else {
+      html += '<div class="classroom-list">';
+      classroomMaster.forEach(function(c){
+        html += '<div class="classroom-row">';
+        html += '<div class="classroom-row__body"><div class="classroom-row__name">' + esc(c.name) + '</div><div class="classroom-row__meta mono">' + esc(c.start) + '〜' + esc(c.end) + ' ・ ' + esc(c.rink) + '</div></div>';
+        html += '<div class="classroom-row__actions">';
+        html += '<button class="icon-btn tappable" data-action="edit-classroom-row" data-id="' + c.id + '">✏️</button>';
+        html += '<button class="icon-btn icon-btn--danger tappable" data-action="delete-classroom-row" data-id="' + c.id + '">🗑</button>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += '<div>';
+    html += '<div class="classroom-form-title">' + (editing ? '教室を編集' : '新しい教室を登録') + (editing ? '<span class="classroom-cancel-edit tappable" data-action="cancel-edit-classroom">キャンセル</span>' : '') + '</div>';
+    html += '<div style="margin-top:10px;"><div class="field-label">教室名</div><input type="text" id="cm-name" class="text-input" placeholder="例：大人スケート教室" value="' + (editing ? esc(editing.name) : '') + '"></div>';
+    html += '<div class="grid-2" style="margin-top:12px;">';
+    html += '<div><div class="field-label">開始</div><input type="time" id="cm-start" class="date-input" value="' + (editing ? esc(editing.start) : '18:00') + '"></div>';
+    html += '<div><div class="field-label">終了</div><input type="time" id="cm-end" class="date-input" value="' + (editing ? esc(editing.end) : '19:00') + '"></div>';
+    html += '</div>';
+    html += '<div style="margin-top:12px;"><div class="field-label">リンク</div><div class="rink-row" id="cm-rink-row">';
+    RINKS.forEach(function(r, idx){
+      var isSel = editing ? (editing.rink === r) : (idx === 0);
+      html += '<button class="rink-btn tappable min-tap' + (isSel?' is-selected':'') + '" data-rink="' + esc(r) + '">' + esc(r) + '</button>';
+    });
+    html += '</div></div>';
+    html += '</div>';
+
+    html += '</div>';
+    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-save-classroom">' + (editing ? 'この内容で更新する' : 'この内容で登録する') + '</button></div>';
+    html += '</div></div>';
+
+    classroomOverlayRoot.innerHTML = html;
+    attachClassroomMasterListeners(editId);
+  }
+
+  function attachClassroomMasterListeners(editId){
+    var overlay = document.getElementById('classroom-master-overlay');
+    overlay.addEventListener('click', function(e){
+      var actionEl = e.target.closest('[data-action]');
+      if(!actionEl) return;
+      var action = actionEl.dataset.action;
+      if(action === 'close-classroom-master'){
+        closeClassroomMasterModal();
+      } else if(action === 'edit-classroom-row'){
+        renderClassroomMasterModal(actionEl.dataset.id);
+      } else if(action === 'cancel-edit-classroom'){
+        renderClassroomMasterModal(null);
+      } else if(action === 'delete-classroom-row'){
+        if(window.confirm('この教室をマスタから削除しますか？（過去の予定データは残ります）')){
+          classroomMaster = classroomMaster.filter(function(c){ return c.id !== actionEl.dataset.id; });
+          persistClassrooms();
+          renderClassroomMasterModal(null);
+          refreshClassroomSelect();
+          showToast('教室を削除しました', 'navy');
+        }
+      }
+    });
+
+    var cmRinkRow = document.getElementById('cm-rink-row');
+    cmRinkRow.addEventListener('click', function(e){
+      var btn = e.target.closest('.rink-btn');
+      if(!btn) return;
+      Array.prototype.forEach.call(cmRinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
+      btn.classList.add('is-selected');
+    });
+
+    document.getElementById('btn-save-classroom').addEventListener('click', function(){
+      var nameInput = document.getElementById('cm-name');
+      var name = nameInput.value.trim();
+      if(!name){ showToast('教室名を入力してください', 'danger'); return; }
+      var start = document.getElementById('cm-start').value || '18:00';
+      var end = document.getElementById('cm-end').value || '19:00';
+      var rinkBtn = cmRinkRow.querySelector('.rink-btn.is-selected');
+      var rink = rinkBtn ? rinkBtn.dataset.rink : RINKS[0];
+
+      if(editId){
+        var target = classroomMaster.find(function(c){ return c.id === editId; });
+        if(target){ target.name = name; target.start = start; target.end = end; target.rink = rink; }
+      } else {
+        classroomMaster.push({ id: uid(), name: name, start: start, end: end, rink: rink });
+      }
+      persistClassrooms();
+      refreshClassroomSelect();
+      renderClassroomMasterModal(null);
+      showToast(editId ? '教室を更新しました' : '教室を登録しました', 'ok');
+    });
+  }
+
+  /* ============================================================
      18. ルート委任イベント（シェル側の全クリックをここで処理）
      ============================================================ */
   rootEl.addEventListener('click', function(e){
@@ -1143,10 +1350,64 @@ h1,h2,h3,p{ margin:0; }
     else if(action === 'set-view') setViewMode(el.dataset.view);
     else if(action === 'cal-prev-month') calPrevMonth();
     else if(action === 'cal-next-month') calNextMonth();
+    else if(action === 'open-classroom-master') openClassroomMasterModal();
   });
 
   /* ============================================================
-     19. 起動
+     19. PWA: Manifest動的注入 & Service Worker登録
+     （静的data URIのmanifestだとホーム画面アイコンに
+      Chromeのショートカットバッジが残ってしまう端末があるため、
+      実行時にBlob URLとしてmanifestを生成し差し込む）
+     ============================================================ */
+  function buildIconSvg(size){
+    var fontSize = Math.round(size * 0.58);
+    var half = size / 2;
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' +
+      '<rect width="' + size + '" height="' + size + '" fill="#002b49"/>' +
+      '<text x="' + half + '" y="' + (half + fontSize*0.35) + '" font-size="' + fontSize + '" text-anchor="middle" dominant-baseline="middle">⛸️</text>' +
+      '</svg>';
+  }
+  function buildIconDataUri(size){
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(buildIconSvg(size));
+  }
+
+  function injectDynamicManifest(){
+    try{
+      var manifest = {
+        "name": "トレペタ - for Figure Skating Coaches -",
+        "short_name": "トレペタ",
+        "start_url": "./",
+        "display": "standalone",
+        "background_color": "#f0f8ff",
+        "theme_color": "#002b49",
+        "icons": [
+          { "src": buildIconDataUri(192), "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
+          { "src": buildIconDataUri(512), "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+        ]
+      };
+      var stringManifest = JSON.stringify(manifest);
+      var blob = new Blob([stringManifest], { type: 'application/json' });
+      var manifestURL = URL.createObjectURL(blob);
+      var linkEl = document.querySelector('#manifest-placeholder');
+      if(linkEl) linkEl.setAttribute('href', manifestURL);
+    }catch(e){ /* Blob/URL非対応環境でもアプリ本体には影響させない */ }
+  }
+
+  function registerInlineServiceWorker(){
+    try{
+      if('serviceWorker' in navigator){
+        var swCode = "self.addEventListener('fetch', function(e) {});";
+        var swBlob = new Blob([swCode], { type: 'text/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(function(){ /* SW登録失敗は無視して継続動作 */ });
+      }
+    }catch(e){ /* Service Worker非対応環境でもアプリ本体には影響させない */ }
+  }
+
+  injectDynamicManifest();
+  registerInlineServiceWorker();
+
+  /* ============================================================
+     20. 起動
      ============================================================ */
   renderShell();
 
