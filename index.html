@@ -1,309 +1,351 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-<title>トレペタ - for Figure Skating Coaches -</title>
-<meta name="theme-color" content="#002b49">
-<!-- PWA: ホーム画面追加時にアドレスバーなしの全画面（Standalone）で起動するための設定 -->
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="トレペタ">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+  <title>トレペタ - for Figure Skating Coaches</title>
+  <meta name="theme-color" content="#0d2b45">
+  <!-- PWA: ホーム画面追加時にアドレスバーなしの全画面 (Standalone) で起動するための設定 -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="トレペタ">
 
-<!-- ★ 修正ポイント1: 正しい manifest.json ファイルを読み込む -->
-<link rel="manifest" href="./manifest.json">
+  <!-- Manifest & Favicon -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
 
-<!-- ★ 修正ポイント2: アップロードしたスケート靴アイコンを指定する -->
-<link rel="apple-touch-icon" href="./icon-192.png">
-<link rel="icon" type="image/png" href="./icon-192.png">
+  <!-- Minimal Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js').catch(function(err) {
+          console.log('SW registration failed:', err);
+        });
+      });
+    }
+  </script>
 
-<!-- ★ 修正ポイント3: Service Worker を登録する -->
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
-    });
-  }
-</script>
-<style>:root{
-  --snow:#F5F9FC;
-  --snow-deep:#E7F0F6;
-  --ice:#2FB6E0;
-  --ice-deep:#1590B8;
-  --ice-bg:#E1F4FA;
-  --navy:#0B2545;
-  --navy-soft:#173763;
-  --line-gray:#D6DEE6;
-  --panel-gray:#EEF2F6;
-  --personal:#2D6CDF;
-  --personal-bg:#E8F0FE;
-  --group:#1E8E5A;
-  --group-bg:#E5F6EC;
-  --rental:#D9720C;
-  --rental-bg:#FCEEDC;
-  --kyoshitsu:#6B46C1;
-  --kyoshitsu-bg:#EDE7FB;
-  --danger:#C4291C;
-  --danger-bg:#FBE9E7;
-  --ok:#1E8E5A;
-  --ok-bg:#E5F6EC;
-  --advice:#8A6D00;
-  --advice-bg:#FFF9E6;
-  --advice-border:#F0D060;
-}
-*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-html,body{ height:100%; }
-body{
-  margin:0;
-  font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
-  color:var(--navy);
-  background:
-    radial-gradient(circle at 10% 0%, #ffffff 0%, transparent 45%),
-    linear-gradient(180deg, var(--snow) 0%, var(--snow-deep) 100%);
-  background-attachment:fixed;
-  -webkit-font-smoothing:antialiased;
-  overscroll-behavior-y:none;
-}
-button, input, textarea{ font-family:inherit; }
-button{ border:none; background:none; padding:0; cursor:pointer; -webkit-appearance:none; appearance:none; }
-input, textarea{ background:#fff; color:var(--navy); }
-h1,h2,h3,p{ margin:0; }
-::-webkit-scrollbar{ display:none; }
-*{ scrollbar-width:none; }
-.mono{ font-variant-numeric:tabular-nums; font-family: "SFMono-Regular", Consolas, Menlo, monospace; }
-.tappable{ transition: transform .12s ease, background-color .12s ease, box-shadow .12s ease; touch-action:manipulation; }
-.tappable:active{ transform:scale(.96); }
-.min-tap{ min-height:44px; min-width:44px; }
-.app{ max-width:560px; margin:0 auto; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; position:relative; }
-.app-header{
-  position:sticky; top:0; z-index:40;
-  padding:14px 20px 8px;
-  padding-top:calc(14px + env(safe-area-inset-top));
-  background:linear-gradient(180deg, var(--navy) 0%, var(--navy-soft) 100%);
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-}
-.app-header__brand{ display:flex; align-items:center; gap:10px; min-width:0; }
-.app-header__logo{ width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.15); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
-.app-header__title{ color:#fff; font-size:17px; font-weight:900; line-height:1.15; letter-spacing:-.01em; white-space:nowrap; }
-.app-header__subtitle{ color:rgba(255,255,255,.62); font-size:10px; font-weight:700; margin-top:2px; white-space:nowrap; }
-.app-header__alert{ flex-shrink:0; background:rgba(255,255,255,.16); color:#fff; font-size:11px; font-weight:700; padding:7px 10px; border-radius:12px; white-space:nowrap; }
-.app-header__right{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
-.header-gear{ width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.16); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
-.date-strip{
-  position:sticky; top:0; z-index:30;
-  display:flex; gap:8px; overflow-x:auto; padding:12px 16px;
-  background:var(--navy-soft);
-}
-.date-chip{
-  flex-shrink:0; width:56px; padding:8px 0;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-  border-radius:16px; border:2px solid transparent; background:#fff;
-}
-.date-chip.is-selected{ background:var(--navy); border-color:var(--navy); }
-.date-chip__weekday{ font-size:11px; font-weight:700; color:var(--navy-soft); }
-.date-chip__weekday.is-sun{ color:var(--danger); }
-.date-chip__weekday.is-sat{ color:var(--personal); }
-.date-chip.is-selected .date-chip__weekday{ color:rgba(255,255,255,.7); }
-.date-chip__day{ font-size:17px; font-weight:900; color:var(--navy); }
-.date-chip.is-selected .date-chip__day{ color:#fff; }
-.date-chip__today-dot{ width:6px; height:6px; border-radius:50%; background:var(--ice); }
-.date-chip__count{ font-size:9px; font-weight:800; color:var(--ice-deep); }
-.date-chip.is-selected .date-chip__count{ color:#fff; }
-.view-toggle{ display:flex; gap:8px; padding:10px 16px 2px; }
-.view-toggle__btn{ flex:1; min-height:40px; border-radius:12px; font-size:12.5px; font-weight:800; background:var(--panel-gray); color:var(--navy-soft); display:flex; align-items:center; justify-content:center; }
-.view-toggle__btn.is-active{ background:var(--navy); color:#fff; }
-.month-calendar{ padding:8px 16px 4px; }
-.month-calendar__nav{ display:flex; align-items:center; justify-content:space-between; padding:2px 2px 12px; }
-.month-calendar__nav-btn{ width:34px; height:34px; border-radius:50%; background:var(--panel-gray); font-weight:900; font-size:15px; display:flex; align-items:center; justify-content:center; }
-.month-calendar__label{ font-size:15px; font-weight:900; }
-.month-calendar__weekdays{ display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:6px; }
-.month-calendar__weekday{ font-size:11px; font-weight:800; color:var(--navy-soft); padding:4px 0; }
-.month-calendar__weekday.is-sun{ color:var(--danger); }
-.month-calendar__weekday.is-sat{ color:var(--personal); }
-.month-calendar__grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
-.month-calendar__cell{ aspect-ratio:1/1; border-radius:12px; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:2px solid transparent; box-shadow:0 1px 2px rgba(11,37,69,.05); }
-.month-calendar__cell.is-empty{ background:transparent; box-shadow:none; }
-.month-calendar__cell.is-today{ border-color:var(--ice); }
-.month-calendar__cell.is-selected{ background:var(--navy); border-color:var(--navy); }
-.month-calendar__cell-day{ font-size:13px; font-weight:800; color:var(--navy); }
-.month-calendar__cell-day.is-sun{ color:var(--danger); }
-.month-calendar__cell-day.is-sat{ color:var(--personal); }
-.month-calendar__cell.is-selected .month-calendar__cell-day{ color:#fff; }
-.month-calendar__cell-dot{ width:5px; height:5px; border-radius:50%; background:var(--ice-deep); }
-.month-calendar__cell.is-selected .month-calendar__cell-dot{ background:#fff; }
-.main-scroll{ flex:1; }
-.section-heading{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px 4px; }
-.section-heading__title{ font-size:15px; font-weight:900; }
-.section-heading__meta{ font-size:12px; font-weight:700; color:var(--navy-soft); }
-.lesson-list{ padding:4px 16px 112px; display:flex; flex-direction:column; gap:12px; }
-.empty-state{ text-align:center; padding:60px 20px; }
-.empty-state__icon{ font-size:40px; }
-.empty-state__text{ font-size:13px; font-weight:700; color:var(--navy-soft); margin-top:8px; }
-.empty-state__btn{ margin-top:16px; padding:10px 20px; border-radius:16px; font-weight:800; font-size:13px; color:#fff; background:var(--navy); display:inline-block; }
-.lesson-tile{ position:relative; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(11,37,69,.06), 0 6px 16px -8px rgba(11,37,69,.14); }
-.lesson-tile__accent{ position:absolute; left:0; top:0; bottom:0; width:6px; }
-.lesson-tile__main{ width:100%; text-align:left; padding:12px 12px 10px 20px; display:flex; align-items:flex-start; gap:12px; }
-.lesson-tile__time{ width:52px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; padding-top:4px; }
-.lesson-tile__time-start{ font-size:15px; font-weight:800; color:var(--navy); line-height:1; }
-.lesson-tile__time-end{ font-size:10px; color:var(--navy-soft); margin-top:4px; }
-.lesson-tile__body{ flex:1; min-width:0; }
-.lesson-tile__title-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.lesson-tile__student{ font-size:15px; font-weight:800; max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.lesson-tile__type-label{ font-size:10px; font-weight:800; padding:2px 6px; border-radius:8px; flex-shrink:0; }
-.lesson-tile__sub{ font-size:12px; color:var(--navy-soft); margin-top:2px; }
-.lesson-tile__badges{ display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
-.lesson-tile__tagcount{ font-size:11px; color:var(--navy-soft); }
-.lesson-tile__actions{ padding:0 12px 12px 20px; }
-.type-badge{ flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:20px; border-width:2px; border-style:solid; }
-.type-badge--sm{ width:32px; height:32px; font-size:15px; }
-.type-badge--md{ width:44px; height:44px; }
-.type-badge.shape-circle{ border-radius:50%; }
-.type-badge.shape-round{ border-radius:14px; }
-.type-badge.shape-hex{ border-radius:6px; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%); }
-.type-badge.shape-square{ border-radius:6px; }
-.type-personal{ color:var(--personal); background:var(--personal-bg); border-color:var(--personal); }
-.type-group{ color:var(--group); background:var(--group-bg); border-color:var(--group); }
-.type-rental{ color:var(--rental); background:var(--rental-bg); border-color:var(--rental); }
-.type-kyoshitsu{ color:var(--kyoshitsu); background:var(--kyoshitsu-bg); border-color:var(--kyoshitsu); }
-.accent-personal{ background:var(--personal); }
-.accent-group{ background:var(--group); }
-.accent-rental{ background:var(--rental); }
-.accent-kyoshitsu{ background:var(--kyoshitsu); }
-.status-pill{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; border:1px solid var(--line-gray); background:var(--panel-gray); color:var(--navy-soft); }
-.status-pill__dot{ width:8px; height:8px; border-radius:50%; background:#9AA9B8; flex-shrink:0; }
-.status-pill--contact.is-on{ color:var(--ice-deep); background:var(--ice-bg); border-color:var(--ice-deep); }
-.status-pill--contact.is-on .status-pill__dot{ background:var(--ice-deep); }
-.status-pill--payment.is-on{ color:var(--ok); background:var(--ok-bg); border-color:var(--ok); }
-.status-pill--payment.is-on .status-pill__dot{ background:var(--ok); }
-.btn-line{ width:100%; min-height:44px; border-radius:14px; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:7px; color:#fff; background:#06C755; }
-.btn-line.is-done{ background:var(--panel-gray); color:var(--navy-soft); }
-.fab{ position:fixed; z-index:50; width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:28px; background:var(--ice); box-shadow:0 10px 24px -6px rgba(11,37,69,.4); right:max(20px, calc(50vw - 260px)); bottom:calc(96px + env(safe-area-inset-bottom)); }
-.bottom-nav{ position:fixed; left:0; right:0; bottom:0; z-index:40; max-width:560px; margin:0 auto; background:#fff; border-top:1px solid rgba(23,55,99,.1); display:flex; padding-bottom:env(safe-area-inset-bottom); }
-.nav-btn{ flex:1; padding:10px 0 8px; display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--navy-soft); }
-.nav-btn.is-active{ color:var(--ice-deep); }
-.nav-btn__icon{ font-size:20px; }
-.nav-btn__label{ font-size:11px; font-weight:800; }
-.nav-btn__indicator{ width:22px; height:3px; border-radius:999px; margin-top:2px; background:transparent; }
-.nav-btn.is-active .nav-btn__indicator{ background:var(--ice); }
-.sheet-overlay{ position:fixed; inset:0; z-index:100; display:flex; align-items:flex-end; }
-.sheet-backdrop{ position:absolute; inset:0; background:rgba(11,37,69,.42); backdrop-filter:blur(1px); -webkit-backdrop-filter:blur(1px); }
-.sheet{ position:relative; width:100%; max-width:560px; margin:0 auto; max-height:92vh; background:#fff; border-radius:24px 24px 0 0; box-shadow:0 -8px 30px rgba(11,37,69,.25); display:flex; flex-direction:column; animation:sheetSlideUp .26s cubic-bezier(.22,.9,.32,1); }
-@keyframes sheetSlideUp{ from{ transform:translateY(100%);} to{ transform:translateY(0);} }
-.sheet__grabber-row{ display:flex; justify-content:center; padding:10px 0 4px; flex-shrink:0; }
-.sheet__grabber{ width:40px; height:6px; border-radius:999px; background:rgba(23,55,99,.22); }
-.sheet__header{ padding:0 20px 12px; display:flex; align-items:center; gap:12px; border-bottom:1px solid rgba(23,55,99,.1); flex-shrink:0; }
-.sheet__header-text{ flex:1; min-width:0; }
-.sheet__header-title{ font-size:16px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.sheet__header-sub{ font-size:12px; color:var(--navy-soft); margin-top:2px; }
-.sheet__close{ width:36px; height:36px; border-radius:50%; background:var(--panel-gray); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
-.sheet__body{ overflow-y:auto; flex:1; padding:16px 20px; display:flex; flex-direction:column; gap:20px; }
-.sheet__footer{ padding:16px 20px; padding-bottom:calc(16px + env(safe-area-inset-bottom)); border-top:1px solid rgba(23,55,99,.1); flex-shrink:0; }
-.sheet__submit{ width:100%; min-height:48px; border-radius:16px; font-weight:900; font-size:15px; color:#fff; background:var(--navy); }
-.sheet__submit:disabled{ opacity:.4; }
-.field-label{ font-size:13px; font-weight:900; margin-bottom:8px; }
-.text-input, .select-like, .date-input{ width:100%; border-radius:16px; border:2px solid rgba(23,55,99,.15); padding:12px; font-size:15px; }
-.text-input:focus, .date-input:focus{ outline:none; border-color:var(--ice); }
-.grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-.grid-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
-.select-wrap{ position:relative; }
-.select-wrap::after{ content:'▾'; position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--navy-soft); font-size:13px; pointer-events:none; }
-.select-input{ width:100%; border-radius:16px; border:2px solid rgba(23,55,99,.15); padding:12px; padding-right:36px; font-size:14px; background:#fff; color:var(--navy); appearance:none; -webkit-appearance:none; -moz-appearance:none; }
-.select-input:focus{ outline:none; border-color:var(--ice); }
-.classroom-manage-link{ display:inline-block; margin-top:8px; font-size:12px; font-weight:800; color:var(--ice-deep); text-decoration:underline; text-underline-offset:3px; padding:4px 2px; }
-.classroom-row{ display:flex; align-items:center; gap:10px; background:#fff; border-radius:14px; padding:10px 12px; box-shadow:0 1px 2px rgba(11,37,69,.06); }
-.classroom-row__body{ flex:1; min-width:0; }
-.classroom-row__name{ font-size:14px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.classroom-row__meta{ font-size:11px; color:var(--navy-soft); margin-top:2px; }
-.classroom-row__actions{ display:flex; gap:6px; flex-shrink:0; }
-.icon-btn{ width:36px; height:36px; border-radius:50%; background:var(--panel-gray); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
-.icon-btn--danger{ color:var(--danger); }
-.classroom-list{ display:flex; flex-direction:column; gap:8px; }
-.classroom-empty{ text-align:center; padding:22px; font-size:13px; font-weight:700; color:var(--navy-soft); background:#fff; border-radius:14px; }
-.classroom-form-title{ font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:space-between; }
-.classroom-cancel-edit{ font-size:12px; font-weight:800; color:var(--navy-soft); text-decoration:underline; text-underline-offset:2px; }
-.advice-box{ border-radius:16px; padding:14px; border:2px solid var(--advice-border); background:var(--advice-bg); }
-.advice-box__title{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:900; color:var(--advice); }
-.advice-box__text{ font-size:13.5px; margin-top:6px; line-height:1.6; color:#5C4900; }
-.action-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.action-btn{ min-height:44px; border-radius:16px; padding:12px 6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-weight:800; font-size:13px; border:2px solid transparent; }
-.action-btn__icon{ font-size:20px; }
-.action-btn--line{ background:#06C755; color:#fff; }
-.action-btn--line.is-done{ background:var(--panel-gray); color:var(--navy-soft); }
-.action-btn--pay{ background:var(--panel-gray); color:var(--navy-soft); }
-.action-btn--pay.is-done{ background:var(--ok-bg); color:var(--ok); border-color:var(--ok); }
-.money-box{ border-radius:16px; background:var(--snow-deep); padding:14px; }
-.money-row{ display:flex; align-items:center; justify-content:between; justify-content:space-between; }
-.money-row + .money-row{ margin-top:12px; padding-top:12px; border-top:1px solid rgba(23,55,99,.1); }
-.money-row__label{ font-size:13px; font-weight:800; color:var(--navy-soft); }
-.money-row__value{ display:flex; align-items:center; gap:4px; }
-.fee-input{ width:100px; text-align:right; font-size:16px; font-weight:800; border:none; background:transparent; border-bottom:2px solid rgba(23,55,99,.3); border-radius:0; padding:2px 0; }
-.fee-input:focus{ outline:none; border-color:var(--ice); }
-.stepper{ display:flex; align-items:center; gap:8px; }
-.stepper__btn{ width:32px; height:32px; border-radius:50%; background:#fff; font-weight:900; display:flex; align-items:center; justify-content:center; }
-.split-input{ width:32px; text-align:center; font-weight:800; border:none; background:transparent; padding:0; }
-.per-person-note{ margin-top:8px; font-size:12px; font-weight:800; color:var(--rental); }
-.tag-wrap{ display:flex; flex-wrap:wrap; gap:8px; }
-.tag-chip{ min-height:44px; padding:9px 14px; border-radius:14px; font-size:13px; font-weight:800; border:2px solid var(--line-gray); background:#fff; color:var(--navy); }
-.tag-chip.is-selected{ background:var(--navy); border-color:var(--navy); color:#fff; }
-.notes-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-.mic-btn{ width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; background:var(--ice); }
-.mic-btn.is-recording{ background:var(--danger); animation:micPulse 1.4s infinite; }
-@keyframes micPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(196,41,28,.45);} 50%{ box-shadow:0 0 0 12px rgba(196,41,28,0);} }
-.mic-unsupported{ font-size:11px; color:var(--navy-soft); }
-.recording-hint{ font-size:11px; font-weight:800; color:var(--danger); margin-bottom:6px; }
-.notes-textarea{ width:100%; min-height:96px; border-radius:16px; border:2px solid rgba(23,55,99,.15); padding:12px; font-size:14px; line-height:1.6; resize:vertical; }
-.notes-textarea:focus{ outline:none; border-color:var(--ice); }
-.delete-link{ text-align:center; font-size:13px; font-weight:800; color:var(--danger); padding:8px 0; width:100%; }
-.type-select-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
-.type-select-btn{ min-height:44px; border-radius:16px; padding:12px 4px; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:8px; border:2px solid #E3E9EE; background:#fff; }
-.type-select-btn.is-selected.sel-personal{ border-color:var(--personal); background:var(--personal-bg); }
-.type-select-btn.is-selected.sel-group{ border-color:var(--group); background:var(--group-bg); }
-.type-select-btn.is-selected.sel-rental{ border-color:var(--rental); background:var(--rental-bg); }
-.type-select-btn.is-selected.sel-kyoshitsu{ border-color:var(--kyoshitsu); background:var(--kyoshitsu-bg); }
-.type-select-btn__icon{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.type-select-btn__label{ font-size:12px; font-weight:800; }
-.rink-row{ display:flex; flex-wrap:wrap; gap:8px; }
-.rink-btn{ min-height:44px; padding:10px 14px; border-radius:14px; font-size:13px; font-weight:800; border:2px solid #E3E9EE; background:#fff; color:var(--navy); }
-.rink-btn.is-selected{ background:var(--navy); border-color:var(--navy); color:#fff; }
-.finance-view{ padding:8px 16px 112px; }
-.finance-year{ display:flex; align-items:center; justify-content:space-between; padding:4px 4px 12px; }
-.year-nav{ display:flex; align-items:center; gap:8px; }
-.year-nav__btn{ width:36px; height:36px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(11,37,69,.08); font-weight:900; display:flex; align-items:center; justify-content:center; }
-.year-nav__label{ font-size:18px; font-weight:900; }
-.btn-csv{ min-height:44px; padding:10px 16px; border-radius:16px; font-size:13px; font-weight:900; color:#fff; background:var(--ice-deep); display:flex; align-items:center; gap:6px; }
-.summary-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
-.summary-card{ border-radius:16px; padding:14px; background:#fff; box-shadow:0 1px 2px rgba(11,37,69,.06), 0 6px 16px -8px rgba(11,37,69,.12); border:2px solid; }
-.summary-card--paid{ border-color:var(--ok); }
-.summary-card--unpaid{ border-color:var(--danger); }
-.summary-card__label{ font-size:12px; font-weight:800; color:var(--navy-soft); }
-.summary-card__value{ font-size:22px; font-weight:900; margin-top:4px; }
-.summary-card--paid .summary-card__value{ color:var(--ok); }
-.summary-card--unpaid .summary-card__value{ color:var(--danger); }
-.summary-card__count{ font-size:11px; color:var(--navy-soft); margin-top:2px; }
-.list-title{ font-size:13px; font-weight:900; margin:0 4px 8px; }
-.unpaid-empty{ text-align:center; padding:40px 20px; font-size:13px; font-weight:700; color:var(--navy-soft); background:#fff; border-radius:16px; box-shadow:0 1px 2px rgba(11,37,69,.06); }
-.unpaid-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
-.unpaid-row{ width:100%; background:#fff; border-radius:16px; box-shadow:0 1px 2px rgba(11,37,69,.06); padding:10px 12px; display:flex; align-items:center; gap:12px; }
-.unpaid-row__body{ flex:1; min-width:0; text-align:left; }
-.unpaid-row__name{ font-size:13.5px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.unpaid-row__date{ font-size:11px; color:var(--navy-soft); margin-top:1px; }
-.unpaid-row__right{ text-align:right; flex-shrink:0; }
-.unpaid-row__fee{ font-size:14px; font-weight:900; }
-.unpaid-row__cta{ font-size:10px; font-weight:800; color:var(--danger); margin-top:1px; }
-.breakdown-card{ background:#fff; border-radius:16px; box-shadow:0 1px 2px rgba(11,37,69,.06); padding:14px; display:flex; flex-direction:column; gap:10px; }
-.breakdown-row{ display:flex; align-items:center; gap:10px; }
-.breakdown-row__icon{ width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
-.breakdown-row__label{ font-size:13px; font-weight:800; flex:1; }
-.breakdown-row__count{ font-size:12px; color:var(--navy-soft); }
-.breakdown-row__sum{ font-size:13px; font-weight:900; width:84px; text-align:right; }
-#toast-root{ position:fixed; left:0; right:0; bottom:92px; z-index:200; display:flex; justify-content:center; pointer-events:none; }
-.toast{ pointer-events:auto; max-width:88vw; padding:12px 16px; border-radius:16px; color:#fff; font-size:14px; font-weight:800; box-shadow:0 -8px 30px rgba(11,37,69,.25); animation:toastIn .2s ease-out; }
-@keyframes toastIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
-.toast--navy{ background:var(--navy); }
-.toast--ok{ background:var(--ok); }
-.toast--danger{ background:var(--danger); }</style>
+  <style>
+    :root {
+      --bg-app: #f4f7f6;
+      --bg-card: #ffffff;
+      --primary: #0d2b45;
+      --primary-light: #203c56;
+      --accent: #20b2aa;
+      --accent-light: #e6f7f6;
+      --text-main: #2b2d42;
+      --text-sub: #6c757d;
+      --border-color: #e2e8f0;
+
+      /* CUD Type Colors */
+      --color-personal: #2b5c8f;
+      --color-group: #1d7874;
+      --color-rental: #d95f02;
+      --color-kyoshitsu: #7570b3;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh; width: 100vw;
+    }
+
+    .app { display: flex; flex-direction: column; height: 100vh; max-width: 600px; margin: 0 auto; background: var(--bg-app); position: relative; }
+
+    /* Header */
+    .app-header {
+      background: var(--primary); color: #fff;
+      padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+      box-shadow: var(--shadow-sm); z-index: 10;
+    }
+    .app-header__brand { display: flex; align-items: center; gap: 8px; }
+    .app-header__logo { font-size: 20px; }
+    .app-header__title { font-weight: 700; font-size: 17px; letter-spacing: 0.5px; }
+    .app-header__subtitle { font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 400; }
+    .app-header__right { display: flex; align-items: center; gap: 8px; }
+    .app-header__alert { font-size: 11px; background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 12px; color: #ffeb3b; font-weight: 600; }
+    .header-gear { background: none; border: none; color: #fff; font-size: 18px; padding: 4px; cursor: pointer; }
+
+    /* Main Scroll Area */
+    .main-scroll { flex: 1; overflow-y: auto; padding: 12px 16px 80px; -webkit-overflow-scrolling: touch; }
+
+    /* Date Strip / Month Calendar */
+    .date-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+    .date-chip {
+      flex: 0 0 auto; width: 56px; padding: 8px 4px; background: var(--bg-card); border-radius: var(--radius-md);
+      border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; gap: 2px;
+      cursor: pointer; transition: all 0.2s; position: relative;
+    }
+    .date-chip.is-selected { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+    .date-chip__weekday { font-size: 11px; font-weight: 600; color: var(--text-sub); }
+    .date-chip.is-selected .date-chip__weekday { color: rgba(255,255,255,0.8); }
+    .date-chip__weekday.is-sun { color: #e53e3e; }
+    .date-chip__weekday.is-sat { color: #3182ce; }
+    .date-chip.is-selected .date-chip__weekday.is-sun, .date-chip.is-selected .date-chip__weekday.is-sat { color: #fff; }
+    .date-chip__day { font-size: 18px; font-weight: 700; }
+    .date-chip__today-dot { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; right: 4px; }
+    .date-chip__count { font-size: 9px; margin-top: 2px; color: var(--accent); }
+    .date-chip.is-selected .date-chip__count { color: #fff; }
+
+    /* View Toggle */
+    .view-toggle { display: flex; background: #e2e8f0; padding: 2px; border-radius: 8px; margin-bottom: 12px; }
+    .view-toggle__btn { flex: 1; border: none; background: none; padding: 6px; font-size: 12px; font-weight: 600; border-radius: 6px; color: var(--text-sub); cursor: pointer; }
+    .view-toggle__btn.is-active { background: #fff; color: var(--text-main); box-shadow: var(--shadow-sm); }
+
+    /* Month Calendar View */
+    .month-calendar { background: #fff; border-radius: var(--radius-md); padding: 12px; border: 1px solid var(--border-color); margin-bottom: 16px; }
+    .month-calendar__nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .month-calendar__nav-btn { background: none; border: none; font-size: 18px; padding: 4px 12px; cursor: pointer; color: var(--text-main); }
+    .month-calendar__label { font-size: 15px; font-weight: 700; }
+    .month-calendar__weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+    .month-calendar__weekday.is-sun { color: #e53e3e; }
+    .month-calendar__weekday.is-sat { color: #3182ce; }
+    .month-calendar__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .month-calendar__cell {
+      aspect-ratio: 1; border: none; background: none; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      position: relative; cursor: pointer; font-size: 13px; font-weight: 500;
+    }
+    .month-calendar__cell.is-empty { cursor: default; }
+    .month-calendar__cell.is-selected { background: var(--primary); color: #fff; }
+    .month-calendar__cell.is-today { font-weight: 700; color: var(--accent); }
+    .month-calendar__cell.is-selected.is-today { color: #fff; }
+    .month-calendar__cell-dot { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; position: absolute; bottom: 3px; }
+    .month-calendar__cell.is-selected .month-calendar__cell-dot { background: #fff; }
+    .month-calendar__cell-day.is-sun { color: #e53e3e; }
+    .month-calendar__cell-day.is-sat { color: #3182ce; }
+    .month-calendar__cell.is-selected .month-calendar__cell-day.is-sun,
+    .month-calendar__cell.is-selected .month-calendar__cell-day.is-sat { color: #fff; }
+
+    /* Section Heading */
+    .section-heading { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+    .section-heading__title { font-size: 16px; font-weight: 700; }
+    .section-heading__meta { font-size: 12px; color: var(--text-sub); }
+
+    /* Lesson List & Tile */
+    .lesson-list { display: flex; flex-direction: column; gap: 10px; }
+    .lesson-tile { background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; position: relative; overflow: hidden; box-shadow: var(--shadow-sm); }
+    .lesson-tile__accent { width: 6px; flex-shrink: 0; }
+    .lesson-tile__accent.accent-personal { background-color: var(--color-personal); }
+    .lesson-tile__accent.accent-group { background-color: var(--color-group); }
+    .lesson-tile__accent.accent-rental { background-color: var(--color-rental); }
+    .lesson-tile__accent.accent-kyoshitsu { background-color: var(--color-kyoshitsu); }
+
+    .lesson-tile__main { flex: 1; padding: 12px; border: none; background: none; text-align: left; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .lesson-tile__time { display: flex; flex-direction: column; width: 48px; flex-shrink: 0; text-align: center; }
+    .lesson-tile__time-start { font-size: 14px; font-weight: 700; }
+    .lesson-tile__time-end { font-size: 10px; color: var(--text-sub); }
+
+    .type-badge {
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
+      width: 28px; height: 28px; color: #fff;
+    }
+    .type-badge.shape-circle { border-radius: 50%; }
+    .type-badge.shape-round { border-radius: 6px; }
+    .type-badge.shape-hex { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
+    .type-badge.shape-square { border-radius: 2px; }
+
+    .type-badge.type-personal, .type-badge--personal { background-color: var(--color-personal); }
+    .type-badge.type-group, .type-badge--group { background-color: var(--color-group); }
+    .type-badge.type-rental, .type-badge--rental { background-color: var(--color-rental); }
+    .type-badge.type-kyoshitsu, .type-badge--kyoshitsu { background-color: var(--color-kyoshitsu); }
+
+    .lesson-tile__body { flex: 1; min-width: 0; }
+    .lesson-tile__title-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
+    .lesson-tile__student { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lesson-tile__type-label { font-size: 10px; padding: 1px 5px; border-radius: 4px; color: #fff; font-weight: 600; }
+    .lesson-tile__sub { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
+    .lesson-tile__badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+    .status-pill { font-size: 10px; padding: 2px 6px; border-radius: 10px; background: #edf2f7; color: var(--text-sub); display: inline-flex; align-items: center; gap: 3px; }
+    .status-pill--contact.is-on { background: #e6fffa; color: #234e52; border: 1px solid #b2f5ea; }
+    .status-pill--payment.is-on { background: #f0fff4; color: #22543d; border: 1px solid #c6f6d5; }
+    .status-pill__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .lesson-tile__tagcount { font-size: 10px; color: var(--text-sub); }
+
+    /* Level Badges for CUD */
+    .level-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #e2e8f0; color: #4a5568; font-weight: 600; border: 1px solid #cbd5e0; display: inline-flex; align-items: center; gap: 2px; }
+
+    .lesson-tile__actions { display: flex; align-items: center; padding-right: 8px; }
+    .btn-line { background: #06c755; color: #fff; border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+    .btn-line.is-done { background: #edf2f7; color: var(--text-sub); font-weight: 500; }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 40px 16px; background: #fff; border-radius: var(--radius-md); border: 1px border-dashed var(--border-color); }
+    .empty-state__icon { font-size: 32px; margin-bottom: 8px; }
+    .empty-state__text { font-size: 14px; color: var(--text-sub); margin-bottom: 12px; }
+    .empty-state__btn { background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+    /* Bottom Nav & FAB */
+    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: #fff; border-top: 1px solid var(--border-color); display: flex; height: 60px; z-index: 100; }
+    .nav-btn { flex: 1; border: none; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-sub); cursor: pointer; position: relative; }
+    .nav-btn.is-active { color: var(--primary); font-weight: 700; }
+    .nav-btn__icon { font-size: 18px; }
+    .nav-btn__label { font-size: 10px; }
+    .nav-btn__indicator { position: absolute; top: 0; width: 32px; height: 3px; background: var(--primary); border-radius: 0 0 3px 3px; display: none; }
+    .nav-btn.is-active .nav-btn__indicator { display: block; }
+
+    .fab { position: fixed; bottom: 72px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: #fff; border: none; font-size: 24px; box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 90; }
+
+    /* Finance View */
+    .finance-view { display: flex; flex-direction: column; gap: 16px; }
+    .finance-year { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+    .year-nav { display: flex; align-items: center; gap: 12px; }
+    .year-nav__btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-main); }
+    .year-nav__label { font-size: 16px; font-weight: 700; }
+    .btn-csv { background: var(--primary-light); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .summary-card { background: #fff; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+    .summary-card--paid { border-left: 4px solid #38a169; }
+    .summary-card--unpaid { border-left: 4px solid #e53e3e; }
+    .summary-card__label { font-size: 11px; color: var(--text-sub); }
+    .summary-card__value { font-size: 18px; font-weight: 700; margin: 4px 0; }
+    .summary-card__count { font-size: 10px; color: var(--text-sub); }
+
+    .list-title { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: -6px; }
+    .unpaid-list { display: flex; flex-direction: column; gap: 8px; }
+    .unpaid-row { background: #fff; border-radius: var(--radius-sm); border: 1px solid var(--border-color); padding: 10px 12px; display: flex; align-items: center; gap: 10px; text-align: left; width: 100%; cursor: pointer; }
+    .unpaid-row__body { flex: 1; }
+    .unpaid-row__name { font-size: 13px; font-weight: 700; }
+    .unpaid-row__date { font-size: 11px; color: var(--text-sub); }
+    .unpaid-row__right { text-align: right; }
+    .unpaid-row__fee { font-size: 13px; font-weight: 700; color: #e53e3e; }
+    .unpaid-row__cta { font-size: 10px; color: var(--accent); }
+    .unpaid-empty { text-align: center; padding: 20px; font-size: 13px; color: var(--text-sub); background: #fff; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+
+    .breakdown-card { background: #fff; border-radius: var(--radius-md); border: 1px solid var(--border-color); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .breakdown-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .breakdown-row__icon { width: 20px; height: 20px; font-size: 11px; }
+    .breakdown-row__label { flex: 1; }
+    .breakdown-row__count { font-size: 11px; color: var(--text-sub); }
+    .breakdown-row__sum { font-weight: 700; width: 80px; text-align: right; }
+
+    /* Modals & Bottom Sheets */
+    .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; flex-direction: column; justify-content: flex-end; }
+    .sheet-backdrop { position: absolute; inset: 0; }
+    .sheet { position: relative; background: #fff; border-radius: 16px 16px 0 0; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.25s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .sheet__grabber-row { display: flex; justify-content: center; padding: 8px; }
+    .sheet__grabber { width: 36px; height: 4px; background: #cbd5e0; border-radius: 2px; }
+    .sheet__header { padding: 8px 16px 12px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
+    .sheet__header-text { flex: 1; }
+    .sheet__header-title { font-size: 16px; font-weight: 700; }
+    .sheet__header-sub { font-size: 11px; color: var(--text-sub); }
+    .sheet__close { background: none; border: none; font-size: 18px; color: var(--text-sub); cursor: pointer; padding: 4px; }
+    .sheet__body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; -webkit-overflow-scrolling: touch; }
+    .sheet__footer { padding: 12px 16px 20px; border-top: 1px solid var(--border-color); background: #fff; }
+    .sheet__submit { width: 100%; background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .sheet__submit:disabled { background: #cbd5e0; cursor: not-allowed; }
+
+    /* Forms */
+    .field-label { font-size: 11px; font-weight: 700; color: var(--text-sub); margin-bottom: 4px; display: block; }
+    .text-input, .date-input, .select-input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; background: #fff; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+    .type-select-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .type-select-btn { border: 1px solid var(--border-color); background: #fff; border-radius: 8px; padding: 8px 2px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+    .type-select-btn.is-selected { border-color: var(--primary); background: #f0f4f8; }
+    .type-select-btn__label { font-size: 10px; font-weight: 600; color: var(--text-sub); }
+
+    .rink-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+    .rink-btn { flex: 0 0 auto; padding: 6px 12px; border-radius: 16px; border: 1px solid var(--border-color); background: #fff; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .rink-btn.is-selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .money-box { background: #f7fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); }
+    .money-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .money-row__label { font-size: 12px; font-weight: 600; }
+    .money-row__value { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 2px; }
+    .fee-input { width: 100px; text-align: right; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 16px; font-weight: 700; }
+    .stepper { display: flex; align-items: center; gap: 6px; }
+    .stepper__btn { width: 28px; height: 28px; border-radius: 4px; border: 1px solid var(--border-color); background: #fff; font-weight: 700; cursor: pointer; }
+    .split-input { width: 40px; text-align: center; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 14px; }
+    .per-person-note { font-size: 11px; color: var(--accent); text-align: right; font-weight: 600; margin-top: 2px; }
+
+    .tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag-chip { padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border-color); background: #fff; font-size: 11px; cursor: pointer; }
+    .tag-chip.is-selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .notes-header { display: flex; justify-content: space-between; align-items: center; }
+    .mic-btn { background: #edf2f7; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .mic-btn.is-recording { background: #e53e3e; color: #fff; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .mic-unsupported { font-size: 10px; color: var(--text-sub); }
+    .recording-hint { font-size: 11px; color: #e53e3e; margin-bottom: 2px; }
+    .notes-textarea { width: 100%; min-height: 90px; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; font-size: 13px; font-family: inherit; }
+
+    .advice-box { background: #fffaf0; border: 1px solid #feebc8; border-radius: 8px; padding: 10px; }
+    .advice-box__title { font-size: 11px; font-weight: 700; color: #dd6b20; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+    .advice-box__text { font-size: 12px; color: #7b341e; }
+
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .action-btn { padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+    .action-btn--line { color: #06c755; border-color: #06c755; }
+    .action-btn--line.is-done { background: #e6fffa; }
+    .action-btn--pay { color: #2b6cb0; border-color: #2b6cb0; }
+    .action-btn--pay.is-done { background: #ebf8ff; }
+
+    .delete-link { color: #e53e3e; background: none; border: none; font-size: 12px; text-decoration: underline; cursor: pointer; margin-top: 8px; text-align: center; }
+
+    /* Classroom Master */
+    .classroom-list { display: flex; flex-direction: column; gap: 6px; }
+    .classroom-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: #f7fafc; border-radius: 6px; border: 1px solid var(--border-color); }
+    .classroom-row__name { font-size: 13px; font-weight: 700; }
+    .classroom-row__meta { font-size: 11px; color: var(--text-sub); }
+    .classroom-row__actions { display: flex; gap: 4px; }
+    .icon-btn { background: none; border: none; padding: 4px; cursor: pointer; font-size: 14px; }
+    .classroom-empty { font-size: 12px; color: var(--text-sub); text-align: center; padding: 12px; }
+    .classroom-form-title { font-size: 12px; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+    .classroom-cancel-edit { font-size: 11px; color: var(--text-sub); font-weight: 400; text-decoration: underline; cursor: pointer; }
+    .select-wrap { margin-bottom: 4px; }
+    .classroom-manage-link { background: none; border: none; color: var(--accent); font-size: 11px; font-weight: 600; padding: 0; cursor: pointer; text-decoration: underline; }
+
+    /* Passcode Lock UI */
+    .lock-screen {
+      position: fixed; inset: 0; background: var(--primary); color: #fff; z-index: 999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+    }
+    .lock-screen__title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .lock-screen__sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 24px; text-align: center; }
+    .lock-screen__input {
+      width: 180px; padding: 10px; border-radius: 8px; border: none; font-size: 20px; letter-spacing: 6px; text-align: center;
+      margin-bottom: 12px; background: #fff; color: var(--text-main); font-family: var(--font-mono);
+    }
+    .lock-screen__btn {
+      background: var(--accent); color: #fff; border: none; padding: 10px 24px; border-radius: 20px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .lock-screen__err { color: #ff8080; font-size: 12px; height: 16px; margin-top: 8px; font-weight: 600; }
+    .lock-screen.shake { animation: shake 0.3s ease-in-out; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+
+    /* Toast */
+    .toast-root { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 300; pointer-events: none; width: 90%; max-width: 400px; }
+    .toast { background: rgba(13, 43, 69, 0.95); color: #fff; padding: 10px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-align: center; box-shadow: var(--shadow-md); animation: fadeIn 0.2s ease-out; }
+    .toast--ok { background: rgba(32, 178, 170, 0.95); }
+    .toast--danger { background: rgba(229, 62, 62, 0.95); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .mono { font-family: var(--font-mono); }
+    .tappable:active { opacity: 0.7; }
+    .min-tap { min-height: 36px; min-width: 36px; }
+  </style>
 </head>
 <body>
 
@@ -312,35 +354,63 @@ h1,h2,h3,p{ margin:0; }
 </div>
 <div id="overlay-root"></div>
 <div id="classroom-overlay-root"></div>
-<div id="toast-root"></div>
+<div id="lock-overlay-root"></div>
+<div id="toast-root" class="toast-root"></div>
 
-<script>(function(){
+<script>
+(function(){
   "use strict";
   var STORAGE_KEY = 'torepeta_lessons_v1';
   var memStore = {};
+
   function loadLessons(){
     try{
       var raw = window.localStorage.getItem(STORAGE_KEY);
-      if(raw !== null && raw !== undefined) return JSON.parse(raw);
-    }catch(e){  }
+      if(raw !== null && raw !== undefined) {
+        var parsed = JSON.parse(raw);
+        // マイグレーション（レベルデータの初期化）
+        if(Array.isArray(parsed)) {
+          parsed.forEach(function(l){
+            if(!l.level) l.level = { jsf:'', isi:'', category:'' };
+          });
+        }
+        return parsed;
+      }
+    }catch(e){ }
     return memStore[STORAGE_KEY] || null;
   }
   function saveLessons(lessons){
     memStore[STORAGE_KEY] = lessons;
-    try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lessons)); }catch(e){  }
+    try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lessons)); }catch(e){ }
   }
+
   var CLASSROOM_STORAGE_KEY = 'torepeta_classrooms_v1';
   function loadClassrooms(){
     try{
       var raw = window.localStorage.getItem(CLASSROOM_STORAGE_KEY);
       if(raw !== null && raw !== undefined) return JSON.parse(raw);
-    }catch(e){  }
+    }catch(e){ }
     return memStore[CLASSROOM_STORAGE_KEY] || null;
   }
   function saveClassrooms(list){
     memStore[CLASSROOM_STORAGE_KEY] = list;
-    try{ window.localStorage.setItem(CLASSROOM_STORAGE_KEY, JSON.stringify(list)); }catch(e){  }
+    try{ window.localStorage.setItem(CLASSROOM_STORAGE_KEY, JSON.stringify(list)); }catch(e){ }
   }
+
+  /* パスワード（ロック）用ストレージ処理 */
+  var PASSCODE_STORAGE_KEY = 'torepeta_passcode_v1';
+  function loadPasscode(){
+    try {
+      return window.localStorage.getItem(PASSCODE_STORAGE_KEY) || '';
+    } catch(e){ return ''; }
+  }
+  function savePasscode(code){
+    try {
+      if(code) window.localStorage.setItem(PASSCODE_STORAGE_KEY, code);
+      else window.localStorage.removeItem(PASSCODE_STORAGE_KEY);
+    } catch(e){}
+  }
+
   var LESSON_TYPES = {
     personal:  { label:'個人レッスン', short:'個人', cls:'type-personal', shape:'shape-circle', icon:'👤' },
     group:     { label:'グループレッスン', short:'グループ', cls:'type-group', shape:'shape-round', icon:'👥' },
@@ -354,7 +424,15 @@ h1,h2,h3,p{ margin:0; }
     '軸の意識','フリー脚','エッジ','踏切','タイミング','腕の使い方','体幹','ジャンプ矯正',
     '曲かけ','振付確認','基礎練習','試合前チェック'
   ];
-  var RINKS = ['メインリンク','サブリンク','外部リンク'];
+
+  /* リンク選択肢の更新 */
+  var RINKS = ['明治神宮', '東伏見', '東大和', '埼玉', '東神奈川', 'アクアリンク', '新横浜', 'その他'];
+
+  /* レベル定義 */
+  var JSF_BADGES = ['初級','1級','2級','3級','4級','5級','6級','7級','8級'];
+  var ISI_LEVELS = ['Pre-Alpha','Alpha','Beta','Gamma','Delta','Freestyle 1','Freestyle 2','Freestyle 3','Freestyle 4','Freestyle 5','Freestyle 6+'];
+  var CATEGORIES = ['初心者','中級','上級'];
+
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
   function pad2(n){ return String(n).padStart(2,'0'); }
   function todayStr(){
@@ -377,30 +455,36 @@ h1,h2,h3,p{ margin:0; }
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch];
     });
   }
+
   function seedData(){
     var t = todayStr();
     var tmr = addDays(t, 1);
     return [
-      { id: uid(), date:t, start:'09:00', end:'09:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
-        contactStatus:'未連絡', paymentStatus:'未回収', tags:['3T','軸の意識'], notes:'踏切のタイミングが早い。助走から意識づけを継続。', homework:'家で片足立ちの軸バランス練習を毎日5分。', createdAt: Date.now()-1000 },
-      { id: uid(), date:t, start:'10:00', end:'10:45', type:'group', student:'ジュニアクラス（4名）', rink:'サブリンク', fee:2500, splitCount:1,
-        contactStatus:'連絡済', paymentStatus:'回収済', tags:['基礎練習','StSq'], notes:'', homework:'', createdAt: Date.now()-2000 },
-      { id: uid(), date:t, start:'13:00', end:'14:00', type:'rental', student:'鈴木 蓮 / 高橋 陸', rink:'メインリンク', fee:9000, splitCount:2,
-        contactStatus:'未連絡', paymentStatus:'未回収', tags:['曲かけ','振付確認'], notes:'', homework:'', createdAt: Date.now()-3000 },
-      { id: uid(), date:tmr, start:'16:00', end:'16:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
-        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now() },
-      { id: uid(), date:tmr, start:'18:00', end:'19:00', type:'kyoshitsu', student:'大人スケート教室', rink:'サブリンク', fee:1500, splitCount:1,
-        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now()+1 }
+      { id: uid(), date:t, start:'09:00', end:'09:30', type:'personal', student:'佐藤 ひなた', rink:'明治神宮', fee:4000, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:['3T','軸の意識'], level:{ jsf:'3級', isi:'', category:'中級' }, notes:'踏切のタイミングが早い。助走から意識づけを継続。', homework:'家で片足立ちの軸バランス練習を毎日5分。', createdAt: Date.now()-1000 },
+      { id: uid(), date:t, start:'10:00', end:'10:45', type:'group', student:'ジュニアクラス（4名）', rink:'東伏見', fee:2500, splitCount:1,
+        contactStatus:'連絡済', paymentStatus:'回収済', tags:['基礎練習','StSq'], level:{ jsf:'', isi:'', category:'初心者' }, notes:'', homework:'', createdAt: Date.now()-2000 },
+      { id: uid(), date:t, start:'13:00', end:'14:00', type:'rental', student:'鈴木 蓮 / 高橋 陸', rink:'明治神宮', fee:9000, splitCount:2,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:['曲かけ','振付確認'], level:{ jsf:'6級', isi:'', category:'上級' }, notes:'', homework:'', createdAt: Date.now()-3000 },
+      { id: uid(), date:tmr, start:'16:00', end:'16:30', type:'personal', student:'佐藤 ひなた', rink:'明治神宮', fee:4000, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], level:{ jsf:'3級', isi:'', category:'中級' }, notes:'', homework:'', createdAt: Date.now() },
+      { id: uid(), date:tmr, start:'18:00', end:'19:00', type:'kyoshitsu', student:'大人スケート教室', rink:'東伏見', fee:1500, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], level:{ jsf:'', isi:'', category:'' }, notes:'', homework:'', createdAt: Date.now()+1 }
     ];
   }
+
   function seedClassrooms(){
     return [
-      { id: uid(), name:'大人スケート教室', start:'18:00', end:'19:00', rink:'サブリンク' },
-      { id: uid(), name:'キッズスケート教室 初級', start:'16:30', end:'17:15', rink:'メインリンク' }
+      { id: uid(), name:'大人スケート教室', start:'18:00', end:'19:00', rink:'東伏見' },
+      { id: uid(), name:'キッズスケート教室 初級', start:'16:30', end:'17:15', rink:'明治神宮' }
     ];
   }
+
   var lessons = loadLessons() || seedData();
   var classroomMaster = loadClassrooms() || seedClassrooms();
+  var savedPasscode = loadPasscode();
+  var isUnlocked = !savedPasscode; // パスワード未設定ならロック解除状態
+
   var selectedDate = todayStr();
   var currentTab = 'schedule';
   var viewMode = 'day';
@@ -408,12 +492,16 @@ h1,h2,h3,p{ margin:0; }
   var calMonth = new Date().getMonth();
   var financeYear = new Date().getFullYear();
   var toastTimer = null;
+
   var rootEl = document.getElementById('root');
   var overlayRoot = document.getElementById('overlay-root');
   var classroomOverlayRoot = document.getElementById('classroom-overlay-root');
+  var lockOverlayRoot = document.getElementById('lock-overlay-root');
   var toastRoot = document.getElementById('toast-root');
+
   function persist(){ saveLessons(lessons); }
   function persistClassrooms(){ saveClassrooms(classroomMaster); }
+
   function copyToClipboard(text){
     return new Promise(function(resolve){
       if(navigator.clipboard && window.isSecureContext){
@@ -436,6 +524,7 @@ h1,h2,h3,p{ margin:0; }
       return ok;
     }catch(e){ return false; }
   }
+
   function buildLineMessage(lesson){
     var typePhrase;
     if(lesson.type === 'kyoshitsu'){
@@ -445,12 +534,52 @@ h1,h2,h3,p{ margin:0; }
     }
     return fmtDateJp(lesson.date) + 'は ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で ' + typePhrase + 'です。よろしくお願いいたします';
   }
+
   function showToast(msg, tone){
     tone = tone || 'navy';
     toastRoot.innerHTML = '<div class="toast toast--' + tone + '">' + esc(msg) + '</div>';
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function(){ toastRoot.innerHTML = ''; }, 2200);
   }
+
+  /* ロック画面の表示 */
+  function renderLockScreen(){
+    if(isUnlocked) {
+      lockOverlayRoot.innerHTML = '';
+      return;
+    }
+    var html = '<div class="lock-screen" id="lock-screen-box">';
+    html += '<div class="lock-screen__title">🔒 トレペタ ロック中</div>';
+    html += '<div class="lock-screen__sub">パスワードを入力してください</div>';
+    html += '<input type="password" id="passcode-input" class="lock-screen__input" pattern="[0-9]*" inputmode="numeric" maxlength="8" autofocus>';
+    html += '<button class="lock-screen__btn tappable" id="btn-unlock">解除</button>';
+    html += '<div class="lock-screen__err" id="lock-err"></div>';
+    html += '</div>';
+    lockOverlayRoot.innerHTML = html;
+
+    var input = document.getElementById('passcode-input');
+    var btn = document.getElementById('btn-unlock');
+    var err = document.getElementById('lock-err');
+    var box = document.getElementById('lock-screen-box');
+
+    function check(){
+      if(input.value === savedPasscode){
+        isUnlocked = true;
+        lockOverlayRoot.innerHTML = '';
+        renderShell();
+        showToast('ロックを解除しました', 'ok');
+      } else {
+        err.textContent = 'パスワードが違います';
+        box.classList.remove('shake');
+        void box.offsetWidth;
+        box.classList.add('shake');
+        input.value = '';
+      }
+    }
+    btn.addEventListener('click', check);
+    input.addEventListener('keypress', function(e){ if(e.key === 'Enter') check(); });
+  }
+
   function renderDateStrip(){
     var html = '<div class="date-strip" id="date-strip">';
     for(var i=-2;i<14;i++){
@@ -471,10 +600,22 @@ h1,h2,h3,p{ margin:0; }
     html += '</div>';
     return html;
   }
+
   function renderTypeBadge(type, size){
     var t = LESSON_TYPES[type];
     return '<div class="type-badge type-badge--' + (size||'md') + ' ' + t.shape + ' ' + t.cls + '">' + t.icon + '</div>';
   }
+
+  /* レベルバッジのタグ生成（CUD対応） */
+  function renderLevelBadges(level){
+    if(!level) return '';
+    var html = '';
+    if(level.jsf) html += '<span class="level-tag">🎖️ ' + esc(level.jsf) + '</span>';
+    if(level.isi) html += '<span class="level-tag">⛸️ ' + esc(level.isi) + '</span>';
+    if(level.category) html += '<span class="level-tag">🏷️ ' + esc(level.category) + '</span>';
+    return html;
+  }
+
   function renderLessonTile(l){
     var t = LESSON_TYPES[l.type];
     var contactOn = l.contactStatus === '連絡済';
@@ -485,7 +626,7 @@ h1,h2,h3,p{ margin:0; }
     html += '<div class="lesson-tile__time"><span class="lesson-tile__time-start mono">' + esc(l.start) + '</span><span class="lesson-tile__time-end">〜' + esc(l.end) + '</span></div>';
     html += renderTypeBadge(l.type, 'md');
     html += '<div class="lesson-tile__body">';
-    html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + '</span><span class="lesson-tile__type-label ' + t.cls + '">' + t.short + '</span></div>';
+    html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + '</span><span class="lesson-tile__type-label ' + t.cls + '">' + t.short + '</span>' + renderLevelBadges(l.level) + '</div>';
     html += '<div class="lesson-tile__sub">' + esc(l.rink) + ' ・ ' + yen(l.fee) + '</div>';
     html += '<div class="lesson-tile__badges">';
     html += '<span class="status-pill status-pill--contact' + (contactOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (contactOn?'連絡済':'未連絡') + '</span>';
@@ -496,6 +637,7 @@ h1,h2,h3,p{ margin:0; }
     html += '</div>';
     return html;
   }
+
   function renderViewToggle(){
     var html = '<div class="view-toggle">';
     html += '<button class="view-toggle__btn tappable min-tap' + (viewMode==='day'?' is-active':'') + '" data-action="set-view" data-view="day">日表示</button>';
@@ -503,6 +645,7 @@ h1,h2,h3,p{ margin:0; }
     html += '</div>';
     return html;
   }
+
   function renderMonthCalendar(){
     var year = calYear, month = calMonth;
     var startWeekday = new Date(year, month, 1).getDay();
@@ -531,6 +674,7 @@ h1,h2,h3,p{ margin:0; }
     html += '</div></div>';
     return html;
   }
+
   function renderScheduleView(){
     var dayLessons = lessons.filter(function(l){ return l.date===selectedDate; }).sort(function(a,b){ return a.start.localeCompare(b.start); });
     var html = renderViewToggle();
@@ -545,6 +689,7 @@ h1,h2,h3,p{ margin:0; }
     }
     return html;
   }
+
   function renderFinanceView(){
     var yearLessons = lessons.filter(function(l){ return l.date.indexOf(String(financeYear))===0; });
     var unpaid = yearLessons.filter(function(l){ return l.paymentStatus==='未回収'; });
@@ -585,6 +730,7 @@ h1,h2,h3,p{ margin:0; }
     html += '</div></div>';
     return html;
   }
+
   function renderHeader(){
     var todayUncontacted = lessons.filter(function(l){ return l.date===todayStr() && l.contactStatus==='未連絡'; }).length;
     var html = '<header class="app-header">';
@@ -593,11 +739,13 @@ h1,h2,h3,p{ margin:0; }
     if(currentTab==='schedule' && todayUncontacted>0){
       html += '<div class="app-header__alert">本日 未連絡 ' + todayUncontacted + '件</div>';
     }
+    html += '<button class="header-gear tappable min-tap" data-action="open-passcode-settings" title="パスワード設定">🔒</button>';
     html += '<button class="header-gear tappable min-tap" data-action="open-classroom-master" title="教室マスタを管理">⚙️</button>';
     html += '</div>';
     html += '</header>';
     return html;
   }
+
   function renderBottomNav(){
     var items = [ { key:'schedule', label:'予定', icon:'🗓️' }, { key:'finance', label:'収支・確定申告', icon:'💰' } ];
     var html = '<nav class="bottom-nav">';
@@ -610,11 +758,17 @@ h1,h2,h3,p{ margin:0; }
     html += '</nav>';
     return html;
   }
+
   function renderFab(){
     if(currentTab !== 'schedule') return '';
     return '<button class="fab tappable" data-action="open-add">＋</button>';
   }
+
   function renderShell(){
+    if(!isUnlocked){
+      renderLockScreen();
+      return;
+    }
     var html = renderHeader();
     html += '<main class="main-scroll">';
     html += (currentTab === 'schedule') ? renderScheduleView() : renderFinanceView();
@@ -628,6 +782,7 @@ h1,h2,h3,p{ margin:0; }
       if(sel) sel.scrollIntoView({ inline:'center', block:'nearest' });
     }
   }
+
   function selectDate(dateKey){ selectedDate = dateKey; renderShell(); }
   function switchTab(tab){ currentTab = tab; renderShell(); }
   function setViewMode(mode){
@@ -641,6 +796,7 @@ h1,h2,h3,p{ margin:0; }
   }
   function calPrevMonth(){ calMonth--; if(calMonth<0){ calMonth=11; calYear--; } renderShell(); }
   function calNextMonth(){ calMonth++; if(calMonth>11){ calMonth=0; calYear++; } renderShell(); }
+
   function quickLine(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
     if(!lesson) return;
@@ -656,6 +812,7 @@ h1,h2,h3,p{ margin:0; }
       }
     });
   }
+
   function togglePaymentFromFinance(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
     if(!lesson) return;
@@ -664,19 +821,22 @@ h1,h2,h3,p{ margin:0; }
     renderShell();
     showToast('回収済みにしました', 'ok');
   }
+
   function changeFinanceYear(delta){ financeYear += delta; renderShell(); }
+
   function exportCsv(){
     var rows = lessons.filter(function(l){ return l.date.indexOf(String(financeYear))===0; });
     if(rows.length === 0){ showToast(financeYear + '年のデータがありません', 'danger'); return; }
-    var header = ['日付','開始','終了','種別','生徒名/グループ名','リンク','料金','割り勘人数','入金状況','連絡状況','カルテタグ'];
+    var header = ['日付','開始','終了','種別','生徒名/グループ名','バッジテスト','ISI','区分','リンク','料金','割り勘人数','入金状況','連絡状況','カルテタグ'];
     rows = rows.slice().sort(function(a,b){ return a.date.localeCompare(b.date) || a.start.localeCompare(b.start); });
     var lines = rows.map(function(l){
-      return [ l.date, l.start, l.end, LESSON_TYPES[l.type].label, l.student, l.rink, l.fee, l.splitCount||1, l.paymentStatus, l.contactStatus, (l.tags||[]).join('/') ];
+      var lvl = l.level || {};
+      return [ l.date, l.start, l.end, LESSON_TYPES[l.type].label, l.student, lvl.jsf||'', lvl.isi||'', lvl.category||'', l.rink, l.fee, l.splitCount||1, l.paymentStatus, l.contactStatus, (l.tags||[]).join('/') ];
     });
     var totalAll = rows.reduce(function(s,l){ return s+Number(l.fee||0); },0);
     var totalPaid = rows.filter(function(l){ return l.paymentStatus==='回収済'; }).reduce(function(s,l){ return s+Number(l.fee||0); },0);
     lines.push([]);
-    lines.push(['', '', '', '', '', '年間合計', totalAll, '', '回収済合計:' + totalPaid, '', '']);
+    lines.push(['', '', '', '', '', '', '', '', '年間合計', totalAll, '', '回収済合計:' + totalPaid, '', '']);
     function escCsv(v){
       var s = String(v==null ? '' : v);
       return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
@@ -693,6 +853,7 @@ h1,h2,h3,p{ margin:0; }
     URL.revokeObjectURL(url);
     showToast(financeYear + '年分のCSVを出力しました', 'ok');
   }
+
   function createRecognizer(onFinalText){
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(!SR) return null;
@@ -709,6 +870,7 @@ h1,h2,h3,p{ margin:0; }
     };
     return rec;
   }
+
   function findPrevAdvice(lesson){
     var candidates = lessons.filter(function(l){
       return l.student === lesson.student && l.id !== lesson.id && (l.homework || l.notes) &&
@@ -717,18 +879,37 @@ h1,h2,h3,p{ margin:0; }
     candidates.sort(function(a,b){ return (b.date+'T'+b.start).localeCompare(a.date+'T'+a.start); });
     return candidates[0] || null;
   }
+
   function openLessonModal(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
     if(!lesson) return;
     var t = LESSON_TYPES[lesson.type];
     var prev = findPrevAdvice(lesson);
     var perPersonInit = (lesson.type==='rental' && lesson.splitCount>1) ? Math.ceil(lesson.fee/lesson.splitCount) : null;
+    var lvl = lesson.level || { jsf:'', isi:'', category:'' };
+
     var html = '<div class="sheet-overlay" id="lesson-overlay">';
     html += '<div class="sheet-backdrop" data-action="close-sheet"></div>';
     html += '<div class="sheet">';
     html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
     html += '<div class="sheet__header">' + renderTypeBadge(lesson.type,'md') + '<div class="sheet__header-text"><div class="sheet__header-title">' + esc(lesson.student) + '</div><div class="sheet__header-sub mono">' + fmtDateJp(lesson.date) + ' ' + esc(lesson.start) + '〜' + esc(lesson.end) + ' ・ ' + esc(lesson.rink) + '</div></div><button class="sheet__close tappable" data-action="close-sheet">✕</button></div>';
     html += '<div class="sheet__body">';
+
+    /* 生徒レベル設定（モーダル内） */
+    html += '<div class="advice-box" style="background:#f0f4f8; border-color:#cbd5e0;">';
+    html += '<div class="advice-box__title" style="color:var(--primary);"><span>🎖️</span><span>生徒の級・レベル設定</span></div>';
+    html += '<div class="grid-3" style="margin-top:6px;">';
+    html += '<div><div class="field-label">バッジテスト</div><select id="edit-lvl-jsf" class="select-input"><option value="">なし</option>';
+    JSF_BADGES.forEach(function(b){ html += '<option value="' + b + '"' + (lvl.jsf===b?' selected':'') + '>' + b + '</option>'; });
+    html += '</select></div>';
+    html += '<div><div class="field-label">ISI級</div><select id="edit-lvl-isi" class="select-input"><option value="">なし</option>';
+    ISI_LEVELS.forEach(function(b){ html += '<option value="' + b + '"' + (lvl.isi===b?' selected':'') + '>' + b + '</option>'; });
+    html += '</select></div>';
+    html += '<div><div class="field-label">区分</div><select id="edit-lvl-cat" class="select-input"><option value="">なし</option>';
+    CATEGORIES.forEach(function(b){ html += '<option value="' + b + '"' + (lvl.category===b?' selected':'') + '>' + b + '</option>'; });
+    html += '</select></div>';
+    html += '</div></div>';
+
     if(prev){
       html += '<div class="advice-box"><div class="advice-box__title"><span>📌</span><span>前回（' + fmtDateJp(prev.date) + '）の宿題・アドバイス</span></div><div class="advice-box__text">' + esc(prev.homework || prev.notes) + '</div></div>';
     }
@@ -760,7 +941,9 @@ h1,h2,h3,p{ margin:0; }
     overlayRoot.innerHTML = html;
     attachLessonModalListeners(lesson);
   }
+
   function closeModal(){ overlayRoot.innerHTML = ''; }
+
   function attachLessonModalListeners(lesson){
     var overlay = document.getElementById('lesson-overlay');
     overlay.addEventListener('click', function(e){
@@ -806,6 +989,7 @@ h1,h2,h3,p{ margin:0; }
     }
     function currentFee(){ return Number(feeInput.value) || 0; }
     function currentSplit(){ return splitInput ? Math.max(1, Number(splitInput.value)||1) : 1; }
+
     document.getElementById('btn-line').addEventListener('click', function(){
       lesson.fee = currentFee();
       lesson.splitCount = currentSplit();
@@ -824,6 +1008,7 @@ h1,h2,h3,p{ margin:0; }
         }
       });
     });
+
     document.getElementById('btn-pay').addEventListener('click', function(){
       lesson.paymentStatus = lesson.paymentStatus === '回収済' ? '未回収' : '回収済';
       persist();
@@ -834,6 +1019,7 @@ h1,h2,h3,p{ margin:0; }
       btn.innerHTML = '<span class="action-btn__icon">' + (isDone?'✅':'💴') + '</span><span>' + (isDone?'回収済み':'未回収 → タップで回収') + '</span>';
       showToast(isDone ? '入金済みにしました' : '未回収に戻しました', 'navy');
     });
+
     var micBtn = document.getElementById('mic-btn');
     var recordingHint = document.getElementById('recording-hint');
     var notesTextarea = document.getElementById('notes-textarea');
@@ -841,6 +1027,7 @@ h1,h2,h3,p{ margin:0; }
     var recognizer = createRecognizer(function(text){
       notesTextarea.value = (notesTextarea.value ? notesTextarea.value + ' ' : '') + text;
     });
+
     if(!recognizer){
       micBtn.outerHTML = '<span class="mic-unsupported">🎤 音声入力非対応</span>';
     } else {
@@ -858,10 +1045,11 @@ h1,h2,h3,p{ margin:0; }
             recognizing = true;
             micBtn.classList.add('is-recording');
             recordingHint.style.display = '';
-          }catch(e){  }
+          }catch(e){ }
         }
       });
     }
+
     document.getElementById('btn-delete').addEventListener('click', function(){
       if(window.confirm('この予定を削除しますか？')){
         lessons = lessons.filter(function(l){ return l.id !== lesson.id; });
@@ -871,18 +1059,25 @@ h1,h2,h3,p{ margin:0; }
         showToast('予定を削除しました', 'navy');
       }
     });
+
     document.getElementById('btn-save-lesson').addEventListener('click', function(){
       lesson.fee = currentFee();
       lesson.splitCount = currentSplit();
       lesson.tags = currentTags();
       lesson.notes = notesTextarea.value;
       lesson.homework = document.getElementById('homework-textarea').value;
+      lesson.level = {
+        jsf: document.getElementById('edit-lvl-jsf').value,
+        isi: document.getElementById('edit-lvl-isi').value,
+        category: document.getElementById('edit-lvl-cat').value
+      };
       persist();
       renderShell();
       closeModal();
       showToast('カルテを保存しました', 'ok');
     });
   }
+
   function openAddSheet(){
     var defaultType = 'personal';
     var html = '<div class="sheet-overlay" id="add-overlay">';
@@ -908,6 +1103,21 @@ h1,h2,h3,p{ margin:0; }
     html += '<button type="button" class="classroom-manage-link tappable" data-action="open-classroom-master">＋ 教室マスタを編集する</button>';
     html += '</div>';
     html += '<div><div class="field-label" id="add-student-label">生徒名 / グループ名</div><input type="text" id="add-student" class="text-input" placeholder="例：佐藤 ひなた"></div>';
+
+    /* 生徒レベル入力項目 */
+    html += '<div><div class="field-label">生徒のレベル・区分（任意）</div>';
+    html += '<div class="grid-3">';
+    html += '<div><div class="field-label" style="font-weight:400;">バッジテスト</div><select id="add-lvl-jsf" class="select-input"><option value="">なし</option>';
+    JSF_BADGES.forEach(function(b){ html += '<option value="' + b + '">' + b + '</option>'; });
+    html += '</select></div>';
+    html += '<div><div class="field-label" style="font-weight:400;">ISI級</div><select id="add-lvl-isi" class="select-input"><option value="">なし</option>';
+    ISI_LEVELS.forEach(function(b){ html += '<option value="' + b + '">' + b + '</option>'; });
+    html += '</select></div>';
+    html += '<div><div class="field-label" style="font-weight:400;">区分</div><select id="add-lvl-cat" class="select-input"><option value="">なし</option>';
+    CATEGORIES.forEach(function(b){ html += '<option value="' + b + '">' + b + '</option>'; });
+    html += '</select></div>';
+    html += '</div></div>';
+
     html += '<div class="grid-3">';
     html += '<div><div class="field-label">日付</div><input type="date" id="add-date" class="date-input" value="' + selectedDate + '"></div>';
     html += '<div><div class="field-label">開始</div><input type="time" id="add-start" class="date-input" value="09:00"></div>';
@@ -928,6 +1138,7 @@ h1,h2,h3,p{ margin:0; }
     overlayRoot.innerHTML = html;
     attachAddSheetListeners();
   }
+
   function attachAddSheetListeners(){
     var overlay = document.getElementById('add-overlay');
     var selectedType = 'personal';
@@ -943,6 +1154,7 @@ h1,h2,h3,p{ margin:0; }
     var studentLabel = document.getElementById('add-student-label');
     var studentInputEl = document.getElementById('add-student');
     var allSelCls = TYPE_ORDER.map(function(k){ return 'sel-' + k; });
+
     typeGrid.addEventListener('click', function(e){
       var btn = e.target.closest('.type-select-btn');
       if(!btn) return;
@@ -962,6 +1174,7 @@ h1,h2,h3,p{ margin:0; }
         studentInputEl.placeholder = '例：佐藤 ひなた';
       }
     });
+
     var rinkRow = document.getElementById('rink-row');
     rinkRow.addEventListener('click', function(e){
       var btn = e.target.closest('.rink-btn');
@@ -969,6 +1182,7 @@ h1,h2,h3,p{ margin:0; }
       Array.prototype.forEach.call(rinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
       btn.classList.add('is-selected');
     });
+
     var classroomSelect = document.getElementById('add-classroom-select');
     classroomSelect.addEventListener('change', function(){
       var val = classroomSelect.value;
@@ -983,13 +1197,16 @@ h1,h2,h3,p{ margin:0; }
       });
       submitBtnRef.disabled = studentInputEl.value.trim().length === 0;
     });
+
     var addSplit = document.getElementById('add-split');
     document.getElementById('add-split-minus').addEventListener('click', function(){ addSplit.value = Math.max(1,(Number(addSplit.value)||1)-1); });
     document.getElementById('add-split-plus').addEventListener('click', function(){ addSplit.value = (Number(addSplit.value)||1)+1; });
+
     var studentInput = document.getElementById('add-student');
     var submitBtnRef = document.getElementById('btn-create-lesson');
     var submitBtn = submitBtnRef;
     studentInput.addEventListener('input', function(){ submitBtn.disabled = studentInput.value.trim().length === 0; });
+
     submitBtn.addEventListener('click', function(){
       if(studentInput.value.trim().length === 0) return;
       var rinkBtn = rinkRow.querySelector('.rink-btn.is-selected');
@@ -1006,6 +1223,11 @@ h1,h2,h3,p{ margin:0; }
         contactStatus: '未連絡',
         paymentStatus: '未回収',
         tags: [],
+        level: {
+          jsf: document.getElementById('add-lvl-jsf').value,
+          isi: document.getElementById('add-lvl-isi').value,
+          category: document.getElementById('add-lvl-cat').value
+        },
         notes: '',
         homework: '',
         createdAt: Date.now()
@@ -1018,6 +1240,7 @@ h1,h2,h3,p{ margin:0; }
       showToast('予定を追加しました', 'ok');
     });
   }
+
   function buildClassroomOptions(){
     var opts = '<option value="">— 選択してください —</option>';
     classroomMaster.forEach(function(c){
@@ -1025,6 +1248,7 @@ h1,h2,h3,p{ margin:0; }
     });
     return opts;
   }
+
   function refreshClassroomSelect(){
     var sel = document.getElementById('add-classroom-select');
     if(!sel) return;
@@ -1032,11 +1256,13 @@ h1,h2,h3,p{ margin:0; }
     sel.innerHTML = buildClassroomOptions();
     if(classroomMaster.some(function(c){ return c.id === current; })) sel.value = current;
   }
+
   function openClassroomMasterModal(){ renderClassroomMasterModal(null); }
   function closeClassroomMasterModal(){
     classroomOverlayRoot.innerHTML = '';
     refreshClassroomSelect();
   }
+
   function renderClassroomMasterModal(editId){
     var editing = editId ? classroomMaster.find(function(c){ return c.id === editId; }) : null;
     var html = '<div class="sheet-overlay" id="classroom-master-overlay">';
@@ -1081,6 +1307,7 @@ h1,h2,h3,p{ margin:0; }
     classroomOverlayRoot.innerHTML = html;
     attachClassroomMasterListeners(editId);
   }
+
   function attachClassroomMasterListeners(editId){
     var overlay = document.getElementById('classroom-master-overlay');
     overlay.addEventListener('click', function(e){
@@ -1103,6 +1330,7 @@ h1,h2,h3,p{ margin:0; }
         }
       }
     });
+
     var cmRinkRow = document.getElementById('cm-rink-row');
     cmRinkRow.addEventListener('click', function(e){
       var btn = e.target.closest('.rink-btn');
@@ -1110,6 +1338,7 @@ h1,h2,h3,p{ margin:0; }
       Array.prototype.forEach.call(cmRinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
       btn.classList.add('is-selected');
     });
+
     document.getElementById('btn-save-classroom').addEventListener('click', function(){
       var nameInput = document.getElementById('cm-name');
       var name = nameInput.value.trim();
@@ -1118,6 +1347,7 @@ h1,h2,h3,p{ margin:0; }
       var end = document.getElementById('cm-end').value || '19:00';
       var rinkBtn = cmRinkRow.querySelector('.rink-btn.is-selected');
       var rink = rinkBtn ? rinkBtn.dataset.rink : RINKS[0];
+
       if(editId){
         var target = classroomMaster.find(function(c){ return c.id === editId; });
         if(target){ target.name = name; target.start = start; target.end = end; target.rink = rink; }
@@ -1130,6 +1360,56 @@ h1,h2,h3,p{ margin:0; }
       showToast(editId ? '教室を更新しました' : '教室を登録しました', 'ok');
     });
   }
+
+  /* パスワード（ロック）設定モーダル */
+  function openPasscodeSettingsModal(){
+    var html = '<div class="sheet-overlay" id="passcode-modal-overlay">';
+    html += '<div class="sheet-backdrop" data-action="close-passcode-modal"></div>';
+    html += '<div class="sheet">';
+    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">🔒 アプリのパスワード設定</div></div><button class="sheet__close tappable" data-action="close-passcode-modal">✕</button></div>';
+    html += '<div class="sheet__body">';
+    html += '<div style="font-size:12px; color:var(--text-sub);">アプリ起動時または復帰時にパスワードを要求するように設定します。</div>';
+    html += '<div><div class="field-label">新しいパスワード（数字4〜8桁）</div><input type="password" id="setting-pass-1" class="text-input mono" pattern="[0-9]*" inputmode="numeric" placeholder="未設定にする場合は空欄"></div>';
+    html += '<div><div class="field-label">パスワード再入力</div><input type="password" id="setting-pass-2" class="text-input mono" pattern="[0-9]*" inputmode="numeric" placeholder="確認のためもう一度入力"></div>';
+    if(savedPasscode) {
+      html += '<button class="delete-link tappable" id="btn-remove-passcode">パスワード保護を解除（未設定にする）</button>';
+    }
+    html += '</div>';
+    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-save-passcode">保存する</button></div>';
+    html += '</div></div>';
+    classroomOverlayRoot.innerHTML = html;
+
+    var overlay = document.getElementById('passcode-modal-overlay');
+    overlay.addEventListener('click', function(e){
+      var actionEl = e.target.closest('[data-action]');
+      if(actionEl && actionEl.dataset.action === 'close-passcode-modal') classroomOverlayRoot.innerHTML = '';
+    });
+
+    document.getElementById('btn-save-passcode').addEventListener('click', function(){
+      var p1 = document.getElementById('setting-pass-1').value.trim();
+      var p2 = document.getElementById('setting-pass-2').value.trim();
+      if(p1 !== p2){
+        showToast('パスワードが一致しません', 'danger');
+        return;
+      }
+      savedPasscode = p1;
+      savePasscode(p1);
+      classroomOverlayRoot.innerHTML = '';
+      showToast(p1 ? 'パスワードを設定しました' : 'パスワードを解除しました', 'ok');
+    });
+
+    var btnRemove = document.getElementById('btn-remove-passcode');
+    if(btnRemove){
+      btnRemove.addEventListener('click', function(){
+        savedPasscode = '';
+        savePasscode('');
+        classroomOverlayRoot.innerHTML = '';
+        showToast('パスワード保護を解除しました', 'navy');
+      });
+    }
+  }
+
   rootEl.addEventListener('click', function(e){
     var el = e.target.closest('[data-action]');
     if(!el) return;
@@ -1147,8 +1427,11 @@ h1,h2,h3,p{ margin:0; }
     else if(action === 'cal-prev-month') calPrevMonth();
     else if(action === 'cal-next-month') calNextMonth();
     else if(action === 'open-classroom-master') openClassroomMasterModal();
+    else if(action === 'open-passcode-settings') openPasscodeSettingsModal();
   });
+
   renderShell();
-})();</script>
+})();
+</script>
 </body>
 </html>
