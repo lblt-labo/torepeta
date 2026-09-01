@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -27,7 +28,6 @@
     });
   }
 </script>
-  
 <style>:root{
   --snow:#F5F9FC;
   --snow-deep:#E7F0F6;
@@ -308,553 +308,505 @@ h1,h2,h3,p{ margin:0; }
 </head>
 <body>
 
-<!-- ↓ ここに以下の5行を追加します -->
+<div class="app">
   <div id="root"></div>
-  <div id="overlay-root"></div>
-  <div id="classroom-root"></div>
-  <div id="classroom-overlay-root"></div>
-  <div id="toast-root"></div>
+</div>
+<div id="overlay-root"></div>
+<div id="classroom-overlay-root"></div>
+<div id="toast-root"></div>
 
 <script>(function(){
-  // --- 定数定義 ---
+  "use strict";
   var STORAGE_KEY = 'torepeta_lessons_v1';
+  var memStore = {};
+  function loadLessons(){
+    try{
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if(raw !== null && raw !== undefined) return JSON.parse(raw);
+    }catch(e){  }
+    return memStore[STORAGE_KEY] || null;
+  }
+  function saveLessons(lessons){
+    memStore[STORAGE_KEY] = lessons;
+    try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lessons)); }catch(e){  }
+  }
   var CLASSROOM_STORAGE_KEY = 'torepeta_classrooms_v1';
-  var STUDENT_STORAGE_KEY = 'torepeta_students_v1';
-  var SETTINGS_STORAGE_KEY = 'torepeta_settings_v1';
-
+  function loadClassrooms(){
+    try{
+      var raw = window.localStorage.getItem(CLASSROOM_STORAGE_KEY);
+      if(raw !== null && raw !== undefined) return JSON.parse(raw);
+    }catch(e){  }
+    return memStore[CLASSROOM_STORAGE_KEY] || null;
+  }
+  function saveClassrooms(list){
+    memStore[CLASSROOM_STORAGE_KEY] = list;
+    try{ window.localStorage.setItem(CLASSROOM_STORAGE_KEY, JSON.stringify(list)); }catch(e){  }
+  }
   var LESSON_TYPES = {
-    personal: { name: '個人レッスン', short: '個人', icon: '👤', cls: 'type-badge--personal', shape: 'shape-rounded' },
-    group: { name: 'グループレッスン', short: 'グループ', icon: '👥', cls: 'type-badge--group', shape: 'shape-circle' },
-    kyoshitsu: { name: '教室', short: '教室', icon: '🏫', cls: 'type-badge--kyoshitsu', shape: 'shape-square' },
-    rental: { name: '貸切', short: '貸切', icon: '⛸️', cls: 'type-badge--rental', shape: 'shape-pill' }
+    personal:  { label:'個人レッスン', short:'個人', cls:'type-personal', shape:'shape-circle', icon:'👤' },
+    group:     { label:'グループレッスン', short:'グループ', cls:'type-group', shape:'shape-round', icon:'👥' },
+    rental:    { label:'貸切・振付', short:'貸切/振付', cls:'type-rental', shape:'shape-hex', icon:'⛸️' },
+    kyoshitsu: { label:'教室', short:'教室', cls:'type-kyoshitsu', shape:'shape-square', icon:'🏫' }
   };
-  var TYPE_ORDER = ['personal', 'group', 'kyoshitsu', 'rental'];
-  var RINKS = ['東伏見', '神宮', '横アリ', 'アクアリンク', 'その他'];
-  var ALL_TAGS = ['ジャンプ', 'スピン', 'ステップ', '曲かけ', '初級', '中級', '上級', '振付', 'コンパルソリー'];
-
-  // --- ステート ---
-  var lessons = loadLessons();
-  var classroomMaster = loadClassrooms();
-  var studentMaster = loadStudents();
-  var appSettings = loadSettings();
-
-  var selectedDate = todayStr();
-  var activeTab = 'schedule'; // 'schedule' | 'finance'
-  var viewMode = 'day'; // 'day' | 'month'
-  var calendarYearMonth = todayStr().substring(0, 7);
-  var financeYear = new Date().getFullYear();
-
-  var rootEl = document.getElementById('app-root');
-  var overlayRoot = document.getElementById('overlay-root');
-  var classroomOverlayRoot = document.getElementById('classroom-overlay-root');
-  var toastContainer = document.getElementById('toast-container');
-
-  // --- 初期化処理（パスワード確認） ---
-  if (appSettings.password) {
-    showPasswordLockModal();
-  } else {
-    renderShell();
+  var TYPE_ORDER = ['personal','group','rental','kyoshitsu'];
+  var TAG_PRESETS = [
+    '1A','2Lo','2Lz','2F','2A','3T','3S','3Lo','3Lz',
+    'FSSp','CSSp','LSp','StSq','ChSq',
+    '軸の意識','フリー脚','エッジ','踏切','タイミング','腕の使い方','体幹','ジャンプ矯正',
+    '曲かけ','振付確認','基礎練習','試合前チェック'
+  ];
+  var RINKS = ['メインリンク','サブリンク','外部リンク'];
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+  function pad2(n){ return String(n).padStart(2,'0'); }
+  function todayStr(){
+    var d = new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
   }
-
-  // --- ローカルストレージアクセス ---
-  function loadLessons() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : getInitialLessons();
-    } catch(e) { return getInitialLessons(); }
+  function addDays(dateStr, n){
+    var d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
   }
-  function persist() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(lessons)); } catch(e){}
+  function fmtDateJp(dateStr){
+    var d = new Date(dateStr + 'T00:00:00');
+    var w = ['日','月','火','水','木','金','土'][d.getDay()];
+    return (d.getMonth()+1) + '月' + d.getDate() + '日（' + w + '）';
   }
-  function loadClassrooms() {
-    try {
-      var raw = localStorage.getItem(CLASSROOM_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch(e) { return []; }
+  function yen(n){ return '¥' + Number(n||0).toLocaleString('ja-JP'); }
+  function esc(str){
+    return String(str==null ? '' : str).replace(/[&<>"']/g, function(ch){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch];
+    });
   }
-  function persistClassrooms() {
-    try { localStorage.setItem(CLASSROOM_STORAGE_KEY, JSON.stringify(classroomMaster)); } catch(e){}
-  }
-  function loadStudents() {
-    try {
-      var raw = localStorage.getItem(STUDENT_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch(e) { return []; }
-  }
-  function persistStudents() {
-    try { localStorage.setItem(STUDENT_STORAGE_KEY, JSON.stringify(studentMaster)); } catch(e){}
-  }
-  function loadSettings() {
-    try {
-      var raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : { password: '' };
-    } catch(e) { return { password: '' }; }
-  }
-  function persistSettings() {
-    try { localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings)); } catch(e){}
-  }
-
-  function getInitialLessons() {
+  function seedData(){
+    var t = todayStr();
+    var tmr = addDays(t, 1);
     return [
-      { id: 'sample-1', date: todayStr(), start: '09:00', end: '09:30', type: 'personal', student: '佐藤 ひなた', rink: '東伏見', fee: 4000, splitCount: 1, contactStatus: '未連絡', paymentStatus: '未回収', tags: ['ジャンプ', '曲かけ'], notes: 'アクセルの踏み込みを意識。', homework: '壁での軸作り10回', createdAt: Date.now() }
+      { id: uid(), date:t, start:'09:00', end:'09:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:['3T','軸の意識'], notes:'踏切のタイミングが早い。助走から意識づけを継続。', homework:'家で片足立ちの軸バランス練習を毎日5分。', createdAt: Date.now()-1000 },
+      { id: uid(), date:t, start:'10:00', end:'10:45', type:'group', student:'ジュニアクラス（4名）', rink:'サブリンク', fee:2500, splitCount:1,
+        contactStatus:'連絡済', paymentStatus:'回収済', tags:['基礎練習','StSq'], notes:'', homework:'', createdAt: Date.now()-2000 },
+      { id: uid(), date:t, start:'13:00', end:'14:00', type:'rental', student:'鈴木 蓮 / 高橋 陸', rink:'メインリンク', fee:9000, splitCount:2,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:['曲かけ','振付確認'], notes:'', homework:'', createdAt: Date.now()-3000 },
+      { id: uid(), date:tmr, start:'16:00', end:'16:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now() },
+      { id: uid(), date:tmr, start:'18:00', end:'19:00', type:'kyoshitsu', student:'大人スケート教室', rink:'サブリンク', fee:1500, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now()+1 }
     ];
   }
-
-  // --- ユーティリティ ---
-  function todayStr() {
-    var d = new Date();
-    var y = d.getFullYear();
-    var m = String(d.getMonth() + 1).padStart(2, '0');
-    var day = String(d.getDate()).padStart(2, '0');
-    return y + '-' + m + '-' + day;
+  function seedClassrooms(){
+    return [
+      { id: uid(), name:'大人スケート教室', start:'18:00', end:'19:00', rink:'サブリンク' },
+      { id: uid(), name:'キッズスケート教室 初級', start:'16:30', end:'17:15', rink:'メインリンク' }
+    ];
   }
-  function uid() { return 'id-' + Math.random().toString(36).substr(2, 9); }
-  function esc(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-  function formatMoney(num) { return (num || 0).toLocaleString(); }
-  function showToast(msg, type) {
-    if (!toastContainer) return;
-    var toast = document.createElement('div');
-    toast.className = 'toast toast--' + (type || 'ok');
-    toast.textContent = msg;
-    toastContainer.appendChild(toast);
-    setTimeout(function(){ toast.classList.add('is-show'); }, 10);
-    setTimeout(function(){
-      toast.classList.remove('is-show');
-      setTimeout(function(){ if(toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
-    }, 2500);
-  }
-  function copyToClipboard(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text).then(function(){ return true; }).catch(function(){ return false; });
-    }
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    var ok = false;
-    try { ok = document.execCommand('copy'); } catch(e){}
-    document.body.removeChild(ta);
-    return Promise.resolve(ok);
-  }
-  function createRecognizer(onResult) {
-    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return null;
-    var rec = new SpeechRecognition();
-    rec.lang = 'ja-JP';
-    rec.continuous = true;
-    rec.interimResults = false;
-    rec.onresult = function(e) {
-      var text = '';
-      for (var i = e.resultIndex; i < e.results.length; ++i) {
-        if (e.results[i].isFinal) text += e.results[i][0].transcript;
+  var lessons = loadLessons() || seedData();
+  var classroomMaster = loadClassrooms() || seedClassrooms();
+  var selectedDate = todayStr();
+  var currentTab = 'schedule';
+  var viewMode = 'day';
+  var calYear = new Date().getFullYear();
+  var calMonth = new Date().getMonth();
+  var financeYear = new Date().getFullYear();
+  var toastTimer = null;
+  var rootEl = document.getElementById('root');
+  var overlayRoot = document.getElementById('overlay-root');
+  var classroomOverlayRoot = document.getElementById('classroom-overlay-root');
+  var toastRoot = document.getElementById('toast-root');
+  function persist(){ saveLessons(lessons); }
+  function persistClassrooms(){ saveClassrooms(classroomMaster); }
+  function copyToClipboard(text){
+    return new Promise(function(resolve){
+      if(navigator.clipboard && window.isSecureContext){
+        navigator.clipboard.writeText(text).then(function(){ resolve(true); }).catch(function(){ resolve(fallbackCopy(text)); });
+      } else {
+        resolve(fallbackCopy(text));
       }
-      if (text && onResult) onResult(text);
-    };
-    return rec;
+    });
   }
-
-  // --- レンダリングメイン ---
-  function renderShell() {
-    var html = '';
-    html += renderHeader();
-    html += renderTabBar();
-    html += '<main class="main-content">';
-    if (activeTab === 'schedule') {
-      html += renderScheduleTab();
+  function fallbackCopy(text){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }catch(e){ return false; }
+  }
+  function buildLineMessage(lesson){
+    var typePhrase;
+    if(lesson.type === 'kyoshitsu'){
+      typePhrase = (lesson.student && lesson.student.trim()) ? lesson.student.trim() : '教室レッスン';
     } else {
-      html += renderFinanceTab();
+      typePhrase = LESSON_TYPES[lesson.type].label;
     }
-    html += '</main>';
-    if (activeTab === 'schedule') {
-      html += '<button class="fab-btn tappable" data-action="open-add">＋</button>';
-    }
-    rootEl.innerHTML = html;
+    return fmtDateJp(lesson.date) + 'は ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で ' + typePhrase + 'です。よろしくお願いいたします';
   }
-
-  function renderHeader() {
-    var html = '<header class="app-header">';
-    html += '<div class="app-header__title">トレペタ ⛸️</div>';
-    html += '<button class="icon-btn tappable" data-action="open-settings-modal" title="設定">⚙️</button>';
-    html += '</header>';
-    return html;
+  function showToast(msg, tone){
+    tone = tone || 'navy';
+    toastRoot.innerHTML = '<div class="toast toast--' + tone + '">' + esc(msg) + '</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastRoot.innerHTML = ''; }, 2200);
   }
-
-  function renderTabBar() {
-    var html = '<div class="tab-bar">';
-    html += '<button class="tab-item ' + (activeTab==='schedule'?'is-active':'') + '" data-action="switch-tab" data-tab="schedule">スケジュール</button>';
-    html += '<button class="tab-item ' + (activeTab==='finance'?'is-active':'') + '" data-action="switch-tab" data-tab="finance">収支・回収</button>';
-    html += '</div>';
-    return html;
-  }
-
-  // --- スケジュールタブ ---
-  function renderScheduleTab() {
-    var html = '<div class="view-switch-row">';
-    html += '<button class="view-switch-btn ' + (viewMode==='day'?'is-active':'') + '" data-action="set-view" data-view="day">日表示</button>';
-    html += '<button class="view-switch-btn ' + (viewMode==='month'?'is-active':'') + '" data-action="set-view" data-view="month">月表示</button>';
-    html += '</div>';
-
-    if (viewMode === 'day') {
-      html += renderDateStrip();
-      html += renderDayLessonList();
-    } else {
-      html += renderMonthCalendar();
-      html += renderDayLessonList();
-    }
-    return html;
-  }
-
-  function renderDateStrip() {
-    var cur = new Date(selectedDate);
-    var html = '<div class="date-strip">';
-    for (var i = -3; i <= 3; i++) {
-      var d = new Date(cur);
-      d.setDate(d.getDate() + i);
-      var dStr = d.toISOString().substring(0, 10);
-      var isSel = dStr === selectedDate;
-      var dayNum = d.getDate();
-      var weekDays = ['日','月','火','水','木','金','土'];
-      var wStr = weekDays[d.getDay()];
-      html += '<div class="date-chip ' + (isSel?'is-selected':'') + '" data-action="select-date" data-date="' + dStr + '">';
-      html += '<div class="date-chip__day">' + dayNum + '</div>';
-      html += '<div class="date-chip__week">' + wStr + '</div>';
-      html += '</div>';
+  function renderDateStrip(){
+    var html = '<div class="date-strip" id="date-strip">';
+    for(var i=-2;i<14;i++){
+      var key = addDays(todayStr(), i);
+      var d = new Date(key + 'T00:00:00');
+      var w = ['日','月','火','水','木','金','土'][d.getDay()];
+      var wCls = w==='日' ? 'is-sun' : (w==='土' ? 'is-sat' : '');
+      var isSel = key === selectedDate;
+      var isToday = key === todayStr();
+      var count = lessons.filter(function(l){ return l.date===key; }).length;
+      html += '<button class="date-chip tappable min-tap' + (isSel?' is-selected':'') + '" data-action="select-date" data-date="' + key + '">';
+      html += '<span class="date-chip__weekday ' + wCls + '">' + w + '</span>';
+      html += '<span class="date-chip__day">' + d.getDate() + '</span>';
+      if(isToday && !isSel) html += '<span class="date-chip__today-dot"></span>';
+      if(count>0) html += '<span class="date-chip__count">' + (isSel ? count + '件' : '●'.repeat(Math.min(count,3))) + '</span>';
+      html += '</button>';
     }
     html += '</div>';
     return html;
   }
-
-  function renderMonthCalendar() {
-    var parts = calendarYearMonth.split('-');
-    var y = parseInt(parts[0], 10);
-    var m = parseInt(parts[1], 10);
-
-    var html = '<div class="month-cal">';
-    html += '<div class="month-cal__header">';
-    html += '<button class="icon-btn" data-action="cal-prev-month">◀</button>';
-    html += '<span class="month-cal__title mono">' + y + '年 ' + m + '月</span>';
-    html += '<button class="icon-btn" data-action="cal-next-month">▶</button>';
+  function renderTypeBadge(type, size){
+    var t = LESSON_TYPES[type];
+    return '<div class="type-badge type-badge--' + (size||'md') + ' ' + t.shape + ' ' + t.cls + '">' + t.icon + '</div>';
+  }
+  function renderLessonTile(l){
+    var t = LESSON_TYPES[l.type];
+    var contactOn = l.contactStatus === '連絡済';
+    var paidOn = l.paymentStatus === '回収済';
+    var html = '<div class="lesson-tile">';
+    html += '<div class="lesson-tile__accent accent-' + l.type + '"></div>';
+    html += '<button class="lesson-tile__main tappable" data-action="open-lesson" data-id="' + l.id + '">';
+    html += '<div class="lesson-tile__time"><span class="lesson-tile__time-start mono">' + esc(l.start) + '</span><span class="lesson-tile__time-end">〜' + esc(l.end) + '</span></div>';
+    html += renderTypeBadge(l.type, 'md');
+    html += '<div class="lesson-tile__body">';
+    html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + '</span><span class="lesson-tile__type-label ' + t.cls + '">' + t.short + '</span></div>';
+    html += '<div class="lesson-tile__sub">' + esc(l.rink) + ' ・ ' + yen(l.fee) + '</div>';
+    html += '<div class="lesson-tile__badges">';
+    html += '<span class="status-pill status-pill--contact' + (contactOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (contactOn?'連絡済':'未連絡') + '</span>';
+    html += '<span class="status-pill status-pill--payment' + (paidOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (paidOn?'回収済':'未回収') + '</span>';
+    if(l.tags && l.tags.length>0) html += '<span class="lesson-tile__tagcount">🏷 ' + l.tags.length + '件</span>';
+    html += '</div></div></button>';
+    html += '<div class="lesson-tile__actions"><button class="btn-line tappable min-tap' + (contactOn?' is-done':'') + '" data-action="quick-line" data-id="' + l.id + '"><span>💬</span><span>' + (contactOn?'LINE文をコピー':'LINE連絡') + '</span></button></div>';
     html += '</div>';
-
-    html += '<div class="month-cal__grid">';
-    var weeks = ['日','月','火','水','木','金','土'];
-    weeks.forEach(function(w){ html += '<div class="month-cal__weekday">' + w + '</div>'; });
-
-    var firstDay = new Date(y, m - 1, 1).getDay();
-    var daysInMonth = new Date(y, m, 0).getDate();
-
-    for (var i = 0; i < firstDay; i++) {
-      html += '<div class="month-cal__day is-empty"></div>';
-    }
-
-    for (var day = 1; day <= daysInMonth; day++) {
-      var dStr = y + '-' + String(m).padStart(2,'0') + '-' + String(day).padStart(2,'0');
-      var isSel = dStr === selectedDate;
-      var dayLessons = lessons.filter(function(l){ return l.date === dStr; });
-      var hasUnpaid = dayLessons.some(function(l){ return l.paymentStatus === '未回収'; });
-
-      html += '<div class="month-cal__day ' + (isSel?'is-selected':'') + '" data-action="select-date" data-date="' + dStr + '">';
-      html += '<span class="month-cal__num">' + day + '</span>';
-      if (dayLessons.length > 0) {
-        html += '<div class="month-cal__dots">';
-        dayLessons.forEach(function(l){
-          var t = LESSON_TYPES[l.type] || LESSON_TYPES.personal;
-          html += '<span class="month-cal__dot ' + t.cls + '"></span>';
-        });
-        html += '</div>';
-      }
-      if (hasUnpaid) {
-        html += '<span class="month-cal__unpaid-badge">未</span>';
-      }
-      html += '</div>';
+    return html;
+  }
+  function renderViewToggle(){
+    var html = '<div class="view-toggle">';
+    html += '<button class="view-toggle__btn tappable min-tap' + (viewMode==='day'?' is-active':'') + '" data-action="set-view" data-view="day">日表示</button>';
+    html += '<button class="view-toggle__btn tappable min-tap' + (viewMode==='month'?' is-active':'') + '" data-action="set-view" data-view="month">月表示</button>';
+    html += '</div>';
+    return html;
+  }
+  function renderMonthCalendar(){
+    var year = calYear, month = calMonth;
+    var startWeekday = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month+1, 0).getDate();
+    var html = '<div class="month-calendar">';
+    html += '<div class="month-calendar__nav"><button class="month-calendar__nav-btn tappable" data-action="cal-prev-month">‹</button><span class="month-calendar__label">' + year + '年' + (month+1) + '月</span><button class="month-calendar__nav-btn tappable" data-action="cal-next-month">›</button></div>';
+    html += '<div class="month-calendar__weekdays">';
+    ['日','月','火','水','木','金','土'].forEach(function(w, idx){
+      var cls = idx===0 ? 'is-sun' : (idx===6 ? 'is-sat' : '');
+      html += '<span class="month-calendar__weekday ' + cls + '">' + w + '</span>';
+    });
+    html += '</div><div class="month-calendar__grid">';
+    for(var i=0;i<startWeekday;i++){ html += '<div class="month-calendar__cell is-empty"></div>'; }
+    for(var day=1; day<=daysInMonth; day++){
+      var dateKey = year + '-' + pad2(month+1) + '-' + pad2(day);
+      var isSel = dateKey === selectedDate;
+      var isToday = dateKey === todayStr();
+      var count = lessons.filter(function(l){ return l.date===dateKey; }).length;
+      var wd = new Date(year, month, day).getDay();
+      var wdCls = wd===0 ? 'is-sun' : (wd===6 ? 'is-sat' : '');
+      html += '<button class="month-calendar__cell tappable' + (isSel?' is-selected':'') + (isToday&&!isSel?' is-today':'') + '" data-action="select-date" data-date="' + dateKey + '">';
+      html += '<span class="month-calendar__cell-day ' + wdCls + '">' + day + '</span>';
+      if(count>0) html += '<span class="month-calendar__cell-dot"></span>';
+      html += '</button>';
     }
     html += '</div></div>';
     return html;
   }
-
-  function renderDayLessonList() {
-    var dayLessons = lessons.filter(function(l){ return l.date === selectedDate; });
-    dayLessons.sort(function(a,b){ return a.start.localeCompare(b.start); });
-
-    var html = '<div class="lesson-list">';
-    html += '<div class="section-title">' + selectedDate + ' の予定 (' + dayLessons.length + '件)</div>';
-
-    if (dayLessons.length === 0) {
-      html += '<div class="empty-state">予定がありません。「＋」ボタンから追加できます。</div>';
+  function renderScheduleView(){
+    var dayLessons = lessons.filter(function(l){ return l.date===selectedDate; }).sort(function(a,b){ return a.start.localeCompare(b.start); });
+    var html = renderViewToggle();
+    html += (viewMode === 'month') ? renderMonthCalendar() : renderDateStrip();
+    html += '<div class="section-heading"><span class="section-heading__title">' + fmtDateJp(selectedDate) + '</span><span class="section-heading__meta">' + dayLessons.length + '件の予定</span></div>';
+    if(dayLessons.length === 0){
+      html += '<div class="lesson-list"><div class="empty-state"><div class="empty-state__icon">🧊</div><div class="empty-state__text">この日の予定はまだありません</div><button class="empty-state__btn tappable" data-action="open-add">＋ 予定を追加</button></div></div>';
     } else {
-      dayLessons.forEach(function(l){
-        var t = LESSON_TYPES[l.type] || LESSON_TYPES.personal;
-        var isPaid = l.paymentStatus === '回収済';
-        var isContacted = l.contactStatus === '連絡済';
-
-        html += '<div class="lesson-card tappable" data-action="open-lesson" data-id="' + l.id + '">';
-        html += '<div class="lesson-card__header">';
-        html += '<span class="type-badge ' + t.shape + ' ' + t.cls + '">' + t.icon + ' ' + t.short + '</span>';
-        html += '<span class="lesson-card__time mono">' + esc(l.start) + ' 〜 ' + esc(l.end) + '</span>';
-        html += '<span class="lesson-card__rink">' + esc(l.rink) + '</span>';
-        html += '</div>';
-
-        html += '<div class="lesson-card__body">';
-        html += '<div class="lesson-card__student">' + esc(l.student) + '</div>';
-        var calcFee = l.type === 'rental' ? Math.round(l.fee / (l.splitCount || 1)) : l.fee;
-        html += '<div class="lesson-card__fee mono">¥' + formatMoney(calcFee) + (l.type === 'rental' && l.splitCount > 1 ? ' <small>(' + l.splitCount + '割)</small>' : '') + '</div>';
-        html += '</div>';
-
-        html += '<div class="lesson-card__footer">';
-        html += '<span class="status-pill ' + (isContacted?'is-done':'is-pending') + '">' + (isContacted?'連絡済':'未連絡') + '</span>';
-        html += '<span class="status-pill ' + (isPaid?'is-done':'is-pending') + '">' + (isPaid?'回収済':'未回収') + '</span>';
-        html += '<button class="quick-btn tappable" data-action="quick-line" data-id="' + l.id + '" onclick="event.stopPropagation();">💬 LINEコピー</button>';
-        html += '</div>';
-        html += '</div>';
-      });
+      html += '<div class="lesson-list">';
+      dayLessons.forEach(function(l){ html += renderLessonTile(l); });
+      html += '</div>';
     }
-    html += '</div>';
     return html;
   }
-
-  // --- 収支タブ ---
-  function renderFinanceTab() {
-    var yearLessons = lessons.filter(function(l){ return l.date.indexOf(String(financeYear)) === 0; });
-
-    var totalExpected = 0;
-    var totalCollected = 0;
-
-    yearLessons.forEach(function(l){
-      var f = l.type === 'rental' ? Math.round(l.fee / (l.splitCount || 1)) : l.fee;
-      totalExpected += f;
-      if (l.paymentStatus === '回収済') totalCollected += f;
-    });
-
-    var uncollected = totalExpected - totalCollected;
-
-    var html = '<div class="finance-container">';
-    html += '<div class="year-selector">';
-    html += '<button class="icon-btn" data-action="year-prev">◀</button>';
-    html += '<span class="year-title mono">' + financeYear + '年 収支</span>';
-    html += '<button class="icon-btn" data-action="year-next">▶</button>';
-    html += '<button class="export-btn tappable" data-action="export-csv">📊 CSV出力</button>';
+  function renderFinanceView(){
+    var yearLessons = lessons.filter(function(l){ return l.date.indexOf(String(financeYear))===0; });
+    var unpaid = yearLessons.filter(function(l){ return l.paymentStatus==='未回収'; });
+    var paid = yearLessons.filter(function(l){ return l.paymentStatus==='回収済'; });
+    var unpaidSum = unpaid.reduce(function(s,l){ return s+Number(l.fee||0); },0);
+    var paidSum = paid.reduce(function(s,l){ return s+Number(l.fee||0); },0);
+    var html = '<div class="finance-view">';
+    html += '<div class="finance-year"><div class="year-nav">';
+    html += '<button class="year-nav__btn tappable" data-action="year-prev">‹</button>';
+    html += '<span class="year-nav__label mono">' + financeYear + '年</span>';
+    html += '<button class="year-nav__btn tappable" data-action="year-next">›</button>';
+    html += '</div><button class="btn-csv tappable" data-action="export-csv"><span>⬇️</span><span>確定申告用CSV出力</span></button></div>';
+    html += '<div class="summary-grid">';
+    html += '<div class="summary-card summary-card--paid"><div class="summary-card__label">回収済 合計</div><div class="summary-card__value mono">' + yen(paidSum) + '</div><div class="summary-card__count">' + paid.length + '件</div></div>';
+    html += '<div class="summary-card summary-card--unpaid"><div class="summary-card__label">未回収 合計</div><div class="summary-card__value mono">' + yen(unpaidSum) + '</div><div class="summary-card__count">' + unpaid.length + '件</div></div>';
     html += '</div>';
-
-    html += '<div class="finance-summary-grid">';
-    html += '<div class="summary-card"><div class="summary-card__label">見込総額</div><div class="summary-card__value mono">¥' + formatMoney(totalExpected) + '</div></div>';
-    html += '<div class="summary-card summary-card--ok"><div class="summary-card__label">回収済み</div><div class="summary-card__value mono">¥' + formatMoney(totalCollected) + '</div></div>';
-    html += '<div class="summary-card summary-card--danger"><div class="summary-card__label">未回収</div><div class="summary-card__value mono">¥' + formatMoney(uncollected) + '</div></div>';
-    html += '</div>';
-
-    html += '<div class="section-title">未回収の予定一覧</div>';
-    var uncollectedLessons = yearLessons.filter(function(l){ return l.paymentStatus === '未回収'; });
-    uncollectedLessons.sort(function(a,b){ return a.date.localeCompare(b.date); });
-
-    if (uncollectedLessons.length === 0) {
-      html += '<div class="empty-state">🎉 未回収の予定はありません！</div>';
+    html += '<div class="list-title">未回収の一覧（タップで回収済みに）</div>';
+    if(unpaid.length === 0){
+      html += '<div class="unpaid-empty" style="margin-bottom:20px;">未回収のレッスンはありません 🎉</div>';
     } else {
-      html += '<div class="uncollected-list">';
-      uncollectedLessons.forEach(function(l){
-        var calcFee = l.type === 'rental' ? Math.round(l.fee / (l.splitCount || 1)) : l.fee;
-        html += '<div class="uncollected-row">';
-        html += '<div class="uncollected-row__info">';
-        html += '<div class="uncollected-row__date mono">' + esc(l.date) + ' ' + esc(l.start) + '</div>';
-        html += '<div class="uncollected-row__student">' + esc(l.student) + ' (' + esc(l.rink) + ')</div>';
-        html += '</div>';
-        html += '<div class="uncollected-row__action">';
-        html += '<span class="uncollected-row__fee mono">¥' + formatMoney(calcFee) + '</span>';
-        html += '<button class="pay-toggle-btn tappable" data-action="toggle-payment" data-id="' + l.id + '">未回収</button>';
-        html += '</div>';
-        html += '</div>';
+      html += '<div class="unpaid-list">';
+      unpaid.sort(function(a,b){ return a.date.localeCompare(b.date); }).forEach(function(l){
+        html += '<button class="unpaid-row tappable" data-action="toggle-payment" data-id="' + l.id + '">';
+        html += renderTypeBadge(l.type,'sm');
+        html += '<div class="unpaid-row__body"><div class="unpaid-row__name">' + esc(l.student) + '</div><div class="unpaid-row__date mono">' + esc(l.date) + ' ' + esc(l.start) + '</div></div>';
+        html += '<div class="unpaid-row__right"><div class="unpaid-row__fee mono">' + yen(l.fee) + '</div><div class="unpaid-row__cta">タップで回収済へ →</div></div>';
+        html += '</button>';
       });
       html += '</div>';
     }
-
-    html += '</div>';
+    html += '<div class="list-title">種別ごとの内訳</div><div class="breakdown-card">';
+    Object.keys(LESSON_TYPES).forEach(function(key){
+      var t = LESSON_TYPES[key];
+      var sub = yearLessons.filter(function(l){ return l.type===key; });
+      var sum = sub.reduce(function(s,l){ return s+Number(l.fee||0); },0);
+      html += '<div class="breakdown-row"><div class="breakdown-row__icon ' + t.shape + ' ' + t.cls + '">' + t.icon + '</div><span class="breakdown-row__label">' + t.label + '</span><span class="breakdown-row__count">' + sub.length + '件</span><span class="breakdown-row__sum mono">' + yen(sum) + '</span></div>';
+    });
+    html += '</div></div>';
     return html;
   }
-
-  // --- イベント操作 ---
-  function selectDate(dStr) { selectedDate = dStr; renderShell(); }
-  function switchTab(tab) { activeTab = tab; renderShell(); }
-  function setViewMode(v) { viewMode = v; renderShell(); }
-  function calPrevMonth() {
-    var parts = calendarYearMonth.split('-');
-    var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 2, 1);
-    calendarYearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  function renderHeader(){
+    var todayUncontacted = lessons.filter(function(l){ return l.date===todayStr() && l.contactStatus==='未連絡'; }).length;
+    var html = '<header class="app-header">';
+    html += '<div class="app-header__brand"><div class="app-header__logo">⛸️</div><div><div class="app-header__title">トレペタ</div><div class="app-header__subtitle">for Figure Skating Coaches</div></div></div>';
+    html += '<div class="app-header__right">';
+    if(currentTab==='schedule' && todayUncontacted>0){
+      html += '<div class="app-header__alert">本日 未連絡 ' + todayUncontacted + '件</div>';
+    }
+    html += '<button class="header-gear tappable min-tap" data-action="open-classroom-master" title="教室マスタを管理">⚙️</button>';
+    html += '</div>';
+    html += '</header>';
+    return html;
+  }
+  function renderBottomNav(){
+    var items = [ { key:'schedule', label:'予定', icon:'🗓️' }, { key:'finance', label:'収支・確定申告', icon:'💰' } ];
+    var html = '<nav class="bottom-nav">';
+    items.forEach(function(it){
+      var active = currentTab === it.key;
+      html += '<button class="nav-btn tappable min-tap' + (active?' is-active':'') + '" data-action="switch-tab" data-tab="' + it.key + '">';
+      html += '<span class="nav-btn__icon">' + it.icon + '</span><span class="nav-btn__label">' + it.label + '</span><span class="nav-btn__indicator"></span>';
+      html += '</button>';
+    });
+    html += '</nav>';
+    return html;
+  }
+  function renderFab(){
+    if(currentTab !== 'schedule') return '';
+    return '<button class="fab tappable" data-action="open-add">＋</button>';
+  }
+  function renderShell(){
+    var html = renderHeader();
+    html += '<main class="main-scroll">';
+    html += (currentTab === 'schedule') ? renderScheduleView() : renderFinanceView();
+    html += '</main>';
+    html += renderFab();
+    html += renderBottomNav();
+    rootEl.innerHTML = html;
+    if(currentTab === 'schedule' && viewMode === 'day'){
+      var strip = document.getElementById('date-strip');
+      var sel = strip && strip.querySelector('.date-chip.is-selected');
+      if(sel) sel.scrollIntoView({ inline:'center', block:'nearest' });
+    }
+  }
+  function selectDate(dateKey){ selectedDate = dateKey; renderShell(); }
+  function switchTab(tab){ currentTab = tab; renderShell(); }
+  function setViewMode(mode){
+    viewMode = mode;
+    if(mode === 'month'){
+      var d = new Date(selectedDate + 'T00:00:00');
+      calYear = d.getFullYear();
+      calMonth = d.getMonth();
+    }
     renderShell();
   }
-  function calNextMonth() {
-    var parts = calendarYearMonth.split('-');
-    var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10), 1);
-    calendarYearMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    renderShell();
-  }
-  function changeFinanceYear(delta) { financeYear += delta; renderShell(); }
-
-  function quickLine(id) {
-    var lesson = lessons.find(function(l){ return l.id === id; });
-    if (!lesson) return;
+  function calPrevMonth(){ calMonth--; if(calMonth<0){ calMonth=11; calYear--; } renderShell(); }
+  function calNextMonth(){ calMonth++; if(calMonth>11){ calMonth=0; calYear++; } renderShell(); }
+  function quickLine(id){
+    var lesson = lessons.find(function(l){ return l.id===id; });
+    if(!lesson) return;
     var msg = buildLineMessage(lesson);
     copyToClipboard(msg).then(function(ok){
       if(ok){
         lesson.contactStatus = '連絡済';
         persist();
         renderShell();
-        showToast('LINEメッセージをコピーしました📋', 'ok');
+        showToast('LINE文をコピーしました📋', 'ok');
       } else {
-        showToast('コピーに失敗しました', 'danger');
+        showToast('コピーに失敗しました。手動で共有してください', 'danger');
       }
     });
   }
-
-  function togglePaymentFromFinance(id) {
-    var lesson = lessons.find(function(l){ return l.id === id; });
-    if (!lesson) return;
-    lesson.paymentStatus = '回収済';
+  function togglePaymentFromFinance(id){
+    var lesson = lessons.find(function(l){ return l.id===id; });
+    if(!lesson) return;
+    lesson.paymentStatus = lesson.paymentStatus === '回収済' ? '未回収' : '回収済';
     persist();
     renderShell();
-    showToast('回収済みに変更しました', 'navy');
+    showToast('回収済みにしました', 'ok');
   }
-
-  function buildLineMessage(l) {
-    var calcFee = l.type === 'rental' ? Math.round(l.fee / (l.splitCount || 1)) : l.fee;
-    var msg = '【レッスンのお知らせ】\n';
-    msg += '日時: ' + l.date + ' ' + l.start + '〜' + l.end + '\n';
-    msg += '場所: ' + l.rink + '\n';
-    msg += '対象: ' + l.student + '様\n';
-    msg += '料金: ¥' + formatMoney(calcFee) + '\n';
-    if(l.homework) msg += '宿題: ' + l.homework + '\n';
-    msg += '\nよろしくお願いします！';
-    return msg;
-  }
-
-  function exportCsv() {
-    var yearLessons = lessons.filter(function(l){ return l.date.indexOf(String(financeYear)) === 0; });
-    var csv = '日付,開始,終了,種別,生徒名/内容,リンク,料金,分割数,連絡状態,回収状態,メモ,宿題\n';
-    yearLessons.forEach(function(l){
-      csv += [
-        l.date, l.start, l.end, (LESSON_TYPES[l.type]||{}).name||l.type,
-        '"' + (l.student||'').replace(/"/g, '""') + '"',
-        '"' + (l.rink||'').replace(/"/g, '""') + '"',
-        l.fee, l.splitCount || 1, l.contactStatus, l.paymentStatus,
-        '"' + (l.notes||'').replace(/"/g, '""') + '"',
-        '"' + (l.homework||'').replace(/"/g, '""') + '"'
-      ].join(',') + '\n';
+  function changeFinanceYear(delta){ financeYear += delta; renderShell(); }
+  function exportCsv(){
+    var rows = lessons.filter(function(l){ return l.date.indexOf(String(financeYear))===0; });
+    if(rows.length === 0){ showToast(financeYear + '年のデータがありません', 'danger'); return; }
+    var header = ['日付','開始','終了','種別','生徒名/グループ名','リンク','料金','割り勘人数','入金状況','連絡状況','カルテタグ'];
+    rows = rows.slice().sort(function(a,b){ return a.date.localeCompare(b.date) || a.start.localeCompare(b.start); });
+    var lines = rows.map(function(l){
+      return [ l.date, l.start, l.end, LESSON_TYPES[l.type].label, l.student, l.rink, l.fee, l.splitCount||1, l.paymentStatus, l.contactStatus, (l.tags||[]).join('/') ];
     });
-    var blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
-    var link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'torepeta_export_' + financeYear + '.csv';
-    link.click();
-    showToast('CSVをダウンロードしました', 'ok');
+    var totalAll = rows.reduce(function(s,l){ return s+Number(l.fee||0); },0);
+    var totalPaid = rows.filter(function(l){ return l.paymentStatus==='回収済'; }).reduce(function(s,l){ return s+Number(l.fee||0); },0);
+    lines.push([]);
+    lines.push(['', '', '', '', '', '年間合計', totalAll, '', '回収済合計:' + totalPaid, '', '']);
+    function escCsv(v){
+      var s = String(v==null ? '' : v);
+      return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+    }
+    var csv = [header].concat(lines).map(function(row){ return row.map(escCsv).join(','); }).join('\r\n');
+    var blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'トレペタ_確定申告用_' + financeYear + '年.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(financeYear + '年分のCSVを出力しました', 'ok');
   }
-
-  function closeModal() { overlayRoot.innerHTML = ''; }
-
-  // --- 詳細（カルテ）モーダル ---
-  function openLessonModal(id) {
-    var lesson = lessons.find(function(l){ return l.id === id; });
-    if (!lesson) return;
-    var t = LESSON_TYPES[lesson.type] || LESSON_TYPES.personal;
-    var calcFee = lesson.type === 'rental' ? Math.round(lesson.fee / (lesson.splitCount || 1)) : lesson.fee;
-
+  function createRecognizer(onFinalText){
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR) return null;
+    var rec = new SR();
+    rec.lang = 'ja-JP';
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.onresult = function(e){
+      var finalTxt = '';
+      for(var i=e.resultIndex; i<e.results.length; i++){
+        if(e.results[i].isFinal) finalTxt += e.results[i][0].transcript;
+      }
+      if(finalTxt) onFinalText(finalTxt);
+    };
+    return rec;
+  }
+  function findPrevAdvice(lesson){
+    var candidates = lessons.filter(function(l){
+      return l.student === lesson.student && l.id !== lesson.id && (l.homework || l.notes) &&
+        (l.date + 'T' + (l.start||'00:00')) < (lesson.date + 'T' + (lesson.start||'00:00'));
+    });
+    candidates.sort(function(a,b){ return (b.date+'T'+b.start).localeCompare(a.date+'T'+a.start); });
+    return candidates[0] || null;
+  }
+  function openLessonModal(id){
+    var lesson = lessons.find(function(l){ return l.id===id; });
+    if(!lesson) return;
+    var t = LESSON_TYPES[lesson.type];
+    var prev = findPrevAdvice(lesson);
+    var perPersonInit = (lesson.type==='rental' && lesson.splitCount>1) ? Math.ceil(lesson.fee/lesson.splitCount) : null;
     var html = '<div class="sheet-overlay" id="lesson-overlay">';
     html += '<div class="sheet-backdrop" data-action="close-sheet"></div>';
     html += '<div class="sheet">';
     html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
-    html += '<div class="sheet__header">';
-    html += '<div class="sheet__header-text">';
-    html += '<div class="sheet__header-title">' + esc(lesson.student) + ' 様</div>';
-    html += '<div class="sheet__header-sub">' + esc(lesson.date) + ' (' + esc(lesson.start) + '〜' + esc(lesson.end) + ') @ ' + esc(lesson.rink) + '</div>';
-    html += '</div><button class="sheet__close tappable" data-action="close-sheet">✕</button></div>';
-
+    html += '<div class="sheet__header">' + renderTypeBadge(lesson.type,'md') + '<div class="sheet__header-text"><div class="sheet__header-title">' + esc(lesson.student) + '</div><div class="sheet__header-sub mono">' + fmtDateJp(lesson.date) + ' ' + esc(lesson.start) + '〜' + esc(lesson.end) + ' ・ ' + esc(lesson.rink) + '</div></div><button class="sheet__close tappable" data-action="close-sheet">✕</button></div>';
     html += '<div class="sheet__body">';
-
-    html += '<div class="action-grid">';
-    var isContacted = lesson.contactStatus === '連絡済';
-    var isPaid = lesson.paymentStatus === '回収済';
-    html += '<button class="action-btn ' + (isContacted?'is-done':'') + '" id="btn-line"><span class="action-btn__icon">💬</span><span>' + (isContacted?'連絡済（再コピー）':'LINE連絡文コピー') + '</span></button>';
-    html += '<button class="action-btn ' + (isPaid?'is-done':'') + '" id="btn-pay"><span class="action-btn__icon">' + (isPaid?'✅':'💴') + '</span><span>' + (isPaid?'回収済み':'未回収 → タップで回収') + '</span></button>';
-    html += '</div>';
-
-    html += '<div class="money-box">';
-    html += '<div class="money-row"><span class="money-row__label">料金</span><span class="money-row__value"><span class="mono">¥</span><input type="number" id="fee-input" class="fee-input mono" value="' + lesson.fee + '"></span></div>';
-    if (lesson.type === 'rental') {
-      html += '<div class="money-row"><span class="money-row__label">割り勘人数</span><div class="stepper"><button class="stepper__btn tappable" id="split-minus">−</button><input type="number" id="split-input" class="split-input mono" min="1" value="' + (lesson.splitCount||1) + '"><button class="stepper__btn tappable" id="split-plus">＋</button></div></div>';
-      html += '<div class="money-row"><span class="money-row__label">1人あたり</span><span class="money-row__value mono" id="split-result">¥' + formatMoney(calcFee) + '</span></div>';
+    if(prev){
+      html += '<div class="advice-box"><div class="advice-box__title"><span>📌</span><span>前回（' + fmtDateJp(prev.date) + '）の宿題・アドバイス</span></div><div class="advice-box__text">' + esc(prev.homework || prev.notes) + '</div></div>';
     }
+    html += '<div class="action-grid">';
+    html += '<button class="action-btn action-btn--line tappable min-tap' + (lesson.contactStatus==='連絡済'?' is-done':'') + '" id="btn-line" data-action="modal-line"><span class="action-btn__icon">💬</span><span>' + (lesson.contactStatus==='連絡済'?'連絡済（再コピー）':'LINE連絡文をコピー') + '</span></button>';
+    html += '<button class="action-btn action-btn--pay tappable min-tap' + (lesson.paymentStatus==='回収済'?' is-done':'') + '" id="btn-pay" data-action="modal-pay"><span class="action-btn__icon">' + (lesson.paymentStatus==='回収済'?'✅':'💴') + '</span><span>' + (lesson.paymentStatus==='回収済'?'回収済み':'未回収 → タップで回収') + '</span></button>';
     html += '</div>';
-
-    html += '<div><div class="field-label">タグ</div><div class="tag-grid" id="tag-grid">';
-    ALL_TAGS.forEach(function(tag){
-      var sel = (lesson.tags || []).indexOf(tag) !== -1;
-      html += '<button class="tag-btn tappable ' + (sel?'is-selected':'') + '" data-tag="' + esc(tag) + '">' + esc(tag) + '</button>';
+    html += '<div class="money-box">';
+    html += '<div class="money-row"><span class="money-row__label">料金</span><span class="money-row__value"><span class="mono">¥</span><input type="number" id="fee-input" class="fee-input mono" value="' + Number(lesson.fee||0) + '"></span></div>';
+    if(lesson.type === 'rental'){
+      html += '<div class="money-row"><span class="money-row__label">割り勘人数</span><div class="stepper"><button class="stepper__btn tappable" id="split-minus">−</button><input type="number" id="split-input" class="split-input mono" min="1" value="' + (lesson.splitCount||1) + '"><button class="stepper__btn tappable" id="split-plus">＋</button></div></div>';
+    }
+    html += '<div class="per-person-note" id="per-person-note" style="' + (perPersonInit===null?'display:none':'') + '">お一人あたり ' + (perPersonInit!==null ? yen(perPersonInit) : '') + '</div>';
+    html += '</div>';
+    html += '<div><div class="field-label">カルテタグ（タップで選択）</div><div class="tag-wrap" id="tag-wrap">';
+    TAG_PRESETS.forEach(function(tag){
+      var on = lesson.tags && lesson.tags.indexOf(tag) !== -1;
+      html += '<button class="tag-chip tappable min-tap' + (on?' is-selected':'') + '" data-tag="' + esc(tag) + '">' + esc(tag) + '</button>';
     });
     html += '</div></div>';
-
-    html += '<div><div class="field-label" style="display:flex;justify-content:space-between;"><span>カルテ・指導メモ</span><button class="mic-btn tappable" id="mic-btn">🎤 音声入力</button></div>';
-    html += '<div id="recording-hint" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:4px;">録音中... 話しかけてください</div>';
-    html += '<textarea id="notes-textarea" class="textarea-input" placeholder="指導内容、気づきなど">' + esc(lesson.notes || '') + '</textarea></div>';
-
-    html += '<div><div class="field-label">次回までの宿題・課題</div>';
-    html += '<textarea id="homework-textarea" class="textarea-input" placeholder="例: 壁で軸を作る練習10回">' + esc(lesson.homework || '') + '</textarea></div>';
-
-    html += '</div>'; // body
-
-    html += '<div class="sheet__footer" style="display:flex;gap:8px;">';
-    html += '<button class="btn-danger tappable" id="btn-delete" style="flex:1;">削除</button>';
-    html += '<button class="sheet__submit tappable" id="btn-save-lesson" style="flex:2;">保存する</button>';
+    html += '<div><div class="notes-header"><span class="field-label" style="margin-bottom:0;">本日のメモ</span><button class="mic-btn tappable" id="mic-btn"><span>🎤</span></button></div>';
+    html += '<div class="recording-hint" id="recording-hint" style="display:none;">● 音声を聞き取り中…</div>';
+    html += '<textarea class="notes-textarea" id="notes-textarea" placeholder="タップして入力、またはマイクで音声入力">' + esc(lesson.notes||'') + '</textarea></div>';
+    html += '<div><div class="field-label">次回への宿題・アドバイス（次回自動表示）</div><textarea class="notes-textarea" id="homework-textarea" placeholder="次回の頭に表示される宿題を書いておく" style="min-height:76px;">' + esc(lesson.homework||'') + '</textarea></div>';
+    html += '<button class="delete-link tappable" id="btn-delete">この予定を削除する</button>';
     html += '</div>';
-
+    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-save-lesson">カルテを保存</button></div>';
     html += '</div></div>';
     overlayRoot.innerHTML = html;
-
     attachLessonModalListeners(lesson);
   }
-
-  function attachLessonModalListeners(lesson) {
+  function closeModal(){ overlayRoot.innerHTML = ''; }
+  function attachLessonModalListeners(lesson){
     var overlay = document.getElementById('lesson-overlay');
     overlay.addEventListener('click', function(e){
       var actionEl = e.target.closest('[data-action]');
-      if (actionEl && actionEl.dataset.action === 'close-sheet') closeModal();
+      if(actionEl && actionEl.dataset.action === 'close-sheet' && (actionEl === e.target || actionEl.classList.contains('sheet-backdrop'))){
+        closeModal();
+      }
     });
-
     var feeInput = document.getElementById('fee-input');
     var splitInput = document.getElementById('split-input');
-    var splitResult = document.getElementById('split-result');
-
-    function currentFee(){ return Number(feeInput.value) || 0; }
-    function currentSplit(){ return splitInput ? Math.max(1, Number(splitInput.value)||1) : 1; }
-    function updateSplitCalc(){
-      if(splitResult){
-        var calc = Math.round(currentFee() / currentSplit());
-        splitResult.textContent = '¥' + formatMoney(calc);
+    var perPersonNote = document.getElementById('per-person-note');
+    function recalcPerPerson(){
+      if(!splitInput) return;
+      var fee = Number(feeInput.value) || 0;
+      var split = Math.max(1, Number(splitInput.value) || 1);
+      if(split > 1){
+        perPersonNote.style.display = '';
+        perPersonNote.textContent = 'お一人あたり ' + yen(Math.ceil(fee/split));
+      } else {
+        perPersonNote.style.display = 'none';
       }
     }
-
-    if(feeInput) feeInput.addEventListener('input', updateSplitCalc);
-    if(splitInput) splitInput.addEventListener('input', updateSplitCalc);
-
-    var splitMinus = document.getElementById('split-minus');
-    var splitPlus = document.getElementById('split-plus');
-    if(splitMinus) splitMinus.addEventListener('click', function(){ splitInput.value = Math.max(1, currentSplit()-1); updateSplitCalc(); });
-    if(splitPlus) splitPlus.addEventListener('click', function(){ splitInput.value = currentSplit()+1; updateSplitCalc(); });
-
-    var tagGrid = document.getElementById('tag-grid');
-    tagGrid.addEventListener('click', function(e){
-      var btn = e.target.closest('.tag-btn');
-      if(!btn) return;
-      btn.classList.toggle('is-selected');
-    });
-
-    function currentTags(){
-      var btns = tagGrid.querySelectorAll('.tag-btn.is-selected');
-      var res = [];
-      Array.prototype.forEach.call(btns, function(b){ res.push(b.dataset.tag); });
-      return res;
+    if(feeInput) feeInput.addEventListener('input', recalcPerPerson);
+    if(splitInput){
+      splitInput.addEventListener('input', recalcPerPerson);
+      document.getElementById('split-minus').addEventListener('click', function(){
+        splitInput.value = Math.max(1, (Number(splitInput.value)||1) - 1);
+        recalcPerPerson();
+      });
+      document.getElementById('split-plus').addEventListener('click', function(){
+        splitInput.value = (Number(splitInput.value)||1) + 1;
+        recalcPerPerson();
+      });
     }
-
+    var tagWrap = document.getElementById('tag-wrap');
+    tagWrap.addEventListener('click', function(e){
+      var chip = e.target.closest('.tag-chip');
+      if(!chip) return;
+      chip.classList.toggle('is-selected');
+    });
+    function currentTags(){
+      return Array.prototype.slice.call(tagWrap.querySelectorAll('.tag-chip.is-selected')).map(function(el){ return el.dataset.tag; });
+    }
+    function currentFee(){ return Number(feeInput.value) || 0; }
+    function currentSplit(){ return splitInput ? Math.max(1, Number(splitInput.value)||1) : 1; }
     document.getElementById('btn-line').addEventListener('click', function(){
       lesson.fee = currentFee();
       lesson.splitCount = currentSplit();
@@ -873,7 +825,6 @@ h1,h2,h3,p{ margin:0; }
         }
       });
     });
-
     document.getElementById('btn-pay').addEventListener('click', function(){
       lesson.paymentStatus = lesson.paymentStatus === '回収済' ? '未回収' : '回収済';
       persist();
@@ -884,7 +835,6 @@ h1,h2,h3,p{ margin:0; }
       btn.innerHTML = '<span class="action-btn__icon">' + (isDone?'✅':'💴') + '</span><span>' + (isDone?'回収済み':'未回収 → タップで回収') + '</span>';
       showToast(isDone ? '入金済みにしました' : '未回収に戻しました', 'navy');
     });
-
     var micBtn = document.getElementById('mic-btn');
     var recordingHint = document.getElementById('recording-hint');
     var notesTextarea = document.getElementById('notes-textarea');
@@ -892,7 +842,6 @@ h1,h2,h3,p{ margin:0; }
     var recognizer = createRecognizer(function(text){
       notesTextarea.value = (notesTextarea.value ? notesTextarea.value + ' ' : '') + text;
     });
-
     if(!recognizer){
       micBtn.outerHTML = '<span class="mic-unsupported">🎤 音声入力非対応</span>';
     } else {
@@ -910,11 +859,10 @@ h1,h2,h3,p{ margin:0; }
             recognizing = true;
             micBtn.classList.add('is-recording');
             recordingHint.style.display = '';
-          }catch(e){}
+          }catch(e){  }
         }
       });
     }
-
     document.getElementById('btn-delete').addEventListener('click', function(){
       if(window.confirm('この予定を削除しますか？')){
         lessons = lessons.filter(function(l){ return l.id !== lesson.id; });
@@ -924,7 +872,6 @@ h1,h2,h3,p{ margin:0; }
         showToast('予定を削除しました', 'navy');
       }
     });
-
     document.getElementById('btn-save-lesson').addEventListener('click', function(){
       lesson.fee = currentFee();
       lesson.splitCount = currentSplit();
@@ -937,8 +884,6 @@ h1,h2,h3,p{ margin:0; }
       showToast('カルテを保存しました', 'ok');
     });
   }
-
-  // --- 予定追加モーダル ---
   function openAddSheet(){
     var defaultType = 'personal';
     var html = '<div class="sheet-overlay" id="add-overlay">';
@@ -947,7 +892,6 @@ h1,h2,h3,p{ margin:0; }
     html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
     html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">新しい予定を追加</div></div><button class="sheet__close tappable" data-action="close-sheet">✕</button></div>';
     html += '<div class="sheet__body">';
-
     html += '<div><div class="field-label">レッスン種別</div><div class="type-select-grid" id="type-select-grid">';
     TYPE_ORDER.forEach(function(key){
       var t = LESSON_TYPES[key];
@@ -959,64 +903,47 @@ h1,h2,h3,p{ margin:0; }
       html += '</button>';
     });
     html += '</div></div>';
-
-    html += '<div id="student-select-block">';
-    html += '<div class="field-label">登録済みの生徒から選択（任意）</div>';
-    html += '<div class="select-wrap"><select id="add-student-select" class="select-input">' + buildStudentOptions() + '</select></div>';
-    html += '</div>';
-
     html += '<div id="classroom-select-block" style="display:none;">';
     html += '<div class="field-label">登録済みの教室から選択（任意）</div>';
     html += '<div class="select-wrap"><select id="add-classroom-select" class="select-input">' + buildClassroomOptions() + '</select></div>';
     html += '<button type="button" class="classroom-manage-link tappable" data-action="open-classroom-master">＋ 教室マスタを編集する</button>';
     html += '</div>';
-
     html += '<div><div class="field-label" id="add-student-label">生徒名 / グループ名</div><input type="text" id="add-student" class="text-input" placeholder="例：佐藤 ひなた"></div>';
-
     html += '<div class="grid-3">';
     html += '<div><div class="field-label">日付</div><input type="date" id="add-date" class="date-input" value="' + selectedDate + '"></div>';
     html += '<div><div class="field-label">開始</div><input type="time" id="add-start" class="date-input" value="09:00"></div>';
     html += '<div><div class="field-label">終了</div><input type="time" id="add-end" class="date-input" value="09:30"></div>';
     html += '</div>';
-
     html += '<div><div class="field-label">リンク</div><div class="rink-row" id="rink-row">';
     RINKS.forEach(function(r, idx){
       html += '<button class="rink-btn tappable min-tap' + (idx===0?' is-selected':'') + '" data-rink="' + esc(r) + '">' + esc(r) + '</button>';
     });
     html += '</div></div>';
-
     html += '<div class="money-box">';
     html += '<div class="money-row"><span class="money-row__label">料金</span><span class="money-row__value"><span class="mono">¥</span><input type="number" id="add-fee" class="fee-input mono" value="4000"></span></div>';
     html += '<div class="money-row" id="add-split-row" style="display:none;"><span class="money-row__label">割り勘人数</span><div class="stepper"><button class="stepper__btn tappable" id="add-split-minus">−</button><input type="number" id="add-split" class="split-input mono" min="1" value="1"><button class="stepper__btn tappable" id="add-split-plus">＋</button></div></div>';
     html += '</div>';
-
-    html += '</div>'; // body
+    html += '</div>';
     html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-create-lesson" disabled>この内容で追加する</button></div>';
     html += '</div></div>';
     overlayRoot.innerHTML = html;
     attachAddSheetListeners();
   }
-
   function attachAddSheetListeners(){
     var overlay = document.getElementById('add-overlay');
     var selectedType = 'personal';
-
     overlay.addEventListener('click', function(e){
       var actionEl = e.target.closest('[data-action]');
       if(!actionEl) return;
       if(actionEl.dataset.action === 'close-sheet'){ closeModal(); }
       else if(actionEl.dataset.action === 'open-classroom-master'){ openClassroomMasterModal(); }
     });
-
     var typeGrid = document.getElementById('type-select-grid');
     var splitRow = document.getElementById('add-split-row');
     var classroomBlock = document.getElementById('classroom-select-block');
-    var studentSelectBlock = document.getElementById('student-select-block');
     var studentLabel = document.getElementById('add-student-label');
     var studentInputEl = document.getElementById('add-student');
-    var submitBtnRef = document.getElementById('btn-create-lesson');
     var allSelCls = TYPE_ORDER.map(function(k){ return 'sel-' + k; });
-
     typeGrid.addEventListener('click', function(e){
       var btn = e.target.closest('.type-select-btn');
       if(!btn) return;
@@ -1026,20 +953,16 @@ h1,h2,h3,p{ margin:0; }
       btn.classList.add('is-selected', btn.dataset.selcls);
       selectedType = btn.dataset.type;
       splitRow.style.display = (selectedType === 'rental') ? '' : 'none';
-
       if(selectedType === 'kyoshitsu'){
         classroomBlock.style.display = '';
-        studentSelectBlock.style.display = 'none';
         studentLabel.textContent = '教室名 / レッスン内容';
         studentInputEl.placeholder = '例：〇〇スケート教室 / 大人クラス初級';
       } else {
         classroomBlock.style.display = 'none';
-        studentSelectBlock.style.display = '';
         studentLabel.textContent = '生徒名 / グループ名';
         studentInputEl.placeholder = '例：佐藤 ひなた';
       }
     });
-
     var rinkRow = document.getElementById('rink-row');
     rinkRow.addEventListener('click', function(e){
       var btn = e.target.closest('.rink-btn');
@@ -1047,24 +970,6 @@ h1,h2,h3,p{ margin:0; }
       Array.prototype.forEach.call(rinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
       btn.classList.add('is-selected');
     });
-
-    var studentSelect = document.getElementById('add-student-select');
-    if(studentSelect) {
-      studentSelect.addEventListener('change', function(){
-        var val = studentSelect.value;
-        if(!val) return;
-        var st = studentMaster.find(function(s){ return s.id === val; });
-        if(!st) return;
-        studentInputEl.value = st.name;
-        if(st.rink) {
-          Array.prototype.forEach.call(rinkRow.querySelectorAll('.rink-btn'), function(el){
-            el.classList.toggle('is-selected', el.dataset.rink === st.rink);
-          });
-        }
-        submitBtnRef.disabled = false;
-      });
-    }
-
     var classroomSelect = document.getElementById('add-classroom-select');
     classroomSelect.addEventListener('change', function(){
       var val = classroomSelect.value;
@@ -1079,15 +984,15 @@ h1,h2,h3,p{ margin:0; }
       });
       submitBtnRef.disabled = studentInputEl.value.trim().length === 0;
     });
-
     var addSplit = document.getElementById('add-split');
     document.getElementById('add-split-minus').addEventListener('click', function(){ addSplit.value = Math.max(1,(Number(addSplit.value)||1)-1); });
     document.getElementById('add-split-plus').addEventListener('click', function(){ addSplit.value = (Number(addSplit.value)||1)+1; });
-
-    studentInputEl.addEventListener('input', function(){ submitBtnRef.disabled = studentInputEl.value.trim().length === 0; });
-
-    submitBtnRef.addEventListener('click', function(){
-      if(studentInputEl.value.trim().length === 0) return;
+    var studentInput = document.getElementById('add-student');
+    var submitBtnRef = document.getElementById('btn-create-lesson');
+    var submitBtn = submitBtnRef;
+    studentInput.addEventListener('input', function(){ submitBtn.disabled = studentInput.value.trim().length === 0; });
+    submitBtn.addEventListener('click', function(){
+      if(studentInput.value.trim().length === 0) return;
       var rinkBtn = rinkRow.querySelector('.rink-btn.is-selected');
       var newLesson = {
         id: uid(),
@@ -1095,7 +1000,7 @@ h1,h2,h3,p{ margin:0; }
         start: document.getElementById('add-start').value || '09:00',
         end: document.getElementById('add-end').value || '09:30',
         type: selectedType,
-        student: studentInputEl.value.trim(),
+        student: studentInput.value.trim(),
         rink: rinkBtn ? rinkBtn.dataset.rink : RINKS[0],
         fee: Number(document.getElementById('add-fee').value) || 0,
         splitCount: Math.max(1, Number(addSplit.value)||1),
@@ -1114,7 +1019,6 @@ h1,h2,h3,p{ margin:0; }
       showToast('予定を追加しました', 'ok');
     });
   }
-
   function buildClassroomOptions(){
     var opts = '<option value="">— 選択してください —</option>';
     classroomMaster.forEach(function(c){
@@ -1122,15 +1026,6 @@ h1,h2,h3,p{ margin:0; }
     });
     return opts;
   }
-
-  function buildStudentOptions(){
-    var opts = '<option value="">— 生徒マスタから選択 —</option>';
-    studentMaster.forEach(function(s){
-      opts += '<option value="' + s.id + '">' + esc(s.name) + (s.rink ? ' (' + esc(s.rink) + ')' : '') + '</option>';
-    });
-    return opts;
-  }
-
   function refreshClassroomSelect(){
     var sel = document.getElementById('add-classroom-select');
     if(!sel) return;
@@ -1138,165 +1033,11 @@ h1,h2,h3,p{ margin:0; }
     sel.innerHTML = buildClassroomOptions();
     if(classroomMaster.some(function(c){ return c.id === current; })) sel.value = current;
   }
-
-  // --- ⚙️ 統合設定モーダル ---
-  function openSettingsModal() {
-    var html = '<div class="sheet-overlay" id="settings-overlay">';
-    html += '<div class="sheet-backdrop" data-action="close-settings"></div>';
-    html += '<div class="sheet">';
-    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
-    html += '<div class="sheet__header"><div class="sheet__header-title">アプリ設定・マスタ管理</div><button class="sheet__close tappable" data-action="close-settings">✕</button></div>';
-    html += '<div class="sheet__body">';
-
-    html += '<div style="display:flex;flex-direction:column;gap:12px;">';
-    html += '<button class="sheet__submit tappable" style="background:#2ecc71;" data-action="open-student-master">👥 生徒マスタの管理</button>';
-    html += '<button class="sheet__submit tappable" style="background:#3498db;" data-action="open-classroom-master">🏫 教室マスタの管理</button>';
-    html += '<button class="sheet__submit tappable" style="background:#f39c12;" data-action="open-password-setting">🔒 パスワード設定</button>';
-    html += '<hr style="border:none;border-top:1px solid #eee;margin:8px 0;">';
-    html += '<button class="sheet__submit tappable" style="background:#34495e;" data-action="export-backup">💾 データバックアップ(JSON)</button>';
-    html += '<label class="sheet__submit tappable" style="background:#7f8c8d;text-align:center;cursor:pointer;display:block;">📂 バックアップから復元<input type="file" id="backup-file-input" accept=".json" style="display:none;"></label>';
-    html += '</div>';
-
-    html += '</div></div></div>';
-    classroomOverlayRoot.innerHTML = html;
-
-    var overlay = document.getElementById('settings-overlay');
-    overlay.addEventListener('click', function(e){
-      var actionEl = e.target.closest('[data-action]');
-      if(!actionEl) return;
-      var act = actionEl.dataset.action;
-      if(act === 'close-settings') classroomOverlayRoot.innerHTML = '';
-      else if(act === 'open-student-master') renderStudentMasterModal(null);
-      else if(act === 'open-classroom-master') renderClassroomMasterModal(null);
-      else if(act === 'open-password-setting') renderPasswordSettingModal();
-      else if(act === 'export-backup') exportBackupData();
-    });
-
-    var fileInput = document.getElementById('backup-file-input');
-    if(fileInput) {
-      fileInput.addEventListener('change', importBackupData);
-    }
-  }
-
-  // --- パスワードロック画面＆設定 ---
-  function showPasswordLockModal() {
-    var html = '<div class="sheet-overlay" style="z-index:9999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;">';
-    html += '<div style="background:#fff;padding:24px;border-radius:16px;width:90%;max-width:320px;text-align:center;">';
-    html += '<h3 style="margin-bottom:12px;">🔒 パスワード入力</h3>';
-    html += '<p style="font-size:12px;color:#666;margin-bottom:16px;">アプリを開くための暗証番号を入力してください</p>';
-    html += '<input type="password" id="unlock-pass" class="text-input" style="text-align:center;font-size:20px;letter-spacing:4px;" placeholder="****">';
-    html += '<button id="btn-unlock" class="sheet__submit tappable" style="margin-top:16px;">解除する</button>';
-    html += '</div></div>';
-    overlayRoot.innerHTML = html;
-
-    document.getElementById('btn-unlock').addEventListener('click', function(){
-      var val = document.getElementById('unlock-pass').value;
-      if (val === appSettings.password) {
-        overlayRoot.innerHTML = '';
-        renderShell();
-      } else {
-        showToast('パスワードが違います', 'danger');
-      }
-    });
-  }
-
-  function renderPasswordSettingModal() {
-    var html = '<div class="sheet-overlay" id="pass-overlay">';
-    html += '<div class="sheet-backdrop" data-action="close-settings"></div>';
-    html += '<div class="sheet">';
-    html += '<div class="sheet__header"><div class="sheet__header-title">パスワード設定</div><button class="sheet__close tappable" data-action="close-settings">✕</button></div>';
-    html += '<div class="sheet__body">';
-    html += '<div class="field-label">暗証番号（空欄にすると解除されます）</div>';
-    html += '<input type="password" id="set-pass-input" class="text-input" placeholder="例：1234" value="' + esc(appSettings.password||'') + '">';
-    html += '<button id="btn-save-pass" class="sheet__submit tappable" style="margin-top:16px;">設定を保存</button>';
-    html += '</div></div></div>';
-    classroomOverlayRoot.innerHTML = html;
-
-    document.getElementById('btn-save-pass').addEventListener('click', function(){
-      appSettings.password = document.getElementById('set-pass-input').value.trim();
-      persistSettings();
-      showToast('パスワードを設定しました', 'ok');
-      openSettingsModal();
-    });
-  }
-
-  // --- 生徒マスタ管理 ---
-  function renderStudentMasterModal(editId) {
-    var editing = editId ? studentMaster.find(function(s){ return s.id === editId; }) : null;
-    var html = '<div class="sheet-overlay" id="student-master-overlay">';
-    html += '<div class="sheet-backdrop" data-action="open-settings-modal"></div>';
-    html += '<div class="sheet">';
-    html += '<div class="sheet__header"><div class="sheet__header-title">生徒マスタを管理</div><button class="sheet__close tappable" data-action="open-settings-modal">✕</button></div>';
-    html += '<div class="sheet__body">';
-
-    html += '<div><div class="field-label">登録済みの生徒</div>';
-    if(studentMaster.length === 0){
-      html += '<div class="classroom-empty">まだ登録がありません</div>';
-    } else {
-      html += '<div class="classroom-list">';
-      studentMaster.forEach(function(s){
-        html += '<div class="classroom-row">';
-        html += '<div class="classroom-row__body"><div class="classroom-row__name">' + esc(s.name) + '</div><div class="classroom-row__meta">' + esc(s.rink || 'リンク指定なし') + '</div></div>';
-        html += '<div class="classroom-row__actions">';
-        html += '<button class="icon-btn tappable" data-action="edit-student-row" data-id="' + s.id + '">✏️</button>';
-        html += '<button class="icon-btn icon-btn--danger tappable" data-action="delete-student-row" data-id="' + s.id + '">🗑</button>';
-        html += '</div></div>';
-      });
-      html += '</div>';
-    }
-    html += '</div>';
-
-    html += '<hr style="border:none;border-top:1px solid #eee;margin:16px 0;">';
-    html += '<div><div class="classroom-form-title">' + (editing ? '生徒情報を編集' : '新しい生徒を登録') + '</div>';
-    html += '<div style="margin-top:10px;"><div class="field-label">生徒氏名</div><input type="text" id="sm-name" class="text-input" placeholder="例：山田 太郎" value="' + (editing ? esc(editing.name) : '') + '"></div>';
-    html += '<div style="margin-top:10px;"><div class="field-label">メインリンク</div><input type="text" id="sm-rink" class="text-input" placeholder="例：東伏見" value="' + (editing ? esc(editing.rink||'') : '') + '"></div>';
-    html += '<button class="sheet__submit tappable" id="btn-save-student" style="margin-top:16px;">' + (editing ? '更新する' : '登録する') + '</button>';
-    html += '</div>';
-
-    html += '</div></div></div>';
-    classroomOverlayRoot.innerHTML = html;
-
-    var overlay = document.getElementById('student-master-overlay');
-    overlay.addEventListener('click', function(e){
-      var actionEl = e.target.closest('[data-action]');
-      if(!actionEl) return;
-      var act = actionEl.dataset.action;
-      if(act === 'open-settings-modal') openSettingsModal();
-      else if(act === 'edit-student-row') renderStudentMasterModal(actionEl.dataset.id);
-      else if(act === 'delete-student-row') {
-        if(confirm('この生徒を削除しますか？')){
-          studentMaster = studentMaster.filter(function(s){ return s.id !== actionEl.dataset.id; });
-          persistStudents();
-          renderStudentMasterModal(null);
-          showToast('削除しました', 'navy');
-        }
-      }
-    });
-
-    document.getElementById('btn-save-student').addEventListener('click', function(){
-      var name = document.getElementById('sm-name').value.trim();
-      var rink = document.getElementById('sm-rink').value.trim();
-      if(!name) { showToast('氏名を入力してください', 'danger'); return; }
-
-      if(editing) {
-        editing.name = name;
-        editing.rink = rink;
-      } else {
-        studentMaster.push({ id: uid(), name: name, rink: rink });
-      }
-      persistStudents();
-      renderStudentMasterModal(null);
-      showToast('生徒情報を保存しました', 'ok');
-    });
-  }
-
-  // --- 教室マスタ管理モーダル ---
   function openClassroomMasterModal(){ renderClassroomMasterModal(null); }
   function closeClassroomMasterModal(){
     classroomOverlayRoot.innerHTML = '';
     refreshClassroomSelect();
   }
-
   function renderClassroomMasterModal(editId){
     var editing = editId ? classroomMaster.find(function(c){ return c.id === editId; }) : null;
     var html = '<div class="sheet-overlay" id="classroom-master-overlay">';
@@ -1305,7 +1046,6 @@ h1,h2,h3,p{ margin:0; }
     html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
     html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">教室マスタを管理</div><div class="sheet__header-sub">名称・時間・場所を登録しておくと予定作成が早くなります</div></div><button class="sheet__close tappable" data-action="close-classroom-master">✕</button></div>';
     html += '<div class="sheet__body">';
-
     html += '<div><div class="field-label">登録済みの教室</div>';
     if(classroomMaster.length === 0){
       html += '<div class="classroom-empty">まだ登録がありません</div>';
@@ -1322,7 +1062,6 @@ h1,h2,h3,p{ margin:0; }
       html += '</div>';
     }
     html += '</div>';
-
     html += '<div>';
     html += '<div class="classroom-form-title">' + (editing ? '教室を編集' : '新しい教室を登録') + (editing ? '<span class="classroom-cancel-edit tappable" data-action="cancel-edit-classroom">キャンセル</span>' : '') + '</div>';
     html += '<div style="margin-top:10px;"><div class="field-label">教室名</div><input type="text" id="cm-name" class="text-input" placeholder="例：大人スケート教室" value="' + (editing ? esc(editing.name) : '') + '"></div>';
@@ -1330,7 +1069,6 @@ h1,h2,h3,p{ margin:0; }
     html += '<div><div class="field-label">開始</div><input type="time" id="cm-start" class="date-input" value="' + (editing ? esc(editing.start) : '18:00') + '"></div>';
     html += '<div><div class="field-label">終了</div><input type="time" id="cm-end" class="date-input" value="' + (editing ? esc(editing.end) : '19:00') + '"></div>';
     html += '</div>';
-
     html += '<div style="margin-top:12px;"><div class="field-label">リンク</div><div class="rink-row" id="cm-rink-row">';
     RINKS.forEach(function(r, idx){
       var isSel = editing ? (editing.rink === r) : (idx === 0);
@@ -1338,15 +1076,12 @@ h1,h2,h3,p{ margin:0; }
     });
     html += '</div></div>';
     html += '</div>';
-
-    html += '</div>'; // body
+    html += '</div>';
     html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-save-classroom">' + (editing ? 'この内容で更新する' : 'この内容で登録する') + '</button></div>';
     html += '</div></div>';
     classroomOverlayRoot.innerHTML = html;
-
     attachClassroomMasterListeners(editId);
   }
-
   function attachClassroomMasterListeners(editId){
     var overlay = document.getElementById('classroom-master-overlay');
     overlay.addEventListener('click', function(e){
@@ -1369,7 +1104,6 @@ h1,h2,h3,p{ margin:0; }
         }
       }
     });
-
     var cmRinkRow = document.getElementById('cm-rink-row');
     cmRinkRow.addEventListener('click', function(e){
       var btn = e.target.closest('.rink-btn');
@@ -1377,7 +1111,6 @@ h1,h2,h3,p{ margin:0; }
       Array.prototype.forEach.call(cmRinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
       btn.classList.add('is-selected');
     });
-
     document.getElementById('btn-save-classroom').addEventListener('click', function(){
       var nameInput = document.getElementById('cm-name');
       var name = nameInput.value.trim();
@@ -1386,68 +1119,18 @@ h1,h2,h3,p{ margin:0; }
       var end = document.getElementById('cm-end').value || '19:00';
       var rinkBtn = cmRinkRow.querySelector('.rink-btn.is-selected');
       var rink = rinkBtn ? rinkBtn.dataset.rink : RINKS[0];
-
       if(editId){
         var target = classroomMaster.find(function(c){ return c.id === editId; });
         if(target){ target.name = name; target.start = start; target.end = end; target.rink = rink; }
       } else {
         classroomMaster.push({ id: uid(), name: name, start: start, end: end, rink: rink });
       }
-
       persistClassrooms();
       refreshClassroomSelect();
       renderClassroomMasterModal(null);
       showToast(editId ? '教室を更新しました' : '教室を登録しました', 'ok');
     });
   }
-
-  // --- バックアップ・復元処理 ---
-  function exportBackupData() {
-    var backupObj = {
-      version: 1,
-      timestamp: Date.now(),
-      lessons: lessons,
-      classroomMaster: classroomMaster,
-      studentMaster: studentMaster,
-      appSettings: appSettings
-    };
-    var jsonStr = JSON.stringify(backupObj, null, 2);
-    var blob = new Blob([jsonStr], { type: 'application/json' });
-    var link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'torepeta_backup_' + todayStr() + '.json';
-    link.click();
-    showToast('バックアップを出力しました', 'ok');
-  }
-
-  function importBackupData(e) {
-    var file = e.target.files[0];
-    if(!file) return;
-    var reader = new FileReader();
-    reader.onload = function(evt) {
-      try {
-        var data = JSON.parse(evt.target.result);
-        if(data.lessons) lessons = data.lessons;
-        if(data.classroomMaster) classroomMaster = data.classroomMaster;
-        if(data.studentMaster) studentMaster = data.studentMaster;
-        if(data.appSettings) appSettings = data.appSettings;
-
-        persist();
-        persistClassrooms();
-        persistStudents();
-        persistSettings();
-
-        classroomOverlayRoot.innerHTML = '';
-        renderShell();
-        showToast('データを復元しました', 'ok');
-      } catch(err) {
-        showToast('ファイルの読み込みに失敗しました', 'danger');
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  // --- ルートクリックイベントディスパッチ ---
   rootEl.addEventListener('click', function(e){
     var el = e.target.closest('[data-action]');
     if(!el) return;
@@ -1464,11 +1147,9 @@ h1,h2,h3,p{ margin:0; }
     else if(action === 'set-view') setViewMode(el.dataset.view);
     else if(action === 'cal-prev-month') calPrevMonth();
     else if(action === 'cal-next-month') calNextMonth();
-    else if(action === 'open-settings-modal') openSettingsModal();
     else if(action === 'open-classroom-master') openClassroomMasterModal();
   });
-
+  renderShell();
 })();</script>
-  
 </body>
 </html>
