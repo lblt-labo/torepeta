@@ -317,31 +317,62 @@ h1,h2,h3,p{ margin:0; }
 
 <script>(function(){
   "use strict";
+
+  /* =========================================================
+     1. STORAGE KEYS & MEMORY STORE
+     ========================================================= */
   var STORAGE_KEY = 'torepeta_lessons_v1';
+  var CLASSROOM_STORAGE_KEY = 'torepeta_classrooms_v1';
+  var STUDENT_STORAGE_KEY = 'torepeta_students_v1';
+  var PASS_STORAGE_KEY = 'torepeta_passcode_v1';
   var memStore = {};
+
   function loadLessons(){
     try{
       var raw = window.localStorage.getItem(STORAGE_KEY);
       if(raw !== null && raw !== undefined) return JSON.parse(raw);
-    }catch(e){  }
+    }catch(e){}
     return memStore[STORAGE_KEY] || null;
   }
   function saveLessons(lessons){
     memStore[STORAGE_KEY] = lessons;
-    try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lessons)); }catch(e){  }
+    try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lessons)); }catch(e){}
   }
-  var CLASSROOM_STORAGE_KEY = 'torepeta_classrooms_v1';
+
   function loadClassrooms(){
     try{
       var raw = window.localStorage.getItem(CLASSROOM_STORAGE_KEY);
       if(raw !== null && raw !== undefined) return JSON.parse(raw);
-    }catch(e){  }
+    }catch(e){}
     return memStore[CLASSROOM_STORAGE_KEY] || null;
   }
   function saveClassrooms(list){
     memStore[CLASSROOM_STORAGE_KEY] = list;
-    try{ window.localStorage.setItem(CLASSROOM_STORAGE_KEY, JSON.stringify(list)); }catch(e){  }
+    try{ window.localStorage.setItem(CLASSROOM_STORAGE_KEY, JSON.stringify(list)); }catch(e){}
   }
+
+  function loadStudents(){
+    try{
+      var raw = window.localStorage.getItem(STUDENT_STORAGE_KEY);
+      if(raw !== null && raw !== undefined) return JSON.parse(raw);
+    }catch(e){}
+    return memStore[STUDENT_STORAGE_KEY] || null;
+  }
+  function saveStudents(list){
+    memStore[STUDENT_STORAGE_KEY] = list;
+    try{ window.localStorage.setItem(STUDENT_STORAGE_KEY, JSON.stringify(list)); }catch(e){}
+  }
+
+  function loadPasscode(){
+    try{ return window.localStorage.getItem(PASS_STORAGE_KEY) || ''; }catch(e){ return ''; }
+  }
+  function savePasscode(code){
+    try{ window.localStorage.setItem(PASS_STORAGE_KEY, code); }catch(e){}
+  }
+
+  /* =========================================================
+     2. CONSTANTS & PRESETS
+     ========================================================= */
   var LESSON_TYPES = {
     personal:  { label:'個人レッスン', short:'個人', cls:'type-personal', shape:'shape-circle', icon:'👤' },
     group:     { label:'グループレッスン', short:'グループ', cls:'type-group', shape:'shape-round', icon:'👥' },
@@ -355,7 +386,18 @@ h1,h2,h3,p{ margin:0; }
     '軸の意識','フリー脚','エッジ','踏切','タイミング','腕の使い方','体幹','ジャンプ矯正',
     '曲かけ','振付確認','基礎練習','試合前チェック'
   ];
-  var RINKS = ['メインリンク','サブリンク','外部リンク'];
+
+  // 更新されたリンクのリスト
+  var RINKS = ['明治神宮', '東伏見', '東大和', '埼玉', '東神奈川', 'アクアリンク', '新横浜', 'その他', 'メインリンク', 'サブリンク', '外部リンク'];
+
+  // 3軸の級プリセット
+  var RENMEI_LEVELS = ['—','無級','初級','1級','2級','3級','4級','5級','6級','7級','8級'];
+  var ISI_LEVELS = ['—','Pre-Alpha','Alpha','Beta','Gamma','Delta','Freestyle 1','Freestyle 2','Freestyle 3','Freestyle 4','Freestyle 5','Freestyle 6','Freestyle 7','Freestyle 8','Freestyle 9','Freestyle 10'];
+  var CATEGORIES = ['—','初心者','初級','中級','上級','選手'];
+
+  /* =========================================================
+     3. UTILITY FUNCTIONS
+     ========================================================= */
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
   function pad2(n){ return String(n).padStart(2,'0'); }
   function todayStr(){
@@ -378,30 +420,47 @@ h1,h2,h3,p{ margin:0; }
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch];
     });
   }
+
+  /* =========================================================
+     4. SEED DATA
+     ========================================================= */
   function seedData(){
     var t = todayStr();
     var tmr = addDays(t, 1);
     return [
-      { id: uid(), date:t, start:'09:00', end:'09:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
+      { id: uid(), date:t, start:'09:00', end:'09:30', type:'personal', student:'佐藤 ひなた', rink:'明治神宮', fee:4000, splitCount:1,
         contactStatus:'未連絡', paymentStatus:'未回収', tags:['3T','軸の意識'], notes:'踏切のタイミングが早い。助走から意識づけを継続。', homework:'家で片足立ちの軸バランス練習を毎日5分。', createdAt: Date.now()-1000 },
-      { id: uid(), date:t, start:'10:00', end:'10:45', type:'group', student:'ジュニアクラス（4名）', rink:'サブリンク', fee:2500, splitCount:1,
+      { id: uid(), date:t, start:'10:00', end:'10:45', type:'group', student:'ジュニアクラス（4名）', rink:'東伏見', fee:2500, splitCount:1,
         contactStatus:'連絡済', paymentStatus:'回収済', tags:['基礎練習','StSq'], notes:'', homework:'', createdAt: Date.now()-2000 },
-      { id: uid(), date:t, start:'13:00', end:'14:00', type:'rental', student:'鈴木 蓮 / 高橋 陸', rink:'メインリンク', fee:9000, splitCount:2,
+      { id: uid(), date:t, start:'13:00', end:'14:00', type:'rental', student:'鈴木 蓮 / 高橋 陸', rink:'明治神宮', fee:9000, splitCount:2,
         contactStatus:'未連絡', paymentStatus:'未回収', tags:['曲かけ','振付確認'], notes:'', homework:'', createdAt: Date.now()-3000 },
-      { id: uid(), date:tmr, start:'16:00', end:'16:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
+      { id: uid(), date:tmr, start:'16:00', end:'16:30', type:'personal', student:'佐藤 ひなた', rink:'明治神宮', fee:4000, splitCount:1,
         contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now() },
-      { id: uid(), date:tmr, start:'18:00', end:'19:00', type:'kyoshitsu', student:'大人スケート教室', rink:'サブリンク', fee:1500, splitCount:1,
+      { id: uid(), date:tmr, start:'18:00', end:'19:00', type:'kyoshitsu', student:'大人スケート教室', rink:'東伏見', fee:1500, splitCount:1,
         contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now()+1 }
     ];
   }
   function seedClassrooms(){
     return [
-      { id: uid(), name:'大人スケート教室', start:'18:00', end:'19:00', rink:'サブリンク' },
-      { id: uid(), name:'キッズスケート教室 初級', start:'16:30', end:'17:15', rink:'メインリンク' }
+      { id: uid(), name:'大人スケート教室', start:'18:00', end:'19:00', rink:'東伏見' },
+      { id: uid(), name:'キッズスケート教室 初級', start:'16:30', end:'17:15', rink:'明治神宮' }
     ];
   }
+  function seedStudents(){
+    return [
+      { id: uid(), name:'佐藤 ひなた', renmei:'3級', isi:'Freestyle 1', category:'中級', rink:'明治神宮', fee:4000, contact:'090-xxxx-xxxx', memo:'軸を意識' },
+      { id: uid(), name:'鈴木 蓮', renmei:'初級', isi:'—', category:'初級', rink:'東伏見', fee:4000, contact:'', memo:'' }
+    ];
+  }
+
+  /* =========================================================
+     5. STATE & DOM NODES
+     ========================================================= */
   var lessons = loadLessons() || seedData();
   var classroomMaster = loadClassrooms() || seedClassrooms();
+  var studentMaster = loadStudents() || seedStudents();
+  var passcode = loadPasscode();
+
   var selectedDate = todayStr();
   var currentTab = 'schedule';
   var viewMode = 'day';
@@ -409,12 +468,91 @@ h1,h2,h3,p{ margin:0; }
   var calMonth = new Date().getMonth();
   var financeYear = new Date().getFullYear();
   var toastTimer = null;
+
   var rootEl = document.getElementById('root');
   var overlayRoot = document.getElementById('overlay-root');
   var classroomOverlayRoot = document.getElementById('classroom-overlay-root');
   var toastRoot = document.getElementById('toast-root');
+
   function persist(){ saveLessons(lessons); }
   function persistClassrooms(){ saveClassrooms(classroomMaster); }
+  function persistStudents(){ saveStudents(studentMaster); }
+
+  /* =========================================================
+     6. APP LOCK / PASSCODE
+     ========================================================= */
+  function checkLockStatus(){
+    if(passcode && passcode.length === 4){
+      renderLockScreen();
+    }
+  }
+
+  function renderLockScreen(){
+    var lockEl = document.getElementById('lock-overlay');
+    if(!lockEl){
+      lockEl = document.createElement('div');
+      lockEl.id = 'lock-overlay';
+      lockEl.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:#0f172a;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:sans-serif;';
+      document.body.appendChild(lockEl);
+    }
+
+    var html = '<div style="font-size:48px;margin-bottom:12px;">🔒</div>';
+    html += '<div style="font-size:18px;font-weight:bold;margin-bottom:20px;">暗証番号を入力</div>';
+    html += '<div id="lock-dots" style="display:flex;gap:12px;margin-bottom:30px;">';
+    for(var i=0;i<4;i++){
+      html += '<div style="width:16px;height:16px;border-radius:50%;border:2px solid #38bdf8;background:transparent;" class="lock-dot"></div>';
+    }
+    html += '</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:240px;">';
+    [1,2,3,4,5,6,7,8,9].forEach(function(num){
+      html += '<button class="lock-num-btn" data-num="' + num + '" style="height:60px;border-radius:30px;border:1px solid #334155;background:#1e293b;color:#fff;font-size:24px;font-weight:bold;">' + num + '</button>';
+    });
+    html += '<div style="height:60px;"></div>';
+    html += '<button class="lock-num-btn" data-num="0" style="height:60px;border-radius:30px;border:1px solid #334155;background:#1e293b;color:#fff;font-size:24px;font-weight:bold;">0</button>';
+    html += '<button id="lock-del-btn" style="height:60px;border-radius:30px;border:none;background:transparent;color:#94a3b8;font-size:18px;">⌫</button>';
+    html += '</div>';
+    lockEl.innerHTML = html;
+
+    var currentInput = '';
+    var dots = lockEl.querySelectorAll('.lock-dot');
+
+    function updateDots(){
+      for(var i=0; i<4; i++){
+        dots[i].style.background = (i < currentInput.length) ? '#38bdf8' : 'transparent';
+      }
+    }
+
+    lockEl.onclick = function(e){
+      var btn = e.target.closest('.lock-num-btn');
+      var del = e.target.closest('#lock-del-btn');
+      if(btn){
+        if(currentInput.length < 4){
+          currentInput += btn.dataset.num;
+          updateDots();
+          if(currentInput.length === 4){
+            setTimeout(function(){
+              if(currentInput === passcode){
+                lockEl.remove();
+              } else {
+                showToast('暗証番号が正しくありません', 'danger');
+                currentInput = '';
+                updateDots();
+              }
+            }, 100);
+          }
+        }
+      } else if(del){
+        if(currentInput.length > 0){
+          currentInput = currentInput.slice(0, -1);
+          updateDots();
+        }
+      }
+    };
+  }
+
+  /* =========================================================
+     7. HELPER FUNCTIONS & UI BADGES
+     ========================================================= */
   function copyToClipboard(text){
     return new Promise(function(resolve){
       if(navigator.clipboard && window.isSecureContext){
@@ -437,6 +575,7 @@ h1,h2,h3,p{ margin:0; }
       return ok;
     }catch(e){ return false; }
   }
+
   function buildLineMessage(lesson){
     var typePhrase;
     if(lesson.type === 'kyoshitsu'){
@@ -446,12 +585,29 @@ h1,h2,h3,p{ margin:0; }
     }
     return fmtDateJp(lesson.date) + 'は ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で ' + typePhrase + 'です。よろしくお願いいたします';
   }
+
   function showToast(msg, tone){
     tone = tone || 'navy';
     toastRoot.innerHTML = '<div class="toast toast--' + tone + '">' + esc(msg) + '</div>';
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function(){ toastRoot.innerHTML = ''; }, 2200);
   }
+
+  // 生徒の級情報を文字組み表示
+  function getStudentLevelTag(studentName){
+    if(!studentName) return '';
+    var st = studentMaster.find(function(s){ return s.name === studentName.trim(); });
+    if(!st) return '';
+    var parts = [];
+    if(st.renmei && st.renmei !== '—') parts.push(st.renmei);
+    if(st.isi && st.isi !== '—') parts.push(st.isi);
+    if(st.category && st.category !== '—') parts.push(st.category);
+    return parts.length > 0 ? ' <span style="font-size:0.8em;color:#0284c7;font-weight:normal;">[' + esc(parts.join('/')) + ']</span>' : '';
+  }
+
+  /* =========================================================
+     8. SCHEDULE & TILE RENDERING
+     ========================================================= */
   function renderDateStrip(){
     var html = '<div class="date-strip" id="date-strip">';
     for(var i=-2;i<14;i++){
@@ -472,21 +628,25 @@ h1,h2,h3,p{ margin:0; }
     html += '</div>';
     return html;
   }
+
   function renderTypeBadge(type, size){
     var t = LESSON_TYPES[type];
     return '<div class="type-badge type-badge--' + (size||'md') + ' ' + t.shape + ' ' + t.cls + '">' + t.icon + '</div>';
   }
+
   function renderLessonTile(l){
     var t = LESSON_TYPES[l.type];
     var contactOn = l.contactStatus === '連絡済';
     var paidOn = l.paymentStatus === '回収済';
+    var levelTag = renderStudentBadgeInline(l.student);
+
     var html = '<div class="lesson-tile">';
     html += '<div class="lesson-tile__accent accent-' + l.type + '"></div>';
     html += '<button class="lesson-tile__main tappable" data-action="open-lesson" data-id="' + l.id + '">';
     html += '<div class="lesson-tile__time"><span class="lesson-tile__time-start mono">' + esc(l.start) + '</span><span class="lesson-tile__time-end">〜' + esc(l.end) + '</span></div>';
     html += renderTypeBadge(l.type, 'md');
     html += '<div class="lesson-tile__body">';
-    html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + '</span><span class="lesson-tile__type-label ' + t.cls + '">' + t.short + '</span></div>';
+    html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + levelTag + '</span><span class="lesson-tile__type-label ' + t.cls + '">' + t.short + '</span></div>';
     html += '<div class="lesson-tile__sub">' + esc(l.rink) + ' ・ ' + yen(l.fee) + '</div>';
     html += '<div class="lesson-tile__badges">';
     html += '<span class="status-pill status-pill--contact' + (contactOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (contactOn?'連絡済':'未連絡') + '</span>';
@@ -497,6 +657,11 @@ h1,h2,h3,p{ margin:0; }
     html += '</div>';
     return html;
   }
+
+  function renderStudentBadgeInline(studentName){
+    return getStudentLevelTag(studentName);
+  }
+
   function renderViewToggle(){
     var html = '<div class="view-toggle">';
     html += '<button class="view-toggle__btn tappable min-tap' + (viewMode==='day'?' is-active':'') + '" data-action="set-view" data-view="day">日表示</button>';
@@ -504,6 +669,7 @@ h1,h2,h3,p{ margin:0; }
     html += '</div>';
     return html;
   }
+
   function renderMonthCalendar(){
     var year = calYear, month = calMonth;
     var startWeekday = new Date(year, month, 1).getDay();
@@ -532,6 +698,7 @@ h1,h2,h3,p{ margin:0; }
     html += '</div></div>';
     return html;
   }
+
   function renderScheduleView(){
     var dayLessons = lessons.filter(function(l){ return l.date===selectedDate; }).sort(function(a,b){ return a.start.localeCompare(b.start); });
     var html = renderViewToggle();
@@ -546,6 +713,7 @@ h1,h2,h3,p{ margin:0; }
     }
     return html;
   }
+
   function renderFinanceView(){
     var yearLessons = lessons.filter(function(l){ return l.date.indexOf(String(financeYear))===0; });
     var unpaid = yearLessons.filter(function(l){ return l.paymentStatus==='未回収'; });
@@ -586,6 +754,7 @@ h1,h2,h3,p{ margin:0; }
     html += '</div></div>';
     return html;
   }
+
   function renderHeader(){
     var todayUncontacted = lessons.filter(function(l){ return l.date===todayStr() && l.contactStatus==='未連絡'; }).length;
     var html = '<header class="app-header">';
@@ -594,11 +763,12 @@ h1,h2,h3,p{ margin:0; }
     if(currentTab==='schedule' && todayUncontacted>0){
       html += '<div class="app-header__alert">本日 未連絡 ' + todayUncontacted + '件</div>';
     }
-    html += '<button class="header-gear tappable min-tap" data-action="open-classroom-master" title="教室マスタを管理">⚙️</button>';
+    html += '<button class="header-gear tappable min-tap" data-action="open-integrated-settings" title="設定">⚙️</button>';
     html += '</div>';
     html += '</header>';
     return html;
   }
+
   function renderBottomNav(){
     var items = [ { key:'schedule', label:'予定', icon:'🗓️' }, { key:'finance', label:'収支・確定申告', icon:'💰' } ];
     var html = '<nav class="bottom-nav">';
@@ -611,10 +781,12 @@ h1,h2,h3,p{ margin:0; }
     html += '</nav>';
     return html;
   }
+
   function renderFab(){
     if(currentTab !== 'schedule') return '';
     return '<button class="fab tappable" data-action="open-add">＋</button>';
   }
+
   function renderShell(){
     var html = renderHeader();
     html += '<main class="main-scroll">';
@@ -629,6 +801,10 @@ h1,h2,h3,p{ margin:0; }
       if(sel) sel.scrollIntoView({ inline:'center', block:'nearest' });
     }
   }
+
+  /* =========================================================
+     9. ACTIONS & HANDLERS
+     ========================================================= */
   function selectDate(dateKey){ selectedDate = dateKey; renderShell(); }
   function switchTab(tab){ currentTab = tab; renderShell(); }
   function setViewMode(mode){
@@ -666,6 +842,7 @@ h1,h2,h3,p{ margin:0; }
     showToast('回収済みにしました', 'ok');
   }
   function changeFinanceYear(delta){ financeYear += delta; renderShell(); }
+
   function exportCsv(){
     var rows = lessons.filter(function(l){ return l.date.indexOf(String(financeYear))===0; });
     if(rows.length === 0){ showToast(financeYear + '年のデータがありません', 'danger'); return; }
@@ -694,6 +871,7 @@ h1,h2,h3,p{ margin:0; }
     URL.revokeObjectURL(url);
     showToast(financeYear + '年分のCSVを出力しました', 'ok');
   }
+
   function createRecognizer(onFinalText){
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(!SR) return null;
@@ -710,6 +888,7 @@ h1,h2,h3,p{ margin:0; }
     };
     return rec;
   }
+
   function findPrevAdvice(lesson){
     var candidates = lessons.filter(function(l){
       return l.student === lesson.student && l.id !== lesson.id && (l.homework || l.notes) &&
@@ -718,6 +897,10 @@ h1,h2,h3,p{ margin:0; }
     candidates.sort(function(a,b){ return (b.date+'T'+b.start).localeCompare(a.date+'T'+a.start); });
     return candidates[0] || null;
   }
+
+  /* =========================================================
+     10. LESSON DETAIL MODAL
+     ========================================================= */
   function openLessonModal(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
     if(!lesson) return;
@@ -728,7 +911,7 @@ h1,h2,h3,p{ margin:0; }
     html += '<div class="sheet-backdrop" data-action="close-sheet"></div>';
     html += '<div class="sheet">';
     html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
-    html += '<div class="sheet__header">' + renderTypeBadge(lesson.type,'md') + '<div class="sheet__header-text"><div class="sheet__header-title">' + esc(lesson.student) + '</div><div class="sheet__header-sub mono">' + fmtDateJp(lesson.date) + ' ' + esc(lesson.start) + '〜' + esc(lesson.end) + ' ・ ' + esc(lesson.rink) + '</div></div><button class="sheet__close tappable" data-action="close-sheet">✕</button></div>';
+    html += '<div class="sheet__header">' + renderTypeBadge(lesson.type,'md') + '<div class="sheet__header-text"><div class="sheet__header-title">' + esc(lesson.student) + getStudentLevelTag(lesson.student) + '</div><div class="sheet__header-sub mono">' + fmtDateJp(lesson.date) + ' ' + esc(lesson.start) + '〜' + esc(lesson.end) + ' ・ ' + esc(lesson.rink) + '</div></div><button class="sheet__close tappable" data-action="close-sheet">✕</button></div>';
     html += '<div class="sheet__body">';
     if(prev){
       html += '<div class="advice-box"><div class="advice-box__title"><span>📌</span><span>前回（' + fmtDateJp(prev.date) + '）の宿題・アドバイス</span></div><div class="advice-box__text">' + esc(prev.homework || prev.notes) + '</div></div>';
@@ -761,7 +944,9 @@ h1,h2,h3,p{ margin:0; }
     overlayRoot.innerHTML = html;
     attachLessonModalListeners(lesson);
   }
+
   function closeModal(){ overlayRoot.innerHTML = ''; }
+
   function attachLessonModalListeners(lesson){
     var overlay = document.getElementById('lesson-overlay');
     overlay.addEventListener('click', function(e){
@@ -859,7 +1044,7 @@ h1,h2,h3,p{ margin:0; }
             recognizing = true;
             micBtn.classList.add('is-recording');
             recordingHint.style.display = '';
-          }catch(e){  }
+          }catch(e){}
         }
       });
     }
@@ -884,6 +1069,10 @@ h1,h2,h3,p{ margin:0; }
       showToast('カルテを保存しました', 'ok');
     });
   }
+
+  /* =========================================================
+     11. ADD LESSON MODAL
+     ========================================================= */
   function openAddSheet(){
     var defaultType = 'personal';
     var html = '<div class="sheet-overlay" id="add-overlay">';
@@ -903,23 +1092,31 @@ h1,h2,h3,p{ margin:0; }
       html += '</button>';
     });
     html += '</div></div>';
-    html += '<div id="classroom-select-block" style="display:none;">';
+
+    // 生徒マスタからのワンタップ補完機能
+    html += '<div id="student-select-block" style="margin-top:10px;">';
+    html += '<div class="field-label">生徒マスタから自動入力</div>';
+    html += '<div class="select-wrap"><select id="add-student-master-select" class="select-input">' + buildStudentOptions() + '</select></div>';
+    html += '</div>';
+
+    html += '<div id="classroom-select-block" style="display:none;margin-top:10px;">';
     html += '<div class="field-label">登録済みの教室から選択（任意）</div>';
     html += '<div class="select-wrap"><select id="add-classroom-select" class="select-input">' + buildClassroomOptions() + '</select></div>';
     html += '<button type="button" class="classroom-manage-link tappable" data-action="open-classroom-master">＋ 教室マスタを編集する</button>';
     html += '</div>';
-    html += '<div><div class="field-label" id="add-student-label">生徒名 / グループ名</div><input type="text" id="add-student" class="text-input" placeholder="例：佐藤 ひなた"></div>';
-    html += '<div class="grid-3">';
+
+    html += '<div style="margin-top:10px;"><div class="field-label" id="add-student-label">生徒名 / グループ名</div><input type="text" id="add-student" class="text-input" placeholder="例：佐藤 ひなた"></div>';
+    html += '<div class="grid-3" style="margin-top:10px;">';
     html += '<div><div class="field-label">日付</div><input type="date" id="add-date" class="date-input" value="' + selectedDate + '"></div>';
     html += '<div><div class="field-label">開始</div><input type="time" id="add-start" class="date-input" value="09:00"></div>';
     html += '<div><div class="field-label">終了</div><input type="time" id="add-end" class="date-input" value="09:30"></div>';
     html += '</div>';
-    html += '<div><div class="field-label">リンク</div><div class="rink-row" id="rink-row">';
-    RINKS.forEach(function(r, idx){
+    html += '<div style="margin-top:10px;"><div class="field-label">リンク</div><div class="rink-row" id="rink-row">';
+    RINKS.slice(0, 8).forEach(function(r, idx){
       html += '<button class="rink-btn tappable min-tap' + (idx===0?' is-selected':'') + '" data-rink="' + esc(r) + '">' + esc(r) + '</button>';
     });
     html += '</div></div>';
-    html += '<div class="money-box">';
+    html += '<div class="money-box" style="margin-top:10px;">';
     html += '<div class="money-row"><span class="money-row__label">料金</span><span class="money-row__value"><span class="mono">¥</span><input type="number" id="add-fee" class="fee-input mono" value="4000"></span></div>';
     html += '<div class="money-row" id="add-split-row" style="display:none;"><span class="money-row__label">割り勘人数</span><div class="stepper"><button class="stepper__btn tappable" id="add-split-minus">−</button><input type="number" id="add-split" class="split-input mono" min="1" value="1"><button class="stepper__btn tappable" id="add-split-plus">＋</button></div></div>';
     html += '</div>';
@@ -929,6 +1126,7 @@ h1,h2,h3,p{ margin:0; }
     overlayRoot.innerHTML = html;
     attachAddSheetListeners();
   }
+
   function attachAddSheetListeners(){
     var overlay = document.getElementById('add-overlay');
     var selectedType = 'personal';
@@ -938,12 +1136,15 @@ h1,h2,h3,p{ margin:0; }
       if(actionEl.dataset.action === 'close-sheet'){ closeModal(); }
       else if(actionEl.dataset.action === 'open-classroom-master'){ openClassroomMasterModal(); }
     });
+
     var typeGrid = document.getElementById('type-select-grid');
     var splitRow = document.getElementById('add-split-row');
     var classroomBlock = document.getElementById('classroom-select-block');
+    var studentSelectBlock = document.getElementById('student-select-block');
     var studentLabel = document.getElementById('add-student-label');
     var studentInputEl = document.getElementById('add-student');
     var allSelCls = TYPE_ORDER.map(function(k){ return 'sel-' + k; });
+
     typeGrid.addEventListener('click', function(e){
       var btn = e.target.closest('.type-select-btn');
       if(!btn) return;
@@ -955,14 +1156,17 @@ h1,h2,h3,p{ margin:0; }
       splitRow.style.display = (selectedType === 'rental') ? '' : 'none';
       if(selectedType === 'kyoshitsu'){
         classroomBlock.style.display = '';
+        studentSelectBlock.style.display = 'none';
         studentLabel.textContent = '教室名 / レッスン内容';
         studentInputEl.placeholder = '例：〇〇スケート教室 / 大人クラス初級';
       } else {
         classroomBlock.style.display = 'none';
+        studentSelectBlock.style.display = '';
         studentLabel.textContent = '生徒名 / グループ名';
         studentInputEl.placeholder = '例：佐藤 ひなた';
       }
     });
+
     var rinkRow = document.getElementById('rink-row');
     rinkRow.addEventListener('click', function(e){
       var btn = e.target.closest('.rink-btn');
@@ -970,6 +1174,24 @@ h1,h2,h3,p{ margin:0; }
       Array.prototype.forEach.call(rinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
       btn.classList.add('is-selected');
     });
+
+    // 生徒選択による自動補完
+    var studentSelect = document.getElementById('add-student-master-select');
+    studentSelect.addEventListener('change', function(){
+      var val = studentSelect.value;
+      if(!val) return;
+      var st = studentMaster.find(function(x){ return x.id === val; });
+      if(!st) return;
+      studentInputEl.value = st.name;
+      if(st.fee) document.getElementById('add-fee').value = st.fee;
+      if(st.rink){
+        Array.prototype.forEach.call(rinkRow.querySelectorAll('.rink-btn'), function(el){
+          el.classList.toggle('is-selected', el.dataset.rink === st.rink);
+        });
+      }
+      submitBtnRef.disabled = studentInputEl.value.trim().length === 0;
+    });
+
     var classroomSelect = document.getElementById('add-classroom-select');
     classroomSelect.addEventListener('change', function(){
       var val = classroomSelect.value;
@@ -984,12 +1206,15 @@ h1,h2,h3,p{ margin:0; }
       });
       submitBtnRef.disabled = studentInputEl.value.trim().length === 0;
     });
+
     var addSplit = document.getElementById('add-split');
     document.getElementById('add-split-minus').addEventListener('click', function(){ addSplit.value = Math.max(1,(Number(addSplit.value)||1)-1); });
     document.getElementById('add-split-plus').addEventListener('click', function(){ addSplit.value = (Number(addSplit.value)||1)+1; });
+
     var studentInput = document.getElementById('add-student');
     var submitBtnRef = document.getElementById('btn-create-lesson');
     var submitBtn = submitBtnRef;
+
     studentInput.addEventListener('input', function(){ submitBtn.disabled = studentInput.value.trim().length === 0; });
     submitBtn.addEventListener('click', function(){
       if(studentInput.value.trim().length === 0) return;
@@ -1019,6 +1244,7 @@ h1,h2,h3,p{ margin:0; }
       showToast('予定を追加しました', 'ok');
     });
   }
+
   function buildClassroomOptions(){
     var opts = '<option value="">— 選択してください —</option>';
     classroomMaster.forEach(function(c){
@@ -1026,6 +1252,15 @@ h1,h2,h3,p{ margin:0; }
     });
     return opts;
   }
+
+  function buildStudentOptions(){
+    var opts = '<option value="">— 生徒を選択 —</option>';
+    studentMaster.forEach(function(s){
+      opts += '<option value="' + s.id + '">' + esc(s.name) + '</option>';
+    });
+    return opts;
+  }
+
   function refreshClassroomSelect(){
     var sel = document.getElementById('add-classroom-select');
     if(!sel) return;
@@ -1033,11 +1268,256 @@ h1,h2,h3,p{ margin:0; }
     sel.innerHTML = buildClassroomOptions();
     if(classroomMaster.some(function(c){ return c.id === current; })) sel.value = current;
   }
+
+  /* =========================================================
+     12. INTEGRATED SETTINGS MODAL & SUB-MODALS
+     ========================================================= */
+  function openIntegratedSettingsModal(){
+    var html = '<div class="sheet-overlay" id="integrated-settings-overlay">';
+    html += '<div class="sheet-backdrop" data-action="close-integrated-settings"></div>';
+    html += '<div class="sheet">';
+    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">⚙️ 設定・マスタ管理</div></div><button class="sheet__close tappable" data-action="close-integrated-settings">✕</button></div>';
+    html += '<div class="sheet__body">';
+
+    html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-passcode-setting"><span style="font-size:20px;margin-right:12px;">🔒</span><span style="font-weight:bold;color:#1e293b;">暗証番号（アプリロック）設定</span></button>';
+    html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-student-master"><span style="font-size:20px;margin-right:12px;">👥</span><span style="font-weight:bold;color:#1e293b;">生徒マスタ管理（連盟級・ISI級・区分）</span></button>';
+    html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-classroom-master"><span style="font-size:20px;margin-right:12px;">🏫</span><span style="font-weight:bold;color:#1e293b;">教室マスタ管理</span></button>';
+    html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-backup-modal"><span style="font-size:20px;margin-right:12px;">💾</span><span style="font-weight:bold;color:#1e293b;">データバックアップ / 復元</span></button>';
+
+    html += '</div></div></div>';
+    classroomOverlayRoot.innerHTML = html;
+
+    var overlay = document.getElementById('integrated-settings-overlay');
+    overlay.onclick = function(e){
+      var btn = e.target.closest('[data-action]');
+      if(!btn) return;
+      var act = btn.dataset.action;
+      if(act === 'close-integrated-settings'){ classroomOverlayRoot.innerHTML = ''; }
+      else if(act === 'open-passcode-setting'){ openPasscodeSettingModal(); }
+      else if(act === 'open-student-master'){ openStudentMasterModal(); }
+      else if(act === 'open-classroom-master'){ openClassroomMasterModal(); }
+      else if(act === 'open-backup-modal'){ openBackupModal(); }
+    };
+  }
+
+  /* --- パスワード設定 --- */
+  function openPasscodeSettingModal(){
+    var html = '<div class="sheet-overlay" id="passcode-setting-overlay">';
+    html += '<div class="sheet-backdrop" data-action="close-submodal"></div>';
+    html += '<div class="sheet">';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">🔒 暗証番号設定</div></div><button class="sheet__close tappable" data-action="close-submodal">✕</button></div>';
+    html += '<div class="sheet__body">';
+    html += '<div style="margin-bottom:12px;font-size:14px;color:#64748b;">4桁の数字を入力してください。空にして保存するとロックが無効になります。</div>';
+    html += '<input type="password" id="passcode-input" maxlength="4" class="text-input" style="font-size:24px;letter-spacing:8px;text-align:center;" value="' + esc(passcode) + '" placeholder="0000">';
+    html += '</div>';
+    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="save-passcode-btn">保存する</button></div>';
+    html += '</div></div>';
+    overlayRoot.innerHTML = html;
+
+    var overlay = document.getElementById('passcode-setting-overlay');
+    overlay.onclick = function(e){
+      var btn = e.target.closest('[data-action]');
+      if(btn && btn.dataset.action === 'close-submodal') overlayRoot.innerHTML = '';
+    };
+
+    document.getElementById('save-passcode-btn').onclick = function(){
+      var val = document.getElementById('passcode-input').value.trim();
+      if(val.length > 0 && val.length !== 4){
+        showToast('4桁で入力してください', 'danger');
+        return;
+      }
+      passcode = val;
+      savePasscode(passcode);
+      overlayRoot.innerHTML = '';
+      showToast(passcode ? '暗証番号を設定しました' : 'ロックを解除しました', 'ok');
+    };
+  }
+
+  /* --- 生徒マスタ管理 --- */
+  function openStudentMasterModal(editId){
+    var editing = editId ? studentMaster.find(function(s){ return s.id === editId; }) : null;
+    var html = '<div class="sheet-overlay" id="student-master-overlay">';
+    html += '<div class="sheet-backdrop" data-action="close-submodal"></div>';
+    html += '<div class="sheet">';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">👥 生徒マスタ管理</div></div><button class="sheet__close tappable" data-action="close-submodal">✕</button></div>';
+    html += '<div class="sheet__body">';
+
+    if(studentMaster.length > 0){
+      html += '<div class="classroom-list" style="margin-bottom:16px;">';
+      studentMaster.forEach(function(s){
+        var tag = getStudentLevelTag(s.name);
+        html += '<div class="classroom-row">';
+        html += '<div class="classroom-row__body"><div class="classroom-row__name">' + esc(s.name) + tag + '</div><div class="classroom-row__meta">' + esc(s.rink||'—') + ' ・ ' + yen(s.fee) + '</div></div>';
+        html += '<div class="classroom-row__actions">';
+        html += '<button class="icon-btn tappable" data-action="edit-student" data-id="' + s.id + '">✏️</button>';
+        html += '<button class="icon-btn icon-btn--danger tappable" data-action="delete-student" data-id="' + s.id + '">🗑</button>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+    }
+
+    html += '<div style="font-weight:bold;margin-bottom:8px;">' + (editing ? '生徒情報を編集' : '新しい生徒を登録') + '</div>';
+    html += '<div><div class="field-label">生徒氏名</div><input type="text" id="sm-name" class="text-input" value="' + (editing?esc(editing.name):'') + '" placeholder="例：佐藤 ひなた"></div>';
+
+    html += '<div class="grid-3" style="margin-top:10px;">';
+    html += '<div><div class="field-label">日本連盟級</div><select id="sm-renmei" class="select-input">';
+    RENMEI_LEVELS.forEach(function(l){ html += '<option value="' + l + '"' + (editing&&editing.renmei===l?' selected':'') + '>' + l + '</option>'; });
+    html += '</select></div>';
+
+    html += '<div><div class="field-label">ISI級</div><select id="sm-isi" class="select-input">';
+    ISI_LEVELS.forEach(function(l){ html += '<option value="' + l + '"' + (editing&&editing.isi===l?' selected':'') + '>' + l + '</option>'; });
+    html += '</select></div>';
+
+    html += '<div><div class="field-label">区分</div><select id="sm-cat" class="select-input">';
+    CATEGORIES.forEach(function(c){ html += '<option value="' + c + '"' + (editing&&editing.category===c?' selected':'') + '>' + c + '</option>'; });
+    html += '</select></div>';
+    html += '</div>';
+
+    html += '<div class="grid-2" style="margin-top:10px;">';
+    html += '<div><div class="field-label">ホームリンク</div><select id="sm-rink" class="select-input">';
+    RINKS.forEach(function(r){ html += '<option value="' + r + '"' + (editing&&editing.rink===r?' selected':'') + '>' + r + '</option>'; });
+    html += '</select></div>';
+    html += '<div><div class="field-label">基本料金</div><input type="number" id="sm-fee" class="fee-input mono" value="' + (editing?editing.fee:4000) + '"></div>';
+    html += '</div>';
+
+    html += '<div style="margin-top:10px;"><div class="field-label">連絡先・メモ</div><input type="text" id="sm-memo" class="text-input" value="' + (editing?esc(editing.memo):'') + '" placeholder="連絡先や特記事項"></div>';
+
+    html += '</div>';
+    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="save-student-btn">' + (editing ? '更新する' : '登録する') + '</button></div>';
+    html += '</div></div>';
+    overlayRoot.innerHTML = html;
+
+    var overlay = document.getElementById('student-master-overlay');
+    overlay.onclick = function(e){
+      var btn = e.target.closest('[data-action]');
+      if(!btn) return;
+      var act = btn.dataset.action;
+      if(act === 'close-submodal') overlayRoot.innerHTML = '';
+      else if(act === 'edit-student') openStudentMasterModal(btn.dataset.id);
+      else if(act === 'delete-student'){
+        if(confirm('この生徒を削除しますか？')){
+          studentMaster = studentMaster.filter(function(s){ return s.id !== btn.dataset.id; });
+          persistStudents();
+          openStudentMasterModal(null);
+          renderShell();
+        }
+      }
+    };
+
+    document.getElementById('save-student-btn').onclick = function(){
+      var name = document.getElementById('sm-name').value.trim();
+      if(!name){ showToast('氏名を入力してください', 'danger'); return; }
+
+      var data = {
+        name: name,
+        renmei: document.getElementById('sm-renmei').value,
+        isi: document.getElementById('sm-isi').value,
+        category: document.getElementById('sm-cat').value,
+        rink: document.getElementById('sm-rink').value,
+        fee: Number(document.getElementById('sm-fee').value) || 0,
+        memo: document.getElementById('sm-memo').value.trim()
+      };
+
+      if(editId){
+        var target = studentMaster.find(function(s){ return s.id === editId; });
+        if(target){ Object.assign(target, data); }
+      } else {
+        data.id = uid();
+        studentMaster.push(data);
+      }
+      persistStudents();
+      overlayRoot.innerHTML = '';
+      renderShell();
+      showToast(editId ? '生徒情報を更新しました' : '生徒を登録しました', 'ok');
+    };
+  }
+
+  /* --- バックアップ / 復元 --- */
+  function openBackupModal(){
+    var html = '<div class="sheet-overlay" id="backup-overlay">';
+    html += '<div class="sheet-backdrop" data-action="close-submodal"></div>';
+    html += '<div class="sheet">';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">💾 バックアップ / 復元</div></div><button class="sheet__close tappable" data-action="close-submodal">✕</button></div>';
+    html += '<div class="sheet__body">';
+
+    html += '<div style="margin-bottom:20px;">';
+    html += '<div style="font-weight:bold;margin-bottom:6px;">データバックアップ</div>';
+    html += '<div style="font-size:13px;color:#64748b;margin-bottom:10px;">現在の全データ（予定・マスタ・設定）をJSONファイルとしてダウンロードします。</div>';
+    html += '<button class="sheet__submit tappable" id="export-json-btn">バックアップファイルを保存</button>';
+    html += '</div>';
+
+    html += '<div style="border-top:1px solid #e2e8f0;padding-top:16px;">';
+    html += '<div style="font-weight:bold;margin-bottom:6px;">データ復元</div>';
+    html += '<div style="font-size:13px;color:#64748b;margin-bottom:10px;">保存したバックアップファイル（JSON）を選択してデータを復元します。</div>';
+    html += '<input type="file" id="import-json-file" accept=".json" style="display:none;">';
+    html += '<button class="action-btn tappable" id="import-json-btn" style="width:100%;justify-content:center;background:#f1f5f9;color:#0f172a;font-weight:bold;">復元ファイルを選択</button>';
+    html += '</div>';
+
+    html += '</div></div></div>';
+    overlayRoot.innerHTML = html;
+
+    var overlay = document.getElementById('backup-overlay');
+    overlay.onclick = function(e){
+      var btn = e.target.closest('[data-action]');
+      if(btn && btn.dataset.action === 'close-submodal') overlayRoot.innerHTML = '';
+    };
+
+    document.getElementById('export-json-btn').onclick = function(){
+      var backupData = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        lessons: lessons,
+        classrooms: classroomMaster,
+        students: studentMaster,
+        passcode: passcode
+      };
+      var jsonStr = JSON.stringify(backupData, null, 2);
+      var blob = new Blob([jsonStr], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'torepeta_backup_' + todayStr() + '.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('バックアップを出力しました', 'ok');
+    };
+
+    var fileInput = document.getElementById('import-json-file');
+    document.getElementById('import-json-btn').onclick = function(){ fileInput.click(); };
+
+    fileInput.onchange = function(e){
+      var file = e.target.files[0];
+      if(!file) return;
+      var reader = new FileReader();
+      reader.onload = function(evt){
+        try{
+          var data = JSON.parse(evt.target.result);
+          if(data.lessons) { lessons = data.lessons; persist(); }
+          if(data.classrooms) { classroomMaster = data.classrooms; persistClassrooms(); }
+          if(data.students) { studentMaster = data.students; persistStudents(); }
+          if(data.passcode !== undefined) { passcode = data.passcode; savePasscode(passcode); }
+          overlayRoot.innerHTML = '';
+          classroomOverlayRoot.innerHTML = '';
+          renderShell();
+          showToast('データを完全に復元しました', 'ok');
+        }catch(err){
+          showToast('ファイルの読み込みに失敗しました', 'danger');
+        }
+      };
+      reader.readAsText(file);
+    };
+  }
+
+  /* =========================================================
+     13. CLASSROOM MASTER MODAL
+     ========================================================= */
   function openClassroomMasterModal(){ renderClassroomMasterModal(null); }
   function closeClassroomMasterModal(){
     classroomOverlayRoot.innerHTML = '';
     refreshClassroomSelect();
   }
+
   function renderClassroomMasterModal(editId){
     var editing = editId ? classroomMaster.find(function(c){ return c.id === editId; }) : null;
     var html = '<div class="sheet-overlay" id="classroom-master-overlay">';
@@ -1070,7 +1550,7 @@ h1,h2,h3,p{ margin:0; }
     html += '<div><div class="field-label">終了</div><input type="time" id="cm-end" class="date-input" value="' + (editing ? esc(editing.end) : '19:00') + '"></div>';
     html += '</div>';
     html += '<div style="margin-top:12px;"><div class="field-label">リンク</div><div class="rink-row" id="cm-rink-row">';
-    RINKS.forEach(function(r, idx){
+    RINKS.slice(0, 8).forEach(function(r, idx){
       var isSel = editing ? (editing.rink === r) : (idx === 0);
       html += '<button class="rink-btn tappable min-tap' + (isSel?' is-selected':'') + '" data-rink="' + esc(r) + '">' + esc(r) + '</button>';
     });
@@ -1082,6 +1562,7 @@ h1,h2,h3,p{ margin:0; }
     classroomOverlayRoot.innerHTML = html;
     attachClassroomMasterListeners(editId);
   }
+
   function attachClassroomMasterListeners(editId){
     var overlay = document.getElementById('classroom-master-overlay');
     overlay.addEventListener('click', function(e){
@@ -1104,6 +1585,7 @@ h1,h2,h3,p{ margin:0; }
         }
       }
     });
+
     var cmRinkRow = document.getElementById('cm-rink-row');
     cmRinkRow.addEventListener('click', function(e){
       var btn = e.target.closest('.rink-btn');
@@ -1111,6 +1593,7 @@ h1,h2,h3,p{ margin:0; }
       Array.prototype.forEach.call(cmRinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
       btn.classList.add('is-selected');
     });
+
     document.getElementById('btn-save-classroom').addEventListener('click', function(){
       var nameInput = document.getElementById('cm-name');
       var name = nameInput.value.trim();
@@ -1131,6 +1614,10 @@ h1,h2,h3,p{ margin:0; }
       showToast(editId ? '教室を更新しました' : '教室を登録しました', 'ok');
     });
   }
+
+  /* =========================================================
+     14. GLOBAL EVENT LISTENERS & INITIALIZATION
+     ========================================================= */
   rootEl.addEventListener('click', function(e){
     var el = e.target.closest('[data-action]');
     if(!el) return;
@@ -1148,8 +1635,13 @@ h1,h2,h3,p{ margin:0; }
     else if(action === 'cal-prev-month') calPrevMonth();
     else if(action === 'cal-next-month') calNextMonth();
     else if(action === 'open-classroom-master') openClassroomMasterModal();
+    else if(action === 'open-integrated-settings') openIntegratedSettingsModal();
   });
+
+  // 描画実行 & アプリロック適用
   renderShell();
+  checkLockStatus();
+
 })();</script>
 </body>
 </html>
