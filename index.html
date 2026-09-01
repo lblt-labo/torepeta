@@ -380,24 +380,50 @@ h1,h2,h3,p{ margin:0; }
     kyoshitsu: { label:'教室', short:'教室', cls:'type-kyoshitsu', shape:'shape-square', icon:'🏫' }
   };
   var TYPE_ORDER = ['personal','group','rental','kyoshitsu'];
-  var TAG_PRESETS = [
-    // Single Jumps
-    '1S','1T','1Lo','1F','1Lz','1A',
-    // Double Jumps
-    '2S','2T','2Lo','2F','2Lz','2A',
-    // Triple Jumps
-    '3S','3T','3Lo','3F','3Lz','3A',
-    // Spin & Step
-    'FSSp','CSSp','LSp','StSq','ChSq',
-    // Point / Advice
-    '軸の意識','フリー脚','エッジ','踏切','タイミング','腕の使い方','体幹','ジャンプ矯正',
-    '曲かけ','振付確認','基礎練習','試合前チェック'
+
+  // カテゴリ分けタグプリセット（シングル・ダンス統合）
+  var TAG_CATEGORIES = [
+    {
+      id: 'single',
+      label: 'シングル',
+      tags: [
+        '1S','1T','1Lo','1F','1Lz','1A',
+        '2S','2T','2Lo','2F','2Lz','2A',
+        '3S','3T','3Lo','3F','3Lz','3A',
+        'FSSp','CSSp','LSp','StSq','ChSq'
+      ]
+    },
+    {
+      id: 'dance',
+      label: 'アイスダンス',
+      tags: [
+        'ツイズル','ワンフット','ダンスリフト','ダンススピン',
+        'パターンダンス','コレオリフト','コレオスライド','コレオハイドロ'
+      ]
+    },
+    {
+      id: 'turns',
+      label: 'ターン/ステップ',
+      tags: [
+        'チョクトウ','モホーク','ブラケット','カウンター','ロッカー',
+        'カーブ・エッジ','エッジチェンジ','クロス'
+      ]
+    },
+    {
+      id: 'points',
+      label: '指導ポイント',
+      tags: [
+        '軸の意識','ユニゾン','ホールド','距離感','膝の使い方','フリー脚',
+        '踏切','タイミング','腕の使い方','体幹','ジャンプ矯正',
+        '曲かけ','振付確認','基礎練習','試合前チェック'
+      ]
+    }
   ];
 
-  // 更新されたリンクのリスト
-  var RINKS = ['明治神宮', '東伏見', '東大和', '埼玉', '東神奈川', 'アクアリンク', '新横浜', 'その他', 'メインリンク', 'サブリンク', '外部リンク'];
+  // 全タグリスト（互換性保持用）
+  var TAG_PRESETS = TAG_CATEGORIES.reduce(function(acc, cat){ return acc.concat(cat.tags); }, []);
 
-  // 3軸の級プリセット
+  var RINKS = ['明治神宮', '東伏見', '東大和', '埼玉', '東神奈川', 'アクアリンク', '新横浜', 'その他', 'メインリンク', 'サブリンク', '外部リンク'];
   var RENMEI_LEVELS = ['—','無級','初級','1級','2級','3級','4級','5級','6級','7級','8級'];
   var ISI_LEVELS = ['—','Pre-Alpha','Alpha','Beta','Gamma','Delta','Freestyle 1','Freestyle 2','Freestyle 3','Freestyle 4','Freestyle 5','Freestyle 6','Freestyle 7','Freestyle 8','Freestyle 9','Freestyle 10'];
   var CATEGORIES = ['—','初心者','初級','中級','上級','選手'];
@@ -440,7 +466,7 @@ h1,h2,h3,p{ margin:0; }
       { id: uid(), date:t, start:'10:00', end:'10:45', type:'group', student:'ジュニアクラス（4名）', rink:'東伏見', fee:2500, splitCount:1,
         contactStatus:'連絡済', paymentStatus:'回収済', tags:['基礎練習','StSq'], notes:'', homework:'', createdAt: Date.now()-2000 },
       { id: uid(), date:t, start:'13:00', end:'14:00', type:'rental', student:'鈴木 蓮 / 高橋 陸', rink:'明治神宮', fee:9000, splitCount:2,
-        contactStatus:'未連絡', paymentStatus:'未回収', tags:['曲かけ','振付確認'], notes:'', homework:'', createdAt: Date.now()-3000 },
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:['曲かけ','振付確認','ツイズル'], notes:'', homework:'', createdAt: Date.now()-3000 },
       { id: uid(), date:tmr, start:'16:00', end:'16:30', type:'personal', student:'佐藤 ひなた', rink:'明治神宮', fee:4000, splitCount:1,
         contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now() },
       { id: uid(), date:tmr, start:'18:00', end:'19:00', type:'kyoshitsu', student:'大人スケート教室', rink:'東伏見', fee:1500, splitCount:1,
@@ -600,7 +626,6 @@ h1,h2,h3,p{ margin:0; }
     toastTimer = setTimeout(function(){ toastRoot.innerHTML = ''; }, 2200);
   }
 
-  // 生徒の級情報を文字組み表示
   function getStudentLevelTag(studentName){
     if(!studentName) return '';
     var st = studentMaster.find(function(s){ return s.name === studentName.trim(); });
@@ -645,7 +670,7 @@ h1,h2,h3,p{ margin:0; }
     var t = LESSON_TYPES[l.type];
     var contactOn = l.contactStatus === '連絡済';
     var paidOn = l.paymentStatus === '回収済';
-    var levelTag = renderStudentBadgeInline(l.student);
+    var levelTag = getStudentLevelTag(l.student);
 
     var html = '<div class="lesson-tile">';
     html += '<div class="lesson-tile__accent accent-' + l.type + '"></div>';
@@ -663,10 +688,6 @@ h1,h2,h3,p{ margin:0; }
     html += '<div class="lesson-tile__actions"><button class="btn-line tappable min-tap' + (contactOn?' is-done':'') + '" data-action="quick-line" data-id="' + l.id + '"><span>💬</span><span>' + (contactOn?'LINE文をコピー':'LINE連絡') + '</span></button></div>';
     html += '</div>';
     return html;
-  }
-
-  function renderStudentBadgeInline(studentName){
-    return getStudentLevelTag(studentName);
   }
 
   function renderViewToggle(){
@@ -697,7 +718,7 @@ h1,h2,h3,p{ margin:0; }
       var count = lessons.filter(function(l){ return l.date===dateKey; }).length;
       var wd = new Date(year, month, day).getDay();
       var wdCls = wd===0 ? 'is-sun' : (wd===6 ? 'is-sat' : '');
-      html += '<button class="month-calendar__cell tappable' + (isSel?' is-selected':'') + (isToday&&!isSel?' is-today':'') + '" data-action="select-date" data-date="' + dateKey + '">';
+      html += '<button class="month-calendar__cell tappable' + (isSel?' is-selected':'') + '" data-action="select-date" data-date="' + dateKey + '">';
       html += '<span class="month-calendar__cell-day ' + wdCls + '">' + day + '</span>';
       if(count>0) html += '<span class="month-calendar__cell-dot"></span>';
       html += '</button>';
@@ -836,7 +857,7 @@ h1,h2,h3,p{ margin:0; }
         renderShell();
         showToast('LINE文をコピーしました📋', 'ok');
       } else {
-        showToast('コピーに失敗しました。手動で共有してください', 'danger');
+        showToast('コピーに失敗しました', 'danger');
       }
     });
   }
@@ -906,7 +927,7 @@ h1,h2,h3,p{ margin:0; }
   }
 
   /* =========================================================
-     10. LESSON DETAIL MODAL
+     10. LESSON DETAIL MODAL (カテゴリタブ付きタグ選択)
      ========================================================= */
   function openLessonModal(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
@@ -934,13 +955,27 @@ h1,h2,h3,p{ margin:0; }
     }
     html += '<div class="per-person-note" id="per-person-note" style="' + (perPersonInit===null?'display:none':'') + '">お一人あたり ' + (perPersonInit!==null ? yen(perPersonInit) : '') + '</div>';
     html += '</div>';
-    html += '<div><div class="field-label">カルテタグ（タップで選択）</div><div class="tag-wrap" id="tag-wrap">';
-    TAG_PRESETS.forEach(function(tag){
-      var on = lesson.tags && lesson.tags.indexOf(tag) !== -1;
-      html += '<button class="tag-chip tappable min-tap' + (on?' is-selected':'') + '" data-tag="' + esc(tag) + '">' + esc(tag) + '</button>';
+
+    // カテゴリタブ付きカルテタグUI
+    html += '<div><div class="field-label">カルテタグ（タブ切替で選択）</div>';
+    html += '<div class="tag-category-tabs" id="tag-category-tabs" style="display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:4px;">';
+    TAG_CATEGORIES.forEach(function(cat, idx){
+      html += '<button type="button" class="tag-cat-tab tappable' + (idx===0?' is-active':'') + '" data-catid="' + cat.id + '" style="padding:4px 10px;font-size:12px;border-radius:12px;border:1px solid #cbd5e1;background:' + (idx===0?'#0284c7':'#f1f5f9') + ';color:' + (idx===0?'#fff':'#334155') + ';font-weight:bold;white-space:nowrap;">' + esc(cat.label) + '</button>';
+    });
+    html += '</div>';
+
+    html += '<div class="tag-wrap" id="tag-wrap">';
+    TAG_CATEGORIES.forEach(function(cat, idx){
+      html += '<div class="tag-category-panel" data-catpanel="' + cat.id + '" style="' + (idx===0?'':'display:none;') + '">';
+      cat.tags.forEach(function(tag){
+        var on = lesson.tags && lesson.tags.indexOf(tag) !== -1;
+        html += '<button class="tag-chip tappable min-tap' + (on?' is-selected':'') + '" data-tag="' + esc(tag) + '">' + esc(tag) + '</button>';
+      });
+      html += '</div>';
     });
     html += '</div></div>';
-    html += '<div><div class="notes-header"><span class="field-label" style="margin-bottom:0;">本日のメモ</span><button class="mic-btn tappable" id="mic-btn"><span>🎤</span></button></div>';
+
+    html += '<div style="margin-top:12px;"><div class="notes-header"><span class="field-label" style="margin-bottom:0;">本日のメモ</span><button class="mic-btn tappable" id="mic-btn"><span>🎤</span></button></div>';
     html += '<div class="recording-hint" id="recording-hint" style="display:none;">● 音声を聞き取り中…</div>';
     html += '<textarea class="notes-textarea" id="notes-textarea" placeholder="タップして入力、またはマイクで音声入力">' + esc(lesson.notes||'') + '</textarea></div>';
     html += '<div><div class="field-label">次回への宿題・アドバイス（次回自動表示）</div><textarea class="notes-textarea" id="homework-textarea" placeholder="次回の頭に表示される宿題を書いておく" style="min-height:76px;">' + esc(lesson.homework||'') + '</textarea></div>';
@@ -962,6 +997,30 @@ h1,h2,h3,p{ margin:0; }
         closeModal();
       }
     });
+
+    // タブ切替イベント
+    var catTabs = document.getElementById('tag-category-tabs');
+    if(catTabs){
+      catTabs.addEventListener('click', function(e){
+        var tabBtn = e.target.closest('.tag-cat-tab');
+        if(!tabBtn) return;
+        var catId = tabBtn.dataset.catid;
+        Array.prototype.forEach.call(catTabs.querySelectorAll('.tag-cat-tab'), function(b){
+          b.style.background = '#f1f5f9';
+          b.style.color = '#334155';
+          b.classList.remove('is-active');
+        });
+        tabBtn.style.background = '#0284c7';
+        tabBtn.style.color = '#fff';
+        tabBtn.classList.add('is-active');
+
+        var panels = overlay.querySelectorAll('.tag-category-panel');
+        Array.prototype.forEach.call(panels, function(p){
+          p.style.display = (p.dataset.catpanel === catId) ? '' : 'none';
+        });
+      });
+    }
+
     var feeInput = document.getElementById('fee-input');
     var splitInput = document.getElementById('split-input');
     var perPersonNote = document.getElementById('per-person-note');
@@ -988,17 +1047,20 @@ h1,h2,h3,p{ margin:0; }
         recalcPerPerson();
       });
     }
+
     var tagWrap = document.getElementById('tag-wrap');
     tagWrap.addEventListener('click', function(e){
       var chip = e.target.closest('.tag-chip');
       if(!chip) return;
       chip.classList.toggle('is-selected');
     });
+
     function currentTags(){
       return Array.prototype.slice.call(tagWrap.querySelectorAll('.tag-chip.is-selected')).map(function(el){ return el.dataset.tag; });
     }
     function currentFee(){ return Number(feeInput.value) || 0; }
     function currentSplit(){ return splitInput ? Math.max(1, Number(splitInput.value)||1) : 1; }
+
     document.getElementById('btn-line').addEventListener('click', function(){
       lesson.fee = currentFee();
       lesson.splitCount = currentSplit();
@@ -1017,6 +1079,7 @@ h1,h2,h3,p{ margin:0; }
         }
       });
     });
+
     document.getElementById('btn-pay').addEventListener('click', function(){
       lesson.paymentStatus = lesson.paymentStatus === '回収済' ? '未回収' : '回収済';
       persist();
@@ -1027,6 +1090,7 @@ h1,h2,h3,p{ margin:0; }
       btn.innerHTML = '<span class="action-btn__icon">' + (isDone?'✅':'💴') + '</span><span>' + (isDone?'回収済み':'未回収 → タップで回収') + '</span>';
       showToast(isDone ? '入金済みにしました' : '未回収に戻しました', 'navy');
     });
+
     var micBtn = document.getElementById('mic-btn');
     var recordingHint = document.getElementById('recording-hint');
     var notesTextarea = document.getElementById('notes-textarea');
@@ -1034,6 +1098,7 @@ h1,h2,h3,p{ margin:0; }
     var recognizer = createRecognizer(function(text){
       notesTextarea.value = (notesTextarea.value ? notesTextarea.value + ' ' : '') + text;
     });
+
     if(!recognizer){
       micBtn.outerHTML = '<span class="mic-unsupported">🎤 音声入力非対応</span>';
     } else {
@@ -1055,6 +1120,7 @@ h1,h2,h3,p{ margin:0; }
         }
       });
     }
+
     document.getElementById('btn-delete').addEventListener('click', function(){
       if(window.confirm('この予定を削除しますか？')){
         lessons = lessons.filter(function(l){ return l.id !== lesson.id; });
@@ -1064,6 +1130,7 @@ h1,h2,h3,p{ margin:0; }
         showToast('予定を削除しました', 'navy');
       }
     });
+
     document.getElementById('btn-save-lesson').addEventListener('click', function(){
       lesson.fee = currentFee();
       lesson.splitCount = currentSplit();
@@ -1100,7 +1167,6 @@ h1,h2,h3,p{ margin:0; }
     });
     html += '</div></div>';
 
-    // 生徒マスタからのワンタップ補完機能
     html += '<div id="student-select-block" style="margin-top:10px;">';
     html += '<div class="field-label">生徒マスタから自動入力</div>';
     html += '<div class="select-wrap"><select id="add-student-master-select" class="select-input">' + buildStudentOptions() + '</select></div>';
@@ -1182,7 +1248,6 @@ h1,h2,h3,p{ margin:0; }
       btn.classList.add('is-selected');
     });
 
-    // 生徒選択による自動補完
     var studentSelect = document.getElementById('add-student-master-select');
     studentSelect.addEventListener('change', function(){
       var val = studentSelect.value;
@@ -1308,7 +1373,6 @@ h1,h2,h3,p{ margin:0; }
     };
   }
 
-  /* --- パスワード設定 --- */
   function openPasscodeSettingModal(){
     var html = '<div class="sheet-overlay" id="passcode-setting-overlay">';
     html += '<div class="sheet-backdrop" data-action="close-submodal"></div>';
@@ -1341,7 +1405,6 @@ h1,h2,h3,p{ margin:0; }
     };
   }
 
-  /* --- 生徒マスタ管理 --- */
   function openStudentMasterModal(editId){
     var editing = editId ? studentMaster.find(function(s){ return s.id === editId; }) : null;
     var html = '<div class="sheet-overlay" id="student-master-overlay">';
@@ -1440,7 +1503,6 @@ h1,h2,h3,p{ margin:0; }
     };
   }
 
-  /* --- バックアップ / 復元 --- */
   function openBackupModal(){
     var html = '<div class="sheet-overlay" id="backup-overlay">';
     html += '<div class="sheet-backdrop" data-action="close-submodal"></div>';
@@ -1645,7 +1707,6 @@ h1,h2,h3,p{ margin:0; }
     else if(action === 'open-integrated-settings') openIntegratedSettingsModal();
   });
 
-  // 描画実行 & アプリロック適用
   renderShell();
   checkLockStatus();
 
