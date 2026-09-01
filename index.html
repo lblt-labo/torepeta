@@ -1,692 +1,875 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-  <title>トレペタ - for Figure Skating Coaches</title>
-  <meta name="theme-color" content="#0d2b45">
-  <!-- PWA: ホーム画面追加時にアドレスバーなしの全画面 (Standalone) で起動するための設定 -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="トレペタ">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>トレペタ - for Figure Skating Coaches</title>
+<style>
+:root {
+  --primary: #1e3a8a;
+  --primary-light: #3b82f6;
+  --primary-bg: #eff6ff;
+  --surface: #ffffff;
+  --bg: #f8fafc;
+  --text: #0f172a;
+  --text-sub: #475569;
+  --border: #e2e8f0;
+  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  
+  --type-personal: #2563eb;
+  --type-rental: #059669;
+  --type-semi: #d97706;
+  --type-kyoshitsu: #7c3aed;
+  --type-choreography: #db2777;
 
-  <!-- Manifest & Favicon -->
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="apple-touch-icon" href="icon-192.png">
+  --status-unpaid: #ef4444;
+  --status-paid: #10b981;
+}
 
-  <!-- Minimal Service Worker Registration -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('sw.js').catch(function(err) {
-          console.log('SW registration failed:', err);
-        });
-      });
-    }
-  </script>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
 
-  <style>
-    :root {
-      --bg-app: #f4f7f6;
-      --bg-card: #ffffff;
-      --primary: #0d2b45;
-      --primary-light: #203c56;
-      --accent: #20b2aa;
-      --accent-light: #e6f7f6;
-      --text-main: #2b2d42;
-      --text-sub: #6c757d;
-      --border-color: #e2e8f0;
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.tappable { cursor: pointer; transition: transform 0.1s ease, opacity 0.1s ease; }
+.tappable:active { transform: scale(0.97); opacity: 0.8; }
+.min-tap { min-height: 44px; min-width: 44px; }
 
-      /* CUD Type Colors */
-      --color-personal: #2b5c8f;
-      --color-group: #1d7874;
-      --color-rental: #d95f02;
-      --color-kyoshitsu: #7570b3;
+#app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 600px;
+  margin: 0 auto;
+  background: var(--surface);
+  position: relative;
+  box-shadow: 0 0 20px rgba(0,0,0,0.05);
+}
 
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --shadow-sm: 0 2px 4px rgba(0,0,0,0.04);
-      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-      --font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
-    }
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+.app-header__brand { display: flex; align-items: center; gap: 8px; }
+.app-header__logo { font-size: 24px; }
+.app-header__title { font-weight: 700; font-size: 18px; color: var(--primary); }
+.app-header__subtitle { font-size: 10px; color: var(--text-sub); }
+.app-header__right { display: flex; align-items: center; gap: 8px; }
+.app-header__alert {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+.header-gear {
+  background: none;
+  border: none;
+  font-size: 18px;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
 
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body {
-      margin: 0; padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-app);
-      color: var(--text-main);
-      overflow: hidden;
-      height: 100vh; width: 100vw;
-    }
+.main-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 80px;
+}
 
-    .app { display: flex; flex-direction: column; height: 100vh; max-width: 600px; margin: 0 auto; background: var(--bg-app); position: relative; }
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 20;
+}
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-sub);
+  width: 50%;
+  height: 100%;
+  position: relative;
+}
+.nav-btn.is-active { color: var(--primary); font-weight: 600; }
+.nav-btn__icon { font-size: 20px; }
+.nav-btn__label { font-size: 11px; margin-top: 2px; }
+.nav-btn__indicator {
+  position: absolute;
+  top: 0;
+  width: 36px;
+  height: 3px;
+  background: transparent;
+  border-radius: 0 0 4px 4px;
+}
+.nav-btn.is-active .nav-btn__indicator { background: var(--primary); }
 
-    /* Header */
-    .app-header {
-      background: var(--primary); color: #fff;
-      padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
-      box-shadow: var(--shadow-sm); z-index: 10;
-    }
-    .app-header__brand { display: flex; align-items: center; gap: 8px; }
-    .app-header__logo { font-size: 20px; }
-    .app-header__title { font-weight: 700; font-size: 17px; letter-spacing: 0.5px; }
-    .app-header__subtitle { font-size: 10px; color: rgba(255,255,255,0.7); font-weight: 400; }
-    .app-header__right { display: flex; align-items: center; gap: 8px; }
-    .app-header__alert { font-size: 11px; background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 12px; color: #ffeb3b; font-weight: 600; }
-    .header-gear { background: none; border: none; color: #fff; font-size: 18px; padding: 4px; cursor: pointer; }
+.fab {
+  position: absolute;
+  bottom: 76px;
+  right: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  font-size: 28px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+}
 
-    /* Main Scroll Area */
-    .main-scroll { flex: 1; overflow-y: auto; padding: 12px 16px 80px; -webkit-overflow-scrolling: touch; }
+.view-switcher {
+  display: flex;
+  background: var(--bg);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  margin: 12px 16px 8px;
+}
+.view-btn {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 6px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  color: var(--text-sub);
+  font-weight: 500;
+}
+.view-btn.is-active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
 
-    /* Date Strip / Month Calendar */
-    .date-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
-    .date-chip {
-      flex: 0 0 auto; width: 56px; padding: 8px 4px; background: var(--bg-card); border-radius: var(--radius-md);
-      border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; gap: 2px;
-      cursor: pointer; transition: all 0.2s; position: relative;
-    }
-    .date-chip.is-selected { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
-    .date-chip__weekday { font-size: 11px; font-weight: 600; color: var(--text-sub); }
-    .date-chip.is-selected .date-chip__weekday { color: rgba(255,255,255,0.8); }
-    .date-chip__weekday.is-sun { color: #e53e3e; }
-    .date-chip__weekday.is-sat { color: #3182ce; }
-    .date-chip.is-selected .date-chip__weekday.is-sun, .date-chip.is-selected .date-chip__weekday.is-sat { color: #fff; }
-    .date-chip__day { font-size: 18px; font-weight: 700; }
-    .date-chip__today-dot { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; position: absolute; top: 4px; right: 4px; }
-    .date-chip__count { font-size: 9px; margin-top: 2px; color: var(--accent); }
-    .date-chip.is-selected .date-chip__count { color: #fff; }
+.date-strip {
+  display: flex;
+  overflow-x: auto;
+  padding: 4px 12px 12px;
+  gap: 8px;
+  scroll-behavior: smooth;
+}
+.date-strip::-webkit-scrollbar { display: none; }
+.date-chip {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 64px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.date-chip.is-selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+.date-chip__day { font-size: 11px; opacity: 0.8; }
+.date-chip__num { font-size: 18px; font-weight: 700; margin-top: 2px; }
+.date-chip__dots { display: flex; gap: 2px; margin-top: 4px; height: 4px; }
+.date-chip__dot { width: 4px; height: 4px; border-radius: 50%; background: var(--text-sub); }
+.date-chip.is-selected .date-chip__dot { background: white; }
 
-    /* View Toggle */
-    .view-toggle { display: flex; background: #e2e8f0; padding: 2px; border-radius: 8px; margin-bottom: 12px; }
-    .view-toggle__btn { flex: 1; border: none; background: none; padding: 6px; font-size: 12px; font-weight: 600; border-radius: 6px; color: var(--text-sub); cursor: pointer; }
-    .view-toggle__btn.is-active { background: #fff; color: var(--text-main); box-shadow: var(--shadow-sm); }
+.calendar-view { padding: 0 16px 16px; }
+.calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.calendar-header__title { font-size: 16px; font-weight: 700; }
+.calendar-nav-btn { background: none; border: none; font-size: 18px; padding: 4px 8px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.calendar-day-head { font-size: 11px; color: var(--text-sub); padding: 4px 0; }
+.calendar-cell {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px 2px;
+  font-size: 12px;
+  border: 1px solid transparent;
+  background: var(--bg);
+}
+.calendar-cell.is-other-month { opacity: 0.3; }
+.calendar-cell.is-selected { border-color: var(--primary); background: var(--primary-bg); font-weight: 700; }
+.calendar-cell.is-today .calendar-cell__num { color: var(--primary-light); font-weight: 700; }
+.calendar-cell__dots { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; margin-top: 2px; }
+.calendar-cell__dot { width: 5px; height: 5px; border-radius: 50%; }
 
-    /* Month Calendar View */
-    .month-calendar { background: #fff; border-radius: var(--radius-md); padding: 12px; border: 1px solid var(--border-color); margin-bottom: 16px; }
-    .month-calendar__nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .month-calendar__nav-btn { background: none; border: none; font-size: 18px; padding: 4px 12px; cursor: pointer; color: var(--text-main); }
-    .month-calendar__label { font-size: 15px; font-weight: 700; }
-    .month-calendar__weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
-    .month-calendar__weekday.is-sun { color: #e53e3e; }
-    .month-calendar__weekday.is-sat { color: #3182ce; }
-    .month-calendar__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-    .month-calendar__cell {
-      aspect-ratio: 1; border: none; background: none; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      position: relative; cursor: pointer; font-size: 13px; font-weight: 500;
-    }
-    .month-calendar__cell.is-empty { cursor: default; }
-    .month-calendar__cell.is-selected { background: var(--primary); color: #fff; }
-    .month-calendar__cell.is-today { font-weight: 700; color: var(--accent); }
-    .month-calendar__cell.is-selected.is-today { color: #fff; }
-    .month-calendar__cell-dot { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; position: absolute; bottom: 3px; }
-    .month-calendar__cell.is-selected .month-calendar__cell-dot { background: #fff; }
-    .month-calendar__cell-day.is-sun { color: #e53e3e; }
-    .month-calendar__cell-day.is-sat { color: #3182ce; }
-    .month-calendar__cell.is-selected .month-calendar__cell-day.is-sun,
-    .month-calendar__cell.is-selected .month-calendar__cell-day.is-sat { color: #fff; }
+.section-title { font-size: 14px; font-weight: 700; color: var(--text-sub); padding: 8px 16px 4px; }
+.lesson-list { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.lesson-empty { text-align: center; padding: 32px 16px; color: var(--text-sub); font-size: 14px; }
 
-    /* Section Heading */
-    .section-heading { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
-    .section-heading__title { font-size: 16px; font-weight: 700; }
-    .section-heading__meta { font-size: 12px; color: var(--text-sub); }
+.lesson-card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lesson-card__head { display: flex; align-items: center; justify-content: space-between; }
+.lesson-card__time { font-size: 13px; font-weight: 600; color: var(--text-sub); }
+.lesson-card__body { display: flex; align-items: flex-start; gap: 10px; }
+.lesson-card__info { flex: 1; }
+.lesson-card__name { font-size: 16px; font-weight: 700; color: var(--text); }
+.lesson-card__meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+.lesson-card__level { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.level-badge { font-size: 10px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; color: #475569; }
 
-    /* Lesson List & Tile */
-    .lesson-list { display: flex; flex-direction: column; gap: 10px; }
-    .lesson-tile { background: var(--bg-card); border-radius: var(--radius-md); border: 1px solid var(--border-color); display: flex; position: relative; overflow: hidden; box-shadow: var(--shadow-sm); }
-    .lesson-tile__accent { width: 6px; flex-shrink: 0; }
-    .lesson-tile__accent.accent-personal { background-color: var(--color-personal); }
-    .lesson-tile__accent.accent-group { background-color: var(--color-group); }
-    .lesson-tile__accent.accent-rental { background-color: var(--color-rental); }
-    .lesson-tile__accent.accent-kyoshitsu { background-color: var(--color-kyoshitsu); }
+.lesson-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+.lesson-card__fee { font-size: 14px; font-weight: 700; }
+.lesson-card__actions { display: flex; gap: 6px; }
+.btn-action {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-action--done { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
 
-    .lesson-tile__main { flex: 1; padding: 12px; border: none; background: none; text-align: left; display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .lesson-tile__time { display: flex; flex-direction: column; width: 48px; flex-shrink: 0; text-align: center; }
-    .lesson-tile__time-start { font-size: 14px; font-weight: 700; }
-    .lesson-tile__time-end { font-size: 10px; color: var(--text-sub); }
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  color: white;
+  border-radius: var(--radius-full);
+}
+.type-badge--sm { font-size: 10px; padding: 1px 6px; }
+.type-badge--md { font-size: 12px; padding: 4px 10px; }
 
-    .type-badge {
-      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px;
-      width: 28px; height: 28px; color: #fff;
-    }
-    .type-badge.shape-circle { border-radius: 50%; }
-    .type-badge.shape-round { border-radius: 6px; }
-    .type-badge.shape-hex { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
-    .type-badge.shape-square { border-radius: 2px; }
+.badge-shape-pill { border-radius: var(--radius-full); }
+.badge-shape-rect { border-radius: 4px; }
+.badge-shape-hexagon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); padding: 2px 10px; }
+.badge-shape-circle { border-radius: 50%; width: 24px; height: 24px; padding: 0; }
 
-    .type-badge.type-personal, .type-badge--personal { background-color: var(--color-personal); }
-    .type-badge.type-group, .type-badge--group { background-color: var(--color-group); }
-    .type-badge.type-rental, .type-badge--rental { background-color: var(--color-rental); }
-    .type-badge.type-kyoshitsu, .type-badge--kyoshitsu { background-color: var(--color-kyoshitsu); }
+.type-personal { background-color: var(--type-personal); }
+.type-rental { background-color: var(--type-rental); }
+.type-semi { background-color: var(--type-semi); }
+.type-kyoshitsu { background-color: var(--type-kyoshitsu); }
+.type-choreography { background-color: var(--type-choreography); }
 
-    .lesson-tile__body { flex: 1; min-width: 0; }
-    .lesson-tile__title-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px; }
-    .lesson-tile__student { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .lesson-tile__type-label { font-size: 10px; padding: 1px 5px; border-radius: 4px; color: #fff; font-weight: 600; }
-    .lesson-tile__sub { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
-    .lesson-tile__badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.finance-view { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.finance-year { display: flex; align-items: center; justify-content: space-between; }
+.year-nav { display: flex; align-items: center; gap: 12px; }
+.year-nav__btn { background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 12px; font-size: 16px; }
+.year-nav__label { font-size: 18px; font-weight: 700; }
+.btn-csv {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-    .status-pill { font-size: 10px; padding: 2px 6px; border-radius: 10px; background: #edf2f7; color: var(--text-sub); display: inline-flex; align-items: center; gap: 3px; }
-    .status-pill--contact.is-on { background: #e6fffa; color: #234e52; border: 1px solid #b2f5ea; }
-    .status-pill--payment.is-on { background: #f0fff4; color: #22543d; border: 1px solid #c6f6d5; }
-    .status-pill__dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-    .lesson-tile__tagcount { font-size: 10px; color: var(--text-sub); }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.summary-card {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.summary-card--paid { border-left: 4px solid var(--status-paid); }
+.summary-card--unpaid { border-left: 4px solid var(--status-unpaid); }
+.summary-card__label { font-size: 11px; color: var(--text-sub); }
+.summary-card__value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+.summary-card__count { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
 
-    /* Level Badges for CUD */
-    .level-tag { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: #e2e8f0; color: #4a5568; font-weight: 600; border: 1px solid #cbd5e0; display: inline-flex; align-items: center; gap: 2px; }
+.list-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--text-sub); }
+.unpaid-list { display: flex; flex-direction: column; gap: 8px; }
+.unpaid-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  width: 100%;
+}
+.unpaid-row__body { flex: 1; margin: 0 8px; }
+.unpaid-row__name { font-size: 14px; font-weight: 600; }
+.unpaid-row__date { font-size: 11px; color: var(--text-sub); }
+.unpaid-row__right { text-align: right; }
+.unpaid-row__fee { font-size: 14px; font-weight: 700; color: var(--status-unpaid); }
+.unpaid-row__cta { font-size: 10px; color: var(--primary-light); }
 
-    .lesson-tile__actions { display: flex; align-items: center; padding-right: 8px; }
-    .btn-line { background: #06c755; color: #fff; border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 4px; cursor: pointer; }
-    .btn-line.is-done { background: #edf2f7; color: var(--text-sub); font-weight: 500; }
+.breakdown-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.breakdown-row { display: flex; align-items: center; font-size: 13px; }
+.breakdown-row__icon { margin-right: 8px; width: 20px; height: 20px; font-size: 10px; }
+.breakdown-row__label { flex: 1; }
+.breakdown-row__count { color: var(--text-sub); margin-right: 12px; font-size: 12px; }
+.breakdown-row__sum { font-weight: 700; }
 
-    /* Empty State */
-    .empty-state { text-align: center; padding: 40px 16px; background: #fff; border-radius: var(--radius-md); border: 1px border-dashed var(--border-color); }
-    .empty-state__icon { font-size: 32px; margin-bottom: 8px; }
-    .empty-state__text { font-size: 14px; color: var(--text-sub); margin-bottom: 12px; }
-    .empty-state__btn { background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.sheet-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    /* Bottom Nav & FAB */
-    .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: #fff; border-top: 1px solid var(--border-color); display: flex; height: 60px; z-index: 100; }
-    .nav-btn { flex: 1; border: none; background: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-sub); cursor: pointer; position: relative; }
-    .nav-btn.is-active { color: var(--primary); font-weight: 700; }
-    .nav-btn__icon { font-size: 18px; }
-    .nav-btn__label { font-size: 10px; }
-    .nav-btn__indicator { position: absolute; top: 0; width: 32px; height: 3px; background: var(--primary); border-radius: 0 0 3px 3px; display: none; }
-    .nav-btn.is-active .nav-btn__indicator { display: block; }
+.sheet-backdrop { flex: 1; }
+.sheet {
+  background: var(--surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.2s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-    .fab { position: fixed; bottom: 72px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: #fff; border: none; font-size: 24px; box-shadow: var(--shadow-md); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 90; }
+.sheet__grabber-row { display: flex; justify-content: center; padding: 8px; }
+.sheet__grabber { width: 36px; height: 4px; background: var(--border); border-radius: 2px; }
+.sheet__header {
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sheet__header-text { flex: 1; }
+.sheet__header-title { font-size: 16px; font-weight: 700; }
+.sheet__header-sub { font-size: 12px; color: var(--text-sub); }
+.sheet__close { background: none; border: none; font-size: 20px; color: var(--text-sub); padding: 4px; }
 
-    /* Finance View */
-    .finance-view { display: flex; flex-direction: column; gap: 16px; }
-    .finance-year { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
-    .year-nav { display: flex; align-items: center; gap: 12px; }
-    .year-nav__btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-main); }
-    .year-nav__label { font-size: 16px; font-weight: 700; }
-    .btn-csv { background: var(--primary-light); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.sheet__body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+.sheet__footer { padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); }
+.sheet__submit {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+}
+.sheet__submit:disabled { opacity: 0.5; }
 
-    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .summary-card { background: #fff; padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
-    .summary-card--paid { border-left: 4px solid #38a169; }
-    .summary-card--unpaid { border-left: 4px solid #e53e3e; }
-    .summary-card__label { font-size: 11px; color: var(--text-sub); }
-    .summary-card__value { font-size: 18px; font-weight: 700; margin: 4px 0; }
-    .summary-card__count { font-size: 10px; color: var(--text-sub); }
+.field-label { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
+.text-input, .select-input, .date-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  background: var(--bg);
+}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
-    .list-title { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: -6px; }
-    .unpaid-list { display: flex; flex-direction: column; gap: 8px; }
-    .unpaid-row { background: #fff; border-radius: var(--radius-sm); border: 1px solid var(--border-color); padding: 10px 12px; display: flex; align-items: center; gap: 10px; text-align: left; width: 100%; cursor: pointer; }
-    .unpaid-row__body { flex: 1; }
-    .unpaid-row__name { font-size: 13px; font-weight: 700; }
-    .unpaid-row__date { font-size: 11px; color: var(--text-sub); }
-    .unpaid-row__right { text-align: right; }
-    .unpaid-row__fee { font-size: 13px; font-weight: 700; color: #e53e3e; }
-    .unpaid-row__cta { font-size: 10px; color: var(--accent); }
-    .unpaid-empty { text-align: center; padding: 20px; font-size: 13px; color: var(--text-sub); background: #fff; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+.type-select-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.type-select-btn {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 4px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.type-select-btn.is-selected { border-color: var(--primary); background: var(--primary-bg); }
 
-    .breakdown-card { background: #fff; border-radius: var(--radius-md); border: 1px solid var(--border-color); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-    .breakdown-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
-    .breakdown-row__icon { width: 20px; height: 20px; font-size: 11px; }
-    .breakdown-row__label { flex: 1; }
-    .breakdown-row__count { font-size: 11px; color: var(--text-sub); }
-    .breakdown-row__sum { font-weight: 700; width: 80px; text-align: right; }
+.rink-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.rink-btn {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  background: var(--bg);
+}
+.rink-btn.is-selected { background: var(--primary); color: white; border-color: var(--primary); }
 
-    /* Modals & Bottom Sheets */
-    .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; flex-direction: column; justify-content: flex-end; }
-    .sheet-backdrop { position: absolute; inset: 0; }
-    .sheet { position: relative; background: #fff; border-radius: 16px 16px 0 0; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.25s ease-out; }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-    .sheet__grabber-row { display: flex; justify-content: center; padding: 8px; }
-    .sheet__grabber { width: 36px; height: 4px; background: #cbd5e0; border-radius: 2px; }
-    .sheet__header { padding: 8px 16px 12px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
-    .sheet__header-text { flex: 1; }
-    .sheet__header-title { font-size: 16px; font-weight: 700; }
-    .sheet__header-sub { font-size: 11px; color: var(--text-sub); }
-    .sheet__close { background: none; border: none; font-size: 18px; color: var(--text-sub); cursor: pointer; padding: 4px; }
-    .sheet__body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; -webkit-overflow-scrolling: touch; }
-    .sheet__footer { padding: 12px 16px 20px; border-top: 1px solid var(--border-color); background: #fff; }
-    .sheet__submit { width: 100%; background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; }
-    .sheet__submit:disabled { background: #cbd5e0; cursor: not-allowed; }
+.money-box { background: var(--bg); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.money-row { display: flex; align-items: center; justify-content: space-between; }
+.money-row + .money-row { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
+.fee-input { width: 100px; text-align: right; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; font-weight: 700; }
+.stepper { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 4px; background: white; }
+.stepper__btn { width: 28px; height: 28px; border: none; background: none; font-size: 16px; font-weight: 700; }
+.split-input { width: 36px; text-align: center; border: none; font-size: 14px; font-weight: 700; }
+.per-person-note { font-size: 11px; color: var(--text-sub); text-align: right; margin-top: 4px; }
 
-    /* Forms */
-    .field-label { font-size: 11px; font-weight: 700; color: var(--text-sub); margin-bottom: 4px; display: block; }
-    .text-input, .date-input, .select-input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; background: #fff; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.advice-box { background: #fffbebf; border: 1px solid #fef3c7; border-radius: var(--radius-sm); padding: 10px 12px; }
+.advice-box__title { font-size: 11px; font-weight: 700; color: #b45309; display: flex; align-items: center; gap: 4px; }
+.advice-box__text { font-size: 13px; color: #78350f; margin-top: 2px; }
 
-    .type-select-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-    .type-select-btn { border: 1px solid var(--border-color); background: #fff; border-radius: 8px; padding: 8px 2px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
-    .type-select-btn.is-selected { border-color: var(--primary); background: #f0f4f8; }
-    .type-select-btn__label { font-size: 10px; font-weight: 600; color: var(--text-sub); }
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.action-btn {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.action-btn--line { background: #06c755; color: white; border-color: #06c755; }
+.action-btn--pay.is-done { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
 
-    .rink-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
-    .rink-btn { flex: 0 0 auto; padding: 6px 12px; border-radius: 16px; border: 1px solid var(--border-color); background: #fff; font-size: 12px; cursor: pointer; white-space: nowrap; }
-    .rink-btn.is-selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-chip {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--text-sub);
+}
+.tag-chip.is-selected { background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; font-weight: 600; }
 
-    .money-box { background: #f7fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); }
-    .money-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .money-row__label { font-size: 12px; font-weight: 600; }
-    .money-row__value { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 2px; }
-    .fee-input { width: 100px; text-align: right; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 16px; font-weight: 700; }
-    .stepper { display: flex; align-items: center; gap: 6px; }
-    .stepper__btn { width: 28px; height: 28px; border-radius: 4px; border: 1px solid var(--border-color); background: #fff; font-weight: 700; cursor: pointer; }
-    .split-input { width: 40px; text-align: center; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px; font-size: 14px; }
-    .per-person-note { font-size: 11px; color: var(--accent); text-align: right; font-weight: 600; margin-top: 2px; }
+.notes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.mic-btn { background: none; border: 1px solid var(--border); border-radius: 50%; width: 28px; height: 28px; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.mic-btn.is-recording { background: #fee2e2; border-color: #fca5a5; animation: pulse 1s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+.recording-hint { font-size: 10px; color: #dc2626; margin-bottom: 4px; }
+.notes-textarea { width: 100%; height: 60px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--bg); resize: none; }
 
-    .tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
-    .tag-chip { padding: 4px 10px; border-radius: 14px; border: 1px solid var(--border-color); background: #fff; font-size: 11px; cursor: pointer; }
-    .tag-chip.is-selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+.delete-link { color: #dc2626; font-size: 12px; text-align: center; border: none; background: none; padding: 8px; margin-top: 8px; width: 100%; }
 
-    .notes-header { display: flex; justify-content: space-between; align-items: center; }
-    .mic-btn { background: #edf2f7; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-    .mic-btn.is-recording { background: #e53e3e; color: #fff; animation: pulse 1s infinite; }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-    .mic-unsupported { font-size: 10px; color: var(--text-sub); }
-    .recording-hint { font-size: 11px; color: #e53e3e; margin-bottom: 2px; }
-    .notes-textarea { width: 100%; min-height: 90px; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; font-size: 13px; font-family: inherit; }
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.9);
+  color: white;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 200;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  animation: toastIn 0.2s ease;
+}
+.toast--ok { background: rgba(16, 185, 129, 0.95); }
+.toast--danger { background: rgba(239, 68, 68, 0.95); }
+.toast--navy { background: rgba(30, 58, 138, 0.95); }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
-    .advice-box { background: #fffaf0; border: 1px solid #feebc8; border-radius: 8px; padding: 10px; }
-    .advice-box__title { font-size: 11px; font-weight: 700; color: #dd6b20; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
-    .advice-box__text { font-size: 12px; color: #7b341e; }
+.classroom-list { display: flex; flex-direction: column; gap: 8px; }
+.classroom-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); }
+.classroom-row__name { font-weight: 600; font-size: 13px; }
+.classroom-row__meta { font-size: 11px; color: var(--text-sub); }
+.classroom-row__actions { display: flex; gap: 4px; }
+.icon-btn { background: none; border: none; font-size: 14px; padding: 4px; }
+.icon-btn--danger { color: #dc2626; }
+.classroom-empty { text-align: center; color: var(--text-sub); font-size: 12px; padding: 12px; }
+.classroom-form-title { font-size: 13px; font-weight: 700; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
+.classroom-cancel-edit { font-size: 11px; color: var(--primary-light); font-weight: normal; }
+.classroom-manage-link { background: none; border: none; color: var(--primary-light); font-size: 11px; text-decoration: underline; margin-top: 4px; padding: 0; text-align: left; }
 
-    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .action-btn { padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
-    .action-btn--line { color: #06c755; border-color: #06c755; }
-    .action-btn--line.is-done { background: #e6fffa; }
-    .action-btn--pay { color: #2b6cb0; border-color: #2b6cb0; }
-    .action-btn--pay.is-done { background: #ebf8ff; }
-
-    .delete-link { color: #e53e3e; background: none; border: none; font-size: 12px; text-decoration: underline; cursor: pointer; margin-top: 8px; text-align: center; }
-
-    /* Classroom Master */
-    .classroom-list { display: flex; flex-direction: column; gap: 6px; }
-    .classroom-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: #f7fafc; border-radius: 6px; border: 1px solid var(--border-color); }
-    .classroom-row__name { font-size: 13px; font-weight: 700; }
-    .classroom-row__meta { font-size: 11px; color: var(--text-sub); }
-    .classroom-row__actions { display: flex; gap: 4px; }
-    .icon-btn { background: none; border: none; padding: 4px; cursor: pointer; font-size: 14px; }
-    .classroom-empty { font-size: 12px; color: var(--text-sub); text-align: center; padding: 12px; }
-    .classroom-form-title { font-size: 12px; font-weight: 700; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
-    .classroom-cancel-edit { font-size: 11px; color: var(--text-sub); font-weight: 400; text-decoration: underline; cursor: pointer; }
-    .select-wrap { margin-bottom: 4px; }
-    .classroom-manage-link { background: none; border: none; color: var(--accent); font-size: 11px; font-weight: 600; padding: 0; cursor: pointer; text-decoration: underline; }
-
-    /* Passcode Lock UI */
-    .lock-screen {
-      position: fixed; inset: 0; background: var(--primary); color: #fff; z-index: 999;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
-    }
-    .lock-screen__title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-    .lock-screen__sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 24px; text-align: center; }
-    .lock-screen__input {
-      width: 180px; padding: 10px; border-radius: 8px; border: none; font-size: 20px; letter-spacing: 6px; text-align: center;
-      margin-bottom: 12px; background: #fff; color: var(--text-main); font-family: var(--font-mono);
-    }
-    .lock-screen__btn {
-      background: var(--accent); color: #fff; border: none; padding: 10px 24px; border-radius: 20px; font-size: 14px; font-weight: 700; cursor: pointer;
-    }
-    .lock-screen__err { color: #ff8080; font-size: 12px; height: 16px; margin-top: 8px; font-weight: 600; }
-    .lock-screen.shake { animation: shake 0.3s ease-in-out; }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-10px); }
-      40%, 80% { transform: translateX(10px); }
-    }
-
-    /* Toast */
-    .toast-root { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 300; pointer-events: none; width: 90%; max-width: 400px; }
-    .toast { background: rgba(13, 43, 69, 0.95); color: #fff; padding: 10px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; text-align: center; box-shadow: var(--shadow-md); animation: fadeIn 0.2s ease-out; }
-    .toast--ok { background: rgba(32, 178, 170, 0.95); }
-    .toast--danger { background: rgba(229, 62, 62, 0.95); }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-    .mono { font-family: var(--font-mono); }
-    .tappable:active { opacity: 0.7; }
-    .min-tap { min-height: 36px; min-width: 36px; }
-  </style>
+.lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 32px; text-align: center; background: var(--surface); }
+.lock-screen__icon { font-size: 48px; margin-bottom: 16px; }
+.lock-screen__title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.lock-screen__sub { font-size: 13px; color: var(--text-sub); margin-bottom: 24px; }
+.lock-screen__input { text-align: center; font-size: 24px; letter-spacing: 8px; width: 180px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 16px; }
+.lock-screen__btn { width: 180px; padding: 12px; background: var(--primary); color: white; border: none; border-radius: var(--radius-md); font-weight: 600; }
+</style>
 </head>
 <body>
 
-<div class="app">
-  <div id="root"></div>
-</div>
+<div id="app-root"></div>
 <div id="overlay-root"></div>
 <div id="classroom-overlay-root"></div>
-<div id="lock-overlay-root"></div>
-<div id="toast-root" class="toast-root"></div>
+<div id="toast-root"></div>
 
 <script>
 (function(){
-  "use strict";
-  var STORAGE_KEY = 'torepeta_lessons_v1';
-  var memStore = {};
-
-  function loadLessons(){
-    try{
-      var raw = window.localStorage.getItem(STORAGE_KEY);
-      if(raw !== null && raw !== undefined) {
-        var parsed = JSON.parse(raw);
-        // マイグレーション（レベルデータの初期化）
-        if(Array.isArray(parsed)) {
-          parsed.forEach(function(l){
-            if(!l.level) l.level = { jsf:'', isi:'', category:'' };
-          });
-        }
-        return parsed;
-      }
-    }catch(e){ }
-    return memStore[STORAGE_KEY] || null;
-  }
-  function saveLessons(lessons){
-    memStore[STORAGE_KEY] = lessons;
-    try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lessons)); }catch(e){ }
-  }
-
-  var CLASSROOM_STORAGE_KEY = 'torepeta_classrooms_v1';
-  function loadClassrooms(){
-    try{
-      var raw = window.localStorage.getItem(CLASSROOM_STORAGE_KEY);
-      if(raw !== null && raw !== undefined) return JSON.parse(raw);
-    }catch(e){ }
-    return memStore[CLASSROOM_STORAGE_KEY] || null;
-  }
-  function saveClassrooms(list){
-    memStore[CLASSROOM_STORAGE_KEY] = list;
-    try{ window.localStorage.setItem(CLASSROOM_STORAGE_KEY, JSON.stringify(list)); }catch(e){ }
-  }
-
-  /* パスワード（ロック）用ストレージ処理 */
-  var PASSCODE_STORAGE_KEY = 'torepeta_passcode_v1';
-  function loadPasscode(){
-    try {
-      return window.localStorage.getItem(PASSCODE_STORAGE_KEY) || '';
-    } catch(e){ return ''; }
-  }
-  function savePasscode(code){
-    try {
-      if(code) window.localStorage.setItem(PASSCODE_STORAGE_KEY, code);
-      else window.localStorage.removeItem(PASSCODE_STORAGE_KEY);
-    } catch(e){}
-  }
+  'use strict';
 
   var LESSON_TYPES = {
-    personal:  { label:'個人レッスン', short:'個人', cls:'type-personal', shape:'shape-circle', icon:'👤' },
-    group:     { label:'グループレッスン', short:'グループ', cls:'type-group', shape:'shape-round', icon:'👥' },
-    rental:    { label:'貸切・振付', short:'貸切/振付', cls:'type-rental', shape:'shape-hex', icon:'⛸️' },
-    kyoshitsu: { label:'教室', short:'教室', cls:'type-kyoshitsu', shape:'shape-square', icon:'🏫' }
+    personal:    { label:'個人レッスン', short:'個人', icon:'👤', cls:'type-personal', shape:'badge-shape-pill' },
+    rental:      { label:'貸切',         short:'貸切', icon:'⛸️', cls:'type-rental', shape:'badge-shape-rect' },
+    semi:        { label:'セミプライベート', short:'セミ', icon:'👥', cls:'type-rental', shape:'badge-shape-hexagon' },
+    kyoshitsu:   { label:'教室',         short:'教室', icon:'🏫', cls:'type-kyoshitsu', shape:'badge-shape-circle' },
+    choreography:{ label:'振付・曲かけ', short:'振付', icon:'🎵', cls:'type-choreography', shape:'badge-shape-pill' }
   };
-  var TYPE_ORDER = ['personal','group','rental','kyoshitsu'];
-  var TAG_PRESETS = [
-    '1A','2Lo','2Lz','2F','2A','3T','3S','3Lo','3Lz',
-    'FSSp','CSSp','LSp','StSq','ChSq',
-    '軸の意識','フリー脚','エッジ','踏切','タイミング','腕の使い方','体幹','ジャンプ矯正',
-    '曲かけ','振付確認','基礎練習','試合前チェック'
-  ];
+  var TYPE_ORDER = ['personal','rental','semi','kyoshitsu','choreography'];
 
-  /* リンク選択肢の更新 */
-  var RINKS = ['明治神宮', '東伏見', '東大和', '埼玉', '東神奈川', 'アクアリンク', '新横浜', 'その他'];
+  var RINKS = ['アクアリンクちば', '新横浜スケートセンター', '明治神宮外苑', '東大和スケートセンター', 'その他'];
+  var JSF_BADGES = ['無級','初級','1級','2級','3級','4級','5級','6級','7級','8級'];
+  var ISI_LEVELS = ['Pre-Alpha','Alpha','Beta','Gamma','Delta','Freestyle 1','Freestyle 2','Freestyle 3','Freestyle 4','Freestyle 5','Freestyle 6','Freestyle 7','Freestyle 8','Freestyle 9','Freestyle 10'];
+  var CATEGORIES = ['ノービスB','ノービスA','ジュニア','シニア','マスターズ','趣味・大人'];
+  var TAG_PRESETS = ['スピン強化', 'ジャンプ調整', '曲かけ練習', 'ステップ補強', '表現力', '大会直前', 'テスト対策'];
 
-  /* レベル定義 */
-  var JSF_BADGES = ['初級','1級','2級','3級','4級','5級','6級','7級','8級'];
-  var ISI_LEVELS = ['Pre-Alpha','Alpha','Beta','Gamma','Delta','Freestyle 1','Freestyle 2','Freestyle 3','Freestyle 4','Freestyle 5','Freestyle 6+'];
-  var CATEGORIES = ['初心者','中級','上級'];
+  var KEY_LESSONS = 'trepeta_lessons_v1';
+  var KEY_PASSCODE = 'trepeta_passcode_v1';
+  var KEY_CLASSROOMS = 'trepeta_classrooms_v1';
 
-  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
-  function pad2(n){ return String(n).padStart(2,'0'); }
+  function loadLessons(){
+    try {
+      var raw = localStorage.getItem(KEY_LESSONS);
+      return raw ? JSON.parse(raw) : getSeedLessons();
+    } catch(e) { return getSeedLessons(); }
+  }
+  function saveLessons(data){
+    try { localStorage.setItem(KEY_LESSONS, JSON.stringify(data)); } catch(e){}
+  }
+  function loadPasscode(){
+    try { return localStorage.getItem(KEY_PASSCODE) || ''; } catch(e){ return ''; }
+  }
+  function savePasscode(pass){
+    try {
+      if(pass) localStorage.setItem(KEY_PASSCODE, pass);
+      else localStorage.removeItem(KEY_PASSCODE);
+    } catch(e){}
+  }
+  function loadClassrooms(){
+    try {
+      var raw = localStorage.getItem(KEY_CLASSROOMS);
+      return raw ? JSON.parse(raw) : getSeedClassrooms();
+    } catch(e){ return getSeedClassrooms(); }
+  }
+  function saveClassrooms(data){
+    try { localStorage.setItem(KEY_CLASSROOMS, JSON.stringify(data)); } catch(e){}
+  }
+
   function todayStr(){
     var d = new Date();
-    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
-  }
-  function addDays(dateStr, n){
-    var d = new Date(dateStr + 'T00:00:00');
-    d.setDate(d.getDate() + n);
-    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
-  }
-  function fmtDateJp(dateStr){
-    var d = new Date(dateStr + 'T00:00:00');
-    var w = ['日','月','火','水','木','金','土'][d.getDay()];
-    return (d.getMonth()+1) + '月' + d.getDate() + '日（' + w + '）';
-  }
-  function yen(n){ return '¥' + Number(n||0).toLocaleString('ja-JP'); }
-  function esc(str){
-    return String(str==null ? '' : str).replace(/[&<>"']/g, function(ch){
-      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch];
-    });
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var day = String(d.getDate()).padStart(2,'0');
+    return y + '-' + m + '-' + day;
   }
 
-  function seedData(){
+  function getSeedLessons(){
     var t = todayStr();
-    var tmr = addDays(t, 1);
     return [
-      { id: uid(), date:t, start:'09:00', end:'09:30', type:'personal', student:'佐藤 ひなた', rink:'明治神宮', fee:4000, splitCount:1,
-        contactStatus:'未連絡', paymentStatus:'未回収', tags:['3T','軸の意識'], level:{ jsf:'3級', isi:'', category:'中級' }, notes:'踏切のタイミングが早い。助走から意識づけを継続。', homework:'家で片足立ちの軸バランス練習を毎日5分。', createdAt: Date.now()-1000 },
-      { id: uid(), date:t, start:'10:00', end:'10:45', type:'group', student:'ジュニアクラス（4名）', rink:'東伏見', fee:2500, splitCount:1,
-        contactStatus:'連絡済', paymentStatus:'回収済', tags:['基礎練習','StSq'], level:{ jsf:'', isi:'', category:'初心者' }, notes:'', homework:'', createdAt: Date.now()-2000 },
-      { id: uid(), date:t, start:'13:00', end:'14:00', type:'rental', student:'鈴木 蓮 / 高橋 陸', rink:'明治神宮', fee:9000, splitCount:2,
-        contactStatus:'未連絡', paymentStatus:'未回収', tags:['曲かけ','振付確認'], level:{ jsf:'6級', isi:'', category:'上級' }, notes:'', homework:'', createdAt: Date.now()-3000 },
-      { id: uid(), date:tmr, start:'16:00', end:'16:30', type:'personal', student:'佐藤 ひなた', rink:'明治神宮', fee:4000, splitCount:1,
-        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], level:{ jsf:'3級', isi:'', category:'中級' }, notes:'', homework:'', createdAt: Date.now() },
-      { id: uid(), date:tmr, start:'18:00', end:'19:00', type:'kyoshitsu', student:'大人スケート教室', rink:'東伏見', fee:1500, splitCount:1,
-        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], level:{ jsf:'', isi:'', category:'' }, notes:'', homework:'', createdAt: Date.now()+1 }
+      { id:'1', date:t, start:'09:00', end:'09:45', type:'personal', student:'佐藤 ひなた', rink:'アクアリンクちば', fee:5000, splitCount:1, contactStatus:'未連絡', paymentStatus:'未回収', tags:['ジャンプ調整'], level:{ jsf:'2級', isi:'', category:'ノービスB' }, notes:'アクセルの回転軸を意識', homework:'左足の締めを意識してバッククロス', createdAt:1000 },
+      { id:'2', date:t, start:'10:00', end:'11:00', type:'rental', student:'強化Aグループ', rink:'アクアリンクちば', fee:12000, splitCount:4, contactStatus:'連絡済', paymentStatus:'回収済', tags:['曲かけ練習'], level:{ jsf:'5級', isi:'', category:'ジュニア' }, notes:'曲かけ1本目まずまず', homework:'', createdAt:1001 },
+      { id:'3', date:t, start:'18:00', end:'19:00', type:'kyoshitsu', student:'夜間大人クラス', rink:'明治神宮外苑', fee:3000, splitCount:1, contactStatus:'連絡済', paymentStatus:'未回収', tags:['スピン強化'], level:{ jsf:'', isi:'Freestyle 1', category:'趣味・大人' }, notes:'', homework:'', createdAt:1002 }
     ];
   }
 
-  function seedClassrooms(){
+  function getSeedClassrooms(){
     return [
-      { id: uid(), name:'大人スケート教室', start:'18:00', end:'19:00', rink:'東伏見' },
-      { id: uid(), name:'キッズスケート教室 初級', start:'16:30', end:'17:15', rink:'明治神宮' }
+      { id:'c1', name:'夜間大人クラス', start:'18:00', end:'19:00', rink:'明治神宮外苑' },
+      { id:'c2', name:'ジュニア選手育成B', start:'07:00', end:'08:30', rink:'アクアリンクちば' }
     ];
   }
 
-  var lessons = loadLessons() || seedData();
-  var classroomMaster = loadClassrooms() || seedClassrooms();
+  var lessons = loadLessons();
+  var classroomMaster = loadClassrooms();
   var savedPasscode = loadPasscode();
-  var isUnlocked = !savedPasscode; // パスワード未設定ならロック解除状態
+  var isUnlocked = !savedPasscode;
 
-  var selectedDate = todayStr();
   var currentTab = 'schedule';
   var viewMode = 'day';
+  var selectedDate = todayStr();
   var calYear = new Date().getFullYear();
   var calMonth = new Date().getMonth();
   var financeYear = new Date().getFullYear();
-  var toastTimer = null;
 
-  var rootEl = document.getElementById('root');
+  var rootEl = document.getElementById('app-root');
   var overlayRoot = document.getElementById('overlay-root');
   var classroomOverlayRoot = document.getElementById('classroom-overlay-root');
-  var lockOverlayRoot = document.getElementById('lock-overlay-root');
-  var toastRoot = document.getElementById('toast-root');
 
   function persist(){ saveLessons(lessons); }
   function persistClassrooms(){ saveClassrooms(classroomMaster); }
 
-  function copyToClipboard(text){
-    return new Promise(function(resolve){
-      if(navigator.clipboard && window.isSecureContext){
-        navigator.clipboard.writeText(text).then(function(){ resolve(true); }).catch(function(){ resolve(fallbackCopy(text)); });
-      } else {
-        resolve(fallbackCopy(text));
-      }
-    });
+  function esc(str){
+    if(str==null) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  function fallbackCopy(text){
-    try{
-      var ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.focus(); ta.select();
-      var ok = document.execCommand('copy');
-      document.body.removeChild(ta);
-      return ok;
-    }catch(e){ return false; }
+  function yen(num){ return '¥' + Number(num||0).toLocaleString(); }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
+
+  function showToast(msg, type){
+    var el = document.createElement('div');
+    el.className = 'toast toast--' + (type||'ok');
+    el.textContent = msg;
+    document.getElementById('toast-root').appendChild(el);
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 2400);
+  }
+
+  function copyToClipboard(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).then(function(){ return true; }).catch(function(){ return false; });
+    }
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta);
+    return Promise.resolve(ok);
+  }
+
+  function fmtDateJp(dateStr){
+    var parts = dateStr.split('-');
+    if(parts.length!==3) return dateStr;
+    var d = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
+    var days = ['日','月','火','水','木','金','土'];
+    return Number(parts[1]) + '月' + Number(parts[2]) + '日(' + days[d.getDay()] + ')';
   }
 
   function buildLineMessage(lesson){
-    var typePhrase;
-    if(lesson.type === 'kyoshitsu'){
-      typePhrase = (lesson.student && lesson.student.trim()) ? lesson.student.trim() : '教室レッスン';
-    } else {
-      typePhrase = LESSON_TYPES[lesson.type].label;
+    var typeLabel = LESSON_TYPES[lesson.type] ? LESSON_TYPES[lesson.type].label : '';
+    var dateJp = fmtDateJp(lesson.date);
+    var feeStr = yen(lesson.fee);
+    if(lesson.type === 'rental' && lesson.splitCount > 1){
+      var per = Math.ceil(lesson.fee / lesson.splitCount);
+      feeStr += '（割り勘' + lesson.splitCount + '名：お一人 ' + yen(per) + '）';
     }
-    return fmtDateJp(lesson.date) + 'は ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で ' + typePhrase + 'です。よろしくお願いいたします';
+    return '【レッスン確定のご連絡】\n' +
+      '・日時：' + dateJp + ' ' + lesson.start + '〜' + lesson.end + '\n' +
+      '・種別：' + typeLabel + '\n' +
+      '・対象：' + lesson.student + '\n' +
+      '・リンク：' + lesson.rink + '\n' +
+      '・料金：' + feeStr + '\n\n' +
+      'よろしくお願いいたします！⛸️';
   }
 
-  function showToast(msg, tone){
-    tone = tone || 'navy';
-    toastRoot.innerHTML = '<div class="toast toast--' + tone + '">' + esc(msg) + '</div>';
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ toastRoot.innerHTML = ''; }, 2200);
+  function renderTypeBadge(typeKey, size){
+    var t = LESSON_TYPES[typeKey] || LESSON_TYPES.personal;
+    var szCls = size ? ' type-badge--' + size : '';
+    return '<span class="type-badge ' + t.shape + ' ' + t.cls + szCls + '">' + t.short + '</span>';
   }
 
-  /* ロック画面の表示 */
   function renderLockScreen(){
-    if(isUnlocked) {
-      lockOverlayRoot.innerHTML = '';
-      return;
-    }
-    var html = '<div class="lock-screen" id="lock-screen-box">';
-    html += '<div class="lock-screen__title">🔒 トレペタ ロック中</div>';
+    var html = '<div class="lock-screen">';
+    html += '<div class="lock-screen__icon">🔒</div>';
+    html += '<div class="lock-screen__title">トレペタ</div>';
     html += '<div class="lock-screen__sub">パスワードを入力してください</div>';
-    html += '<input type="password" id="passcode-input" class="lock-screen__input" pattern="[0-9]*" inputmode="numeric" maxlength="8" autofocus>';
+    html += '<input type="password" id="passcode-input" class="lock-screen__input mono" maxlength="8" pattern="[0-9]*" inputmode="numeric" autofocus>';
     html += '<button class="lock-screen__btn tappable" id="btn-unlock">解除</button>';
-    html += '<div class="lock-screen__err" id="lock-err"></div>';
     html += '</div>';
-    lockOverlayRoot.innerHTML = html;
+    rootEl.innerHTML = html;
 
-    var input = document.getElementById('passcode-input');
-    var btn = document.getElementById('btn-unlock');
-    var err = document.getElementById('lock-err');
-    var box = document.getElementById('lock-screen-box');
-
-    function check(){
-      if(input.value === savedPasscode){
+    function attempt(){
+      var val = document.getElementById('passcode-input').value;
+      if(val === savedPasscode){
         isUnlocked = true;
-        lockOverlayRoot.innerHTML = '';
         renderShell();
-        showToast('ロックを解除しました', 'ok');
       } else {
-        err.textContent = 'パスワードが違います';
-        box.classList.remove('shake');
-        void box.offsetWidth;
-        box.classList.add('shake');
-        input.value = '';
+        showToast('パスワードが違います', 'danger');
       }
     }
-    btn.addEventListener('click', check);
-    input.addEventListener('keypress', function(e){ if(e.key === 'Enter') check(); });
+    document.getElementById('btn-unlock').addEventListener('click', attempt);
+    document.getElementById('passcode-input').addEventListener('keypress', function(e){
+      if(e.key === 'Enter') attempt();
+    });
+  }
+
+  function renderScheduleView(){
+    var html = '<div class="view-switcher">';
+    html += '<button class="view-btn tappable' + (viewMode==='day'?' is-active':'') + '" data-action="set-view" data-view="day">日表示</button>';
+    html += '<button class="view-btn tappable' + (viewMode==='month'?' is-active':'') + '" data-action="set-view" data-view="month">月表示</button>';
+    html += '</div>';
+
+    if(viewMode === 'day'){
+      html += renderDateStrip();
+      html += renderDayLessonList();
+    } else {
+      html += renderCalendarMonth();
+      html += renderDayLessonList();
+    }
+    return html;
   }
 
   function renderDateStrip(){
-    var html = '<div class="date-strip" id="date-strip">';
-    for(var i=-2;i<14;i++){
-      var key = addDays(todayStr(), i);
-      var d = new Date(key + 'T00:00:00');
+    var cur = new Date(selectedDate + 'T00:00:00');
+    var days = [];
+    for(var i=-14; i<=14; i++){
+      var d = new Date(cur);
+      d.setDate(d.getDate() + i);
+      var y = d.getFullYear();
+      var m = String(d.getMonth()+1).padStart(2,'0');
+      var day = String(d.getDate()).padStart(2,'0');
+      var key = y + '-' + m + '-' + day;
       var w = ['日','月','火','水','木','金','土'][d.getDay()];
-      var wCls = w==='日' ? 'is-sun' : (w==='土' ? 'is-sat' : '');
-      var isSel = key === selectedDate;
-      var isToday = key === todayStr();
-      var count = lessons.filter(function(l){ return l.date===key; }).length;
-      html += '<button class="date-chip tappable min-tap' + (isSel?' is-selected':'') + '" data-action="select-date" data-date="' + key + '">';
-      html += '<span class="date-chip__weekday ' + wCls + '">' + w + '</span>';
-      html += '<span class="date-chip__day">' + d.getDate() + '</span>';
-      if(isToday && !isSel) html += '<span class="date-chip__today-dot"></span>';
-      if(count>0) html += '<span class="date-chip__count">' + (isSel ? count + '件' : '●'.repeat(Math.min(count,3))) + '</span>';
-      html += '</button>';
+      days.push({ key:key, num:d.getDate(), week:w, isToday: key===todayStr() });
     }
-    html += '</div>';
-    return html;
-  }
-
-  function renderTypeBadge(type, size){
-    var t = LESSON_TYPES[type];
-    return '<div class="type-badge type-badge--' + (size||'md') + ' ' + t.shape + ' ' + t.cls + '">' + t.icon + '</div>';
-  }
-
-  /* レベルバッジのタグ生成（CUD対応） */
-  function renderLevelBadges(level){
-    if(!level) return '';
-    var html = '';
-    if(level.jsf) html += '<span class="level-tag">🎖️ ' + esc(level.jsf) + '</span>';
-    if(level.isi) html += '<span class="level-tag">⛸️ ' + esc(level.isi) + '</span>';
-    if(level.category) html += '<span class="level-tag">🏷️ ' + esc(level.category) + '</span>';
-    return html;
-  }
-
-  function renderLessonTile(l){
-    var t = LESSON_TYPES[l.type];
-    var contactOn = l.contactStatus === '連絡済';
-    var paidOn = l.paymentStatus === '回収済';
-    var html = '<div class="lesson-tile">';
-    html += '<div class="lesson-tile__accent accent-' + l.type + '"></div>';
-    html += '<button class="lesson-tile__main tappable" data-action="open-lesson" data-id="' + l.id + '">';
-    html += '<div class="lesson-tile__time"><span class="lesson-tile__time-start mono">' + esc(l.start) + '</span><span class="lesson-tile__time-end">〜' + esc(l.end) + '</span></div>';
-    html += renderTypeBadge(l.type, 'md');
-    html += '<div class="lesson-tile__body">';
-    html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + '</span><span class="lesson-tile__type-label ' + t.cls + '">' + t.short + '</span>' + renderLevelBadges(l.level) + '</div>';
-    html += '<div class="lesson-tile__sub">' + esc(l.rink) + ' ・ ' + yen(l.fee) + '</div>';
-    html += '<div class="lesson-tile__badges">';
-    html += '<span class="status-pill status-pill--contact' + (contactOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (contactOn?'連絡済':'未連絡') + '</span>';
-    html += '<span class="status-pill status-pill--payment' + (paidOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (paidOn?'回収済':'未回収') + '</span>';
-    if(l.tags && l.tags.length>0) html += '<span class="lesson-tile__tagcount">🏷 ' + l.tags.length + '件</span>';
-    html += '</div></div></button>';
-    html += '<div class="lesson-tile__actions"><button class="btn-line tappable min-tap' + (contactOn?' is-done':'') + '" data-action="quick-line" data-id="' + l.id + '"><span>💬</span><span>' + (contactOn?'LINE文をコピー':'LINE連絡') + '</span></button></div>';
-    html += '</div>';
-    return html;
-  }
-
-  function renderViewToggle(){
-    var html = '<div class="view-toggle">';
-    html += '<button class="view-toggle__btn tappable min-tap' + (viewMode==='day'?' is-active':'') + '" data-action="set-view" data-view="day">日表示</button>';
-    html += '<button class="view-toggle__btn tappable min-tap' + (viewMode==='month'?' is-active':'') + '" data-action="set-view" data-view="month">月表示</button>';
-    html += '</div>';
-    return html;
-  }
-
-  function renderMonthCalendar(){
-    var year = calYear, month = calMonth;
-    var startWeekday = new Date(year, month, 1).getDay();
-    var daysInMonth = new Date(year, month+1, 0).getDate();
-    var html = '<div class="month-calendar">';
-    html += '<div class="month-calendar__nav"><button class="month-calendar__nav-btn tappable" data-action="cal-prev-month">‹</button><span class="month-calendar__label">' + year + '年' + (month+1) + '月</span><button class="month-calendar__nav-btn tappable" data-action="cal-next-month">›</button></div>';
-    html += '<div class="month-calendar__weekdays">';
-    ['日','月','火','水','木','金','土'].forEach(function(w, idx){
-      var cls = idx===0 ? 'is-sun' : (idx===6 ? 'is-sat' : '');
-      html += '<span class="month-calendar__weekday ' + cls + '">' + w + '</span>';
+    var html = '<div class="date-strip" id="date-strip">';
+    days.forEach(function(d){
+      var sel = d.key === selectedDate ? ' is-selected' : '';
+      var count = lessons.filter(function(l){ return l.date===d.key; }).length;
+      html += '<button class="date-chip tappable' + sel + '" data-action="select-date" data-date="' + d.key + '">';
+      html += '<span class="date-chip__day">' + d.week + '</span>';
+      html += '<span class="date-chip__num mono">' + d.num + '</span>';
+      html += '<div class="date-chip__dots">';
+      for(var k=0; k<Math.min(count,3); k++){ html += '<span class="date-chip__dot"></span>'; }
+      html += '</div></button>';
     });
-    html += '</div><div class="month-calendar__grid">';
-    for(var i=0;i<startWeekday;i++){ html += '<div class="month-calendar__cell is-empty"></div>'; }
-    for(var day=1; day<=daysInMonth; day++){
-      var dateKey = year + '-' + pad2(month+1) + '-' + pad2(day);
-      var isSel = dateKey === selectedDate;
-      var isToday = dateKey === todayStr();
-      var count = lessons.filter(function(l){ return l.date===dateKey; }).length;
-      var wd = new Date(year, month, day).getDay();
-      var wdCls = wd===0 ? 'is-sun' : (wd===6 ? 'is-sat' : '');
-      html += '<button class="month-calendar__cell tappable' + (isSel?' is-selected':'') + (isToday&&!isSel?' is-today':'') + '" data-action="select-date" data-date="' + dateKey + '">';
-      html += '<span class="month-calendar__cell-day ' + wdCls + '">' + day + '</span>';
-      if(count>0) html += '<span class="month-calendar__cell-dot"></span>';
-      html += '</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderCalendarMonth(){
+    var firstDay = new Date(calYear, calMonth, 1);
+    var startWeek = firstDay.getDay();
+    var startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - startWeek);
+
+    var html = '<div class="calendar-view">';
+    html += '<div class="calendar-header">';
+    html += '<button class="calendar-nav-btn tappable" data-action="cal-prev-month">‹</button>';
+    html += '<div class="calendar-header__title mono">' + calYear + '年 ' + (calMonth+1) + '月</div>';
+    html += '<button class="calendar-nav-btn tappable" data-action="cal-next-month">›</button>';
+    html += '</div>';
+    html += '<div class="calendar-grid">';
+    var weeks = ['日','月','火','水','木','金','土'];
+    weeks.forEach(function(w){ html += '<div class="calendar-day-head">' + w + '</div>'; });
+
+    var curr = new Date(startDate);
+    for(var cell=0; cell<35; cell++){
+      var y = curr.getFullYear();
+      var m = String(curr.getMonth()+1).padStart(2,'0');
+      var day = String(curr.getDate()).padStart(2,'0');
+      var key = y + '-' + m + '-' + day;
+
+      var isOther = curr.getMonth() !== calMonth;
+      var isSel = key === selectedDate;
+      var isTod = key === todayStr();
+
+      var dayLessons = lessons.filter(function(l){ return l.date===key; });
+
+      var cls = 'calendar-cell tappable';
+      if(isOther) cls += ' is-other-month';
+      if(isSel) cls += ' is-selected';
+      if(isTod) cls += ' is-today';
+
+      html += '<button class="' + cls + '" data-action="select-date" data-date="' + key + '">';
+      html += '<span class="calendar-cell__num mono">' + curr.getDate() + '</span>';
+      html += '<div class="calendar-cell__dots">';
+      dayLessons.forEach(function(l){
+        var t = LESSON_TYPES[l.type] || LESSON_TYPES.personal;
+        html += '<span class="calendar-cell__dot ' + t.cls + '"></span>';
+      });
+      html += '</div></button>';
+
+      curr.setDate(curr.getDate() + 1);
     }
     html += '</div></div>';
     return html;
   }
 
-  function renderScheduleView(){
-    var dayLessons = lessons.filter(function(l){ return l.date===selectedDate; }).sort(function(a,b){ return a.start.localeCompare(b.start); });
-    var html = renderViewToggle();
-    html += (viewMode === 'month') ? renderMonthCalendar() : renderDateStrip();
-    html += '<div class="section-heading"><span class="section-heading__title">' + fmtDateJp(selectedDate) + '</span><span class="section-heading__meta">' + dayLessons.length + '件の予定</span></div>';
+  function renderDayLessonList(){
+    var dayLessons = lessons.filter(function(l){ return l.date === selectedDate; });
+    dayLessons.sort(function(a,b){ return a.start.localeCompare(b.start); });
+
+    var html = '<div class="section-title">' + fmtDateJp(selectedDate) + ' の予定 (' + dayLessons.length + '件)</div>';
     if(dayLessons.length === 0){
-      html += '<div class="lesson-list"><div class="empty-state"><div class="empty-state__icon">🧊</div><div class="empty-state__text">この日の予定はまだありません</div><button class="empty-state__btn tappable" data-action="open-add">＋ 予定を追加</button></div></div>';
-    } else {
-      html += '<div class="lesson-list">';
-      dayLessons.forEach(function(l){ html += renderLessonTile(l); });
-      html += '</div>';
+      html += '<div class="lesson-empty">予定はありません 🎉<br><span style="font-size:12px;opacity:0.7">右下の「＋」から追加できます</span></div>';
+      return html;
     }
+    html += '<div class="lesson-list">';
+    dayLessons.forEach(function(l){
+      var isPaid = l.paymentStatus === '回収済';
+      var isContacted = l.contactStatus === '連絡済';
+      var lvl = l.level || {};
+
+      html += '<div class="lesson-card tappable" data-action="open-lesson" data-id="' + l.id + '">';
+      html += '<div class="lesson-card__head">';
+      html += renderTypeBadge(l.type, 'sm');
+      html += '<span class="lesson-card__time mono">' + esc(l.start) + ' 〜 ' + esc(l.end) + '</span>';
+      html += '</div>';
+      html += '<div class="lesson-card__body">';
+      html += '<div class="lesson-card__info">';
+      html += '<div class="lesson-card__name">' + esc(l.student) + '</div>';
+      html += '<div class="lesson-card__meta"><span>📍 ' + esc(l.rink) + '</span></div>';
+      
+      if(lvl.jsf || lvl.isi || lvl.category){
+        html += '<div class="lesson-card__level">';
+        if(lvl.jsf) html += '<span class="level-badge">JSF: ' + esc(lvl.jsf) + '</span>';
+        if(lvl.isi) html += '<span class="level-badge">ISI: ' + esc(lvl.isi) + '</span>';
+        if(lvl.category) html += '<span class="level-badge">' + esc(lvl.category) + '</span>';
+        html += '</div>';
+      }
+      html += '</div></div>';
+
+      html += '<div class="lesson-card__foot">';
+      html += '<div class="lesson-card__fee mono">' + yen(l.fee) + '</div>';
+      html += '<div class="lesson-card__actions">';
+      html += '<button class="btn-action' + (isContacted?' btn-action--done':'') + '" data-action="quick-line" data-id="' + l.id + '"><span>💬</span><span>' + (isContacted?'連絡済':'LINE') + '</span></button>';
+      html += '<span class="btn-action' + (isPaid?' btn-action--done':'') + '"><span>' + (isPaid?'✅':'💴') + '</span><span>' + (isPaid?'回収済':'未回収') + '</span></span>';
+      html += '</div></div>';
+      html += '</div>';
+    });
+    html += '</div>';
     return html;
   }
 
