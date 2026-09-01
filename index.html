@@ -1,878 +1,550 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>トレペタ - for Figure Skating Coaches</title>
-<style>
-:root {
-  --primary: #1e3a8a;
-  --primary-light: #3b82f6;
-  --primary-bg: #eff6ff;
-  --surface: #ffffff;
-  --bg: #f8fafc;
-  --text: #0f172a;
-  --text-sub: #475569;
-  --border: #e2e8f0;
-  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-full: 9999px;
-  
-  --type-personal: #2563eb;
-  --type-rental: #059669;
-  --type-semi: #d97706;
-  --type-kyoshitsu: #7c3aed;
-  --type-choreography: #db2777;
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>トレペタ - for Figure Skating Coaches -</title>
+<meta name="theme-color" content="#002b49">
+<!-- PWA: ホーム画面追加時にアドレスバーなしの全画面（Standalone）で起動するための設定 -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="トレペタ">
 
-  --status-unpaid: #ef4444;
-  --status-paid: #10b981;
+<!-- ★ 修正ポイント1: 正しい manifest.json ファイルを読み込む -->
+<link rel="manifest" href="./manifest.json">
+
+<!-- ★ 修正ポイント2: アップロードしたスケート靴アイコンを指定する -->
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" href="./icon-192.png">
+
+<!-- ★ 修正ポイント3: Service Worker を登録する -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+  }
+</script>
+<style>:root{
+  --snow:#F5F9FC;
+  --snow-deep:#E7F0F6;
+  --ice:#2FB6E0;
+  --ice-deep:#1590B8;
+  --ice-bg:#E1F4FA;
+  --navy:#0B2545;
+  --navy-soft:#173763;
+  --line-gray:#D6DEE6;
+  --panel-gray:#EEF2F6;
+  --personal:#2D6CDF;
+  --personal-bg:#E8F0FE;
+  --group:#1E8E5A;
+  --group-bg:#E5F6EC;
+  --rental:#D9720C;
+  --rental-bg:#FCEEDC;
+  --kyoshitsu:#6B46C1;
+  --kyoshitsu-bg:#EDE7FB;
+  --danger:#C4291C;
+  --danger-bg:#FBE9E7;
+  --ok:#1E8E5A;
+  --ok-bg:#E5F6EC;
+  --advice:#8A6D00;
+  --advice-bg:#FFF9E6;
+  --advice-border:#F0D060;
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--bg);
-  color: var(--text);
-  line-height: 1.5;
-  user-select: none;
-  -webkit-user-select: none;
-  overflow: hidden;
-  height: 100vh;
-  width: 100vw;
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family:-apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  color:var(--navy);
+  background:
+    radial-gradient(circle at 10% 0%, #ffffff 0%, transparent 45%),
+    linear-gradient(180deg, var(--snow) 0%, var(--snow-deep) 100%);
+  background-attachment:fixed;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
 }
-
-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-.tappable { cursor: pointer; transition: transform 0.1s ease, opacity 0.1s ease; }
-.tappable:active { transform: scale(0.97); opacity: 0.8; }
-.min-tap { min-height: 44px; min-width: 44px; }
-
-#app-root {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  max-width: 600px;
-  margin: 0 auto;
-  background: var(--surface);
-  position: relative;
-  box-shadow: 0 0 20px rgba(0,0,0,0.05);
+button, input, textarea{ font-family:inherit; }
+button{ border:none; background:none; padding:0; cursor:pointer; -webkit-appearance:none; appearance:none; }
+input, textarea{ background:#fff; color:var(--navy); }
+h1,h2,h3,p{ margin:0; }
+::-webkit-scrollbar{ display:none; }
+*{ scrollbar-width:none; }
+.mono{ font-variant-numeric:tabular-nums; font-family: "SFMono-Regular", Consolas, Menlo, monospace; }
+.tappable{ transition: transform .12s ease, background-color .12s ease, box-shadow .12s ease; touch-action:manipulation; }
+.tappable:active{ transform:scale(.96); }
+.min-tap{ min-height:44px; min-width:44px; }
+.app{ max-width:560px; margin:0 auto; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; position:relative; }
+.app-header{
+  position:sticky; top:0; z-index:40;
+  padding:14px 20px 8px;
+  padding-top:calc(14px + env(safe-area-inset-top));
+  background:linear-gradient(180deg, var(--navy) 0%, var(--navy-soft) 100%);
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
 }
-
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  z-index: 10;
+.app-header__brand{ display:flex; align-items:center; gap:10px; min-width:0; }
+.app-header__logo{ width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.15); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.app-header__title{ color:#fff; font-size:17px; font-weight:900; line-height:1.15; letter-spacing:-.01em; white-space:nowrap; }
+.app-header__subtitle{ color:rgba(255,255,255,.62); font-size:10px; font-weight:700; margin-top:2px; white-space:nowrap; }
+.app-header__alert{ flex-shrink:0; background:rgba(255,255,255,.16); color:#fff; font-size:11px; font-weight:700; padding:7px 10px; border-radius:12px; white-space:nowrap; }
+.app-header__right{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+.header-gear{ width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.16); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.date-strip{
+  position:sticky; top:0; z-index:30;
+  display:flex; gap:8px; overflow-x:auto; padding:12px 16px;
+  background:var(--navy-soft);
 }
-.app-header__brand { display: flex; align-items: center; gap: 8px; }
-.app-header__logo { font-size: 24px; }
-.app-header__title { font-weight: 700; font-size: 18px; color: var(--primary); }
-.app-header__subtitle { font-size: 10px; color: var(--text-sub); }
-.app-header__right { display: flex; align-items: center; gap: 8px; }
-.app-header__alert {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: var(--radius-full);
-  font-weight: 600;
+.date-chip{
+  flex-shrink:0; width:56px; padding:8px 0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  border-radius:16px; border:2px solid transparent; background:#fff;
 }
-.header-gear {
-  background: none;
-  border: none;
-  font-size: 18px;
-  padding: 4px;
-  border-radius: var(--radius-sm);
-}
-
-.main-scroll {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 80px;
-}
-
-.bottom-nav {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  z-index: 20;
-}
-.nav-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: none;
-  color: var(--text-sub);
-  width: 50%;
-  height: 100%;
-  position: relative;
-}
-.nav-btn.is-active { color: var(--primary); font-weight: 600; }
-.nav-btn__icon { font-size: 20px; }
-.nav-btn__label { font-size: 11px; margin-top: 2px; }
-.nav-btn__indicator {
-  position: absolute;
-  top: 0;
-  width: 36px;
-  height: 3px;
-  background: transparent;
-  border-radius: 0 0 4px 4px;
-}
-.nav-btn.is-active .nav-btn__indicator { background: var(--primary); }
-
-.fab {
-  position: absolute;
-  bottom: 76px;
-  right: 16px;
-  width: 56px;
-  height: 56px;
-  border-radius: 28px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  font-size: 28px;
-  box-shadow: var(--shadow-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 15;
-}
-
-.view-switcher {
-  display: flex;
-  background: var(--bg);
-  padding: 4px;
-  border-radius: var(--radius-md);
-  margin: 12px 16px 8px;
-}
-.view-btn {
-  flex: 1;
-  border: none;
-  background: none;
-  padding: 6px;
-  font-size: 13px;
-  border-radius: var(--radius-sm);
-  color: var(--text-sub);
-  font-weight: 500;
-}
-.view-btn.is-active {
-  background: var(--surface);
-  color: var(--text);
-  font-weight: 600;
-  box-shadow: var(--shadow-sm);
-}
-
-.date-strip {
-  display: flex;
-  overflow-x: auto;
-  padding: 4px 12px 12px;
-  gap: 8px;
-  scroll-behavior: smooth;
-}
-.date-strip::-webkit-scrollbar { display: none; }
-.date-chip {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 64px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-.date-chip.is-selected {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-.date-chip__day { font-size: 11px; opacity: 0.8; }
-.date-chip__num { font-size: 18px; font-weight: 700; margin-top: 2px; }
-.date-chip__dots { display: flex; gap: 2px; margin-top: 4px; height: 4px; }
-.date-chip__dot { width: 4px; height: 4px; border-radius: 50%; background: var(--text-sub); }
-.date-chip.is-selected .date-chip__dot { background: white; }
-
-.calendar-view { padding: 0 16px 16px; }
-.calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.calendar-header__title { font-size: 16px; font-weight: 700; }
-.calendar-nav-btn { background: none; border: none; font-size: 18px; padding: 4px 8px; }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
-.calendar-day-head { font-size: 11px; color: var(--text-sub); padding: 4px 0; }
-.calendar-cell {
-  aspect-ratio: 1;
-  border-radius: var(--radius-sm);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 4px 2px;
-  font-size: 12px;
-  border: 1px solid transparent;
-  background: var(--bg);
-}
-.calendar-cell.is-other-month { opacity: 0.3; }
-.calendar-cell.is-selected { border-color: var(--primary); background: var(--primary-bg); font-weight: 700; }
-.calendar-cell.is-today .calendar-cell__num { color: var(--primary-light); font-weight: 700; }
-.calendar-cell__dots { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; margin-top: 2px; }
-.calendar-cell__dot { width: 5px; height: 5px; border-radius: 50%; }
-
-.section-title { font-size: 14px; font-weight: 700; color: var(--text-sub); padding: 8px 16px 4px; }
-.lesson-list { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
-.lesson-empty { text-align: center; padding: 32px 16px; color: var(--text-sub); font-size: 14px; }
-
-.lesson-card {
-  background: var(--surface);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  padding: 12px;
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.lesson-card__head { display: flex; align-items: center; justify-content: space-between; }
-.lesson-card__time { font-size: 13px; font-weight: 600; color: var(--text-sub); }
-.lesson-card__body { display: flex; align-items: flex-start; gap: 10px; }
-.lesson-card__info { flex: 1; }
-.lesson-card__name { font-size: 16px; font-weight: 700; color: var(--text); }
-.lesson-card__meta { font-size: 12px; color: var(--text-sub); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
-.lesson-card__level { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
-.level-badge { font-size: 10px; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; color: #475569; }
-
-.lesson-card__foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px dashed var(--border);
-  padding-top: 8px;
-  margin-top: 4px;
-}
-.lesson-card__fee { font-size: 14px; font-weight: 700; }
-.lesson-card__actions { display: flex; gap: 6px; }
-.btn-action {
-  font-size: 11px;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.btn-action--done { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-
-.type-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  color: white;
-  border-radius: var(--radius-full);
-}
-.type-badge--sm { font-size: 10px; padding: 1px 6px; }
-.type-badge--md { font-size: 12px; padding: 4px 10px; }
-
-.badge-shape-pill { border-radius: var(--radius-full); }
-.badge-shape-rect { border-radius: 4px; }
-.badge-shape-hexagon { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); padding: 2px 10px; }
-.badge-shape-circle { border-radius: 50%; width: 24px; height: 24px; padding: 0; }
-
-.type-personal { background-color: var(--type-personal); }
-.type-rental { background-color: var(--type-rental); }
-.type-semi { background-color: var(--type-semi); }
-.type-kyoshitsu { background-color: var(--type-kyoshitsu); }
-.type-choreography { background-color: var(--type-choreography); }
-
-.finance-view { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
-.finance-year { display: flex; align-items: center; justify-content: space-between; }
-.year-nav { display: flex; align-items: center; gap: 12px; }
-.year-nav__btn { background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 12px; font-size: 16px; }
-.year-nav__label { font-size: 18px; font-weight: 700; }
-.btn-csv {
-  background: #f0fdf4;
-  color: #15803d;
-  border: 1px solid #bbf7d0;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.summary-card {
-  padding: 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-.summary-card--paid { border-left: 4px solid var(--status-paid); }
-.summary-card--unpaid { border-left: 4px solid var(--status-unpaid); }
-.summary-card__label { font-size: 11px; color: var(--text-sub); }
-.summary-card__value { font-size: 18px; font-weight: 700; margin-top: 2px; }
-.summary-card__count { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
-
-.list-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--text-sub); }
-.unpaid-list { display: flex; flex-direction: column; gap: 8px; }
-.unpaid-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  text-align: left;
-  width: 100%;
-}
-.unpaid-row__body { flex: 1; margin: 0 8px; }
-.unpaid-row__name { font-size: 14px; font-weight: 600; }
-.unpaid-row__date { font-size: 11px; color: var(--text-sub); }
-.unpaid-row__right { text-align: right; }
-.unpaid-row__fee { font-size: 14px; font-weight: 700; color: var(--status-unpaid); }
-.unpaid-row__cta { font-size: 10px; color: var(--primary-light); }
-
-.breakdown-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.breakdown-row { display: flex; align-items: center; font-size: 13px; }
-.breakdown-row__icon { margin-right: 8px; width: 20px; height: 20px; font-size: 10px; }
-.breakdown-row__label { flex: 1; }
-.breakdown-row__count { color: var(--text-sub); margin-right: 12px; font-size: 12px; }
-.breakdown-row__sum { font-weight: 700; }
-
-.sheet-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.4);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  animation: fadeIn 0.2s ease;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-.sheet-backdrop { flex: 1; }
-.sheet {
-  background: var(--surface);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  animation: slideUp 0.2s ease;
-}
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-.sheet__grabber-row { display: flex; justify-content: center; padding: 8px; }
-.sheet__grabber { width: 36px; height: 4px; background: var(--border); border-radius: 2px; }
-.sheet__header {
-  padding: 0 16px 12px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.sheet__header-text { flex: 1; }
-.sheet__header-title { font-size: 16px; font-weight: 700; }
-.sheet__header-sub { font-size: 12px; color: var(--text-sub); }
-.sheet__close { background: none; border: none; font-size: 20px; color: var(--text-sub); padding: 4px; }
-
-.sheet__body { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-.sheet__footer { padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); }
-.sheet__submit {
-  width: 100%;
-  padding: 12px;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 15px;
-  font-weight: 600;
-}
-.sheet__submit:disabled { opacity: 0.5; }
-
-.field-label { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; }
-.text-input, .select-input, .date-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 14px;
-  background: var(--bg);
-}
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-
-.type-select-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.type-select-btn {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 8px 4px;
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-.type-select-btn.is-selected { border-color: var(--primary); background: var(--primary-bg); }
-
-.rink-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
-.rink-btn {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
-  font-size: 12px;
-  white-space: nowrap;
-  background: var(--bg);
-}
-.rink-btn.is-selected { background: var(--primary); color: white; border-color: var(--primary); }
-
-.money-box { background: var(--bg); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); }
-.money-row { display: flex; align-items: center; justify-content: space-between; }
-.money-row + .money-row { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }
-.fee-input { width: 100px; text-align: right; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 16px; font-weight: 700; }
-.stepper { display: flex; align-items: center; border: 1px solid var(--border); border-radius: 4px; background: white; }
-.stepper__btn { width: 28px; height: 28px; border: none; background: none; font-size: 16px; font-weight: 700; }
-.split-input { width: 36px; text-align: center; border: none; font-size: 14px; font-weight: 700; }
-.per-person-note { font-size: 11px; color: var(--text-sub); text-align: right; margin-top: 4px; }
-
-.advice-box { background: #fffbebf; border: 1px solid #fef3c7; border-radius: var(--radius-sm); padding: 10px 12px; }
-.advice-box__title { font-size: 11px; font-weight: 700; color: #b45309; display: flex; align-items: center; gap: 4px; }
-.advice-box__text { font-size: 13px; color: #78350f; margin-top: 2px; }
-
-.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.action-btn {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 600;
-}
-.action-btn--line { background: #06c755; color: white; border-color: #06c755; }
-.action-btn--pay.is-done { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
-
-.tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
-.tag-chip {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  padding: 4px 10px;
-  font-size: 11px;
-  background: var(--bg);
-  color: var(--text-sub);
-}
-.tag-chip.is-selected { background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; font-weight: 600; }
-
-.notes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-.mic-btn { background: none; border: 1px solid var(--border); border-radius: 50%; width: 28px; height: 28px; font-size: 14px; display: flex; align-items: center; justify-content: center; }
-.mic-btn.is-recording { background: #fee2e2; border-color: #fca5a5; animation: pulse 1s infinite; }
-@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-.recording-hint { font-size: 10px; color: #dc2626; margin-bottom: 4px; }
-.notes-textarea { width: 100%; height: 60px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--bg); resize: none; }
-
-.delete-link { color: #dc2626; font-size: 12px; text-align: center; border: none; background: none; padding: 8px; margin-top: 8px; width: 100%; }
-
-.toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.9);
-  color: white;
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  font-size: 13px;
-  font-weight: 500;
-  z-index: 200;
-  box-shadow: var(--shadow-lg);
-  pointer-events: none;
-  animation: toastIn 0.2s ease;
-}
-.toast--ok { background: rgba(16, 185, 129, 0.95); }
-.toast--danger { background: rgba(239, 68, 68, 0.95); }
-.toast--navy { background: rgba(30, 58, 138, 0.95); }
-@keyframes toastIn { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
-
-.classroom-list { display: flex; flex-direction: column; gap: 8px; }
-.classroom-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); }
-.classroom-row__name { font-weight: 600; font-size: 13px; }
-.classroom-row__meta { font-size: 11px; color: var(--text-sub); }
-.classroom-row__actions { display: flex; gap: 4px; }
-.icon-btn { background: none; border: none; font-size: 14px; padding: 4px; }
-.icon-btn--danger { color: #dc2626; }
-.classroom-empty { text-align: center; color: var(--text-sub); font-size: 12px; padding: 12px; }
-.classroom-form-title { font-size: 13px; font-weight: 700; margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
-.classroom-cancel-edit { font-size: 11px; color: var(--primary-light); font-weight: normal; }
-.classroom-manage-link { background: none; border: none; color: var(--primary-light); font-size: 11px; text-decoration: underline; margin-top: 4px; padding: 0; text-align: left; }
-
-.lock-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 32px; text-align: center; background: var(--surface); }
-.lock-screen__icon { font-size: 48px; margin-bottom: 16px; }
-.lock-screen__title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-.lock-screen__sub { font-size: 13px; color: var(--text-sub); margin-bottom: 24px; }
-.lock-screen__input { text-align: center; font-size: 24px; letter-spacing: 8px; width: 180px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 16px; }
-.lock-screen__btn { width: 180px; padding: 12px; background: var(--primary); color: white; border: none; border-radius: var(--radius-md); font-weight: 600; }
-</style>
+.date-chip.is-selected{ background:var(--navy); border-color:var(--navy); }
+.date-chip__weekday{ font-size:11px; font-weight:700; color:var(--navy-soft); }
+.date-chip__weekday.is-sun{ color:var(--danger); }
+.date-chip__weekday.is-sat{ color:var(--personal); }
+.date-chip.is-selected .date-chip__weekday{ color:rgba(255,255,255,.7); }
+.date-chip__day{ font-size:17px; font-weight:900; color:var(--navy); }
+.date-chip.is-selected .date-chip__day{ color:#fff; }
+.date-chip__today-dot{ width:6px; height:6px; border-radius:50%; background:var(--ice); }
+.date-chip__count{ font-size:9px; font-weight:800; color:var(--ice-deep); }
+.date-chip.is-selected .date-chip__count{ color:#fff; }
+.view-toggle{ display:flex; gap:8px; padding:10px 16px 2px; }
+.view-toggle__btn{ flex:1; min-height:40px; border-radius:12px; font-size:12.5px; font-weight:800; background:var(--panel-gray); color:var(--navy-soft); display:flex; align-items:center; justify-content:center; }
+.view-toggle__btn.is-active{ background:var(--navy); color:#fff; }
+.month-calendar{ padding:8px 16px 4px; }
+.month-calendar__nav{ display:flex; align-items:center; justify-content:space-between; padding:2px 2px 12px; }
+.month-calendar__nav-btn{ width:34px; height:34px; border-radius:50%; background:var(--panel-gray); font-weight:900; font-size:15px; display:flex; align-items:center; justify-content:center; }
+.month-calendar__label{ font-size:15px; font-weight:900; }
+.month-calendar__weekdays{ display:grid; grid-template-columns:repeat(7,1fr); text-align:center; margin-bottom:6px; }
+.month-calendar__weekday{ font-size:11px; font-weight:800; color:var(--navy-soft); padding:4px 0; }
+.month-calendar__weekday.is-sun{ color:var(--danger); }
+.month-calendar__weekday.is-sat{ color:var(--personal); }
+.month-calendar__grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.month-calendar__cell{ aspect-ratio:1/1; border-radius:12px; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:2px solid transparent; box-shadow:0 1px 2px rgba(11,37,69,.05); }
+.month-calendar__cell.is-empty{ background:transparent; box-shadow:none; }
+.month-calendar__cell.is-today{ border-color:var(--ice); }
+.month-calendar__cell.is-selected{ background:var(--navy); border-color:var(--navy); }
+.month-calendar__cell-day{ font-size:13px; font-weight:800; color:var(--navy); }
+.month-calendar__cell-day.is-sun{ color:var(--danger); }
+.month-calendar__cell-day.is-sat{ color:var(--personal); }
+.month-calendar__cell.is-selected .month-calendar__cell-day{ color:#fff; }
+.month-calendar__cell-dot{ width:5px; height:5px; border-radius:50%; background:var(--ice-deep); }
+.month-calendar__cell.is-selected .month-calendar__cell-dot{ background:#fff; }
+.main-scroll{ flex:1; }
+.section-heading{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px 4px; }
+.section-heading__title{ font-size:15px; font-weight:900; }
+.section-heading__meta{ font-size:12px; font-weight:700; color:var(--navy-soft); }
+.lesson-list{ padding:4px 16px 112px; display:flex; flex-direction:column; gap:12px; }
+.empty-state{ text-align:center; padding:60px 20px; }
+.empty-state__icon{ font-size:40px; }
+.empty-state__text{ font-size:13px; font-weight:700; color:var(--navy-soft); margin-top:8px; }
+.empty-state__btn{ margin-top:16px; padding:10px 20px; border-radius:16px; font-weight:800; font-size:13px; color:#fff; background:var(--navy); display:inline-block; }
+.lesson-tile{ position:relative; background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(11,37,69,.06), 0 6px 16px -8px rgba(11,37,69,.14); }
+.lesson-tile__accent{ position:absolute; left:0; top:0; bottom:0; width:6px; }
+.lesson-tile__main{ width:100%; text-align:left; padding:12px 12px 10px 20px; display:flex; align-items:flex-start; gap:12px; }
+.lesson-tile__time{ width:52px; flex-shrink:0; display:flex; flex-direction:column; align-items:center; padding-top:4px; }
+.lesson-tile__time-start{ font-size:15px; font-weight:800; color:var(--navy); line-height:1; }
+.lesson-tile__time-end{ font-size:10px; color:var(--navy-soft); margin-top:4px; }
+.lesson-tile__body{ flex:1; min-width:0; }
+.lesson-tile__title-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.lesson-tile__student{ font-size:15px; font-weight:800; max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lesson-tile__type-label{ font-size:10px; font-weight:800; padding:2px 6px; border-radius:8px; flex-shrink:0; }
+.lesson-tile__sub{ font-size:12px; color:var(--navy-soft); margin-top:2px; }
+.lesson-tile__badges{ display:flex; align-items:center; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.lesson-tile__tagcount{ font-size:11px; color:var(--navy-soft); }
+.lesson-tile__actions{ padding:0 12px 12px 20px; }
+.type-badge{ flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:20px; border-width:2px; border-style:solid; }
+.type-badge--sm{ width:32px; height:32px; font-size:15px; }
+.type-badge--md{ width:44px; height:44px; }
+.type-badge.shape-circle{ border-radius:50%; }
+.type-badge.shape-round{ border-radius:14px; }
+.type-badge.shape-hex{ border-radius:6px; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%); }
+.type-badge.shape-square{ border-radius:6px; }
+.type-personal{ color:var(--personal); background:var(--personal-bg); border-color:var(--personal); }
+.type-group{ color:var(--group); background:var(--group-bg); border-color:var(--group); }
+.type-rental{ color:var(--rental); background:var(--rental-bg); border-color:var(--rental); }
+.type-kyoshitsu{ color:var(--kyoshitsu); background:var(--kyoshitsu-bg); border-color:var(--kyoshitsu); }
+.accent-personal{ background:var(--personal); }
+.accent-group{ background:var(--group); }
+.accent-rental{ background:var(--rental); }
+.accent-kyoshitsu{ background:var(--kyoshitsu); }
+.status-pill{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:800; padding:3px 9px; border-radius:999px; border:1px solid var(--line-gray); background:var(--panel-gray); color:var(--navy-soft); }
+.status-pill__dot{ width:8px; height:8px; border-radius:50%; background:#9AA9B8; flex-shrink:0; }
+.status-pill--contact.is-on{ color:var(--ice-deep); background:var(--ice-bg); border-color:var(--ice-deep); }
+.status-pill--contact.is-on .status-pill__dot{ background:var(--ice-deep); }
+.status-pill--payment.is-on{ color:var(--ok); background:var(--ok-bg); border-color:var(--ok); }
+.status-pill--payment.is-on .status-pill__dot{ background:var(--ok); }
+.btn-line{ width:100%; min-height:44px; border-radius:14px; font-size:13px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:7px; color:#fff; background:#06C755; }
+.btn-line.is-done{ background:var(--panel-gray); color:var(--navy-soft); }
+.fab{ position:fixed; z-index:50; width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:28px; background:var(--ice); box-shadow:0 10px 24px -6px rgba(11,37,69,.4); right:max(20px, calc(50vw - 260px)); bottom:calc(96px + env(safe-area-inset-bottom)); }
+.bottom-nav{ position:fixed; left:0; right:0; bottom:0; z-index:40; max-width:560px; margin:0 auto; background:#fff; border-top:1px solid rgba(23,55,99,.1); display:flex; padding-bottom:env(safe-area-inset-bottom); }
+.nav-btn{ flex:1; padding:10px 0 8px; display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--navy-soft); }
+.nav-btn.is-active{ color:var(--ice-deep); }
+.nav-btn__icon{ font-size:20px; }
+.nav-btn__label{ font-size:11px; font-weight:800; }
+.nav-btn__indicator{ width:22px; height:3px; border-radius:999px; margin-top:2px; background:transparent; }
+.nav-btn.is-active .nav-btn__indicator{ background:var(--ice); }
+.sheet-overlay{ position:fixed; inset:0; z-index:100; display:flex; align-items:flex-end; }
+.sheet-backdrop{ position:absolute; inset:0; background:rgba(11,37,69,.42); backdrop-filter:blur(1px); -webkit-backdrop-filter:blur(1px); }
+.sheet{ position:relative; width:100%; max-width:560px; margin:0 auto; max-height:92vh; background:#fff; border-radius:24px 24px 0 0; box-shadow:0 -8px 30px rgba(11,37,69,.25); display:flex; flex-direction:column; animation:sheetSlideUp .26s cubic-bezier(.22,.9,.32,1); }
+@keyframes sheetSlideUp{ from{ transform:translateY(100%);} to{ transform:translateY(0);} }
+.sheet__grabber-row{ display:flex; justify-content:center; padding:10px 0 4px; flex-shrink:0; }
+.sheet__grabber{ width:40px; height:6px; border-radius:999px; background:rgba(23,55,99,.22); }
+.sheet__header{ padding:0 20px 12px; display:flex; align-items:center; gap:12px; border-bottom:1px solid rgba(23,55,99,.1); flex-shrink:0; }
+.sheet__header-text{ flex:1; min-width:0; }
+.sheet__header-title{ font-size:16px; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sheet__header-sub{ font-size:12px; color:var(--navy-soft); margin-top:2px; }
+.sheet__close{ width:36px; height:36px; border-radius:50%; background:var(--panel-gray); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.sheet__body{ overflow-y:auto; flex:1; padding:16px 20px; display:flex; flex-direction:column; gap:20px; }
+.sheet__footer{ padding:16px 20px; padding-bottom:calc(16px + env(safe-area-inset-bottom)); border-top:1px solid rgba(23,55,99,.1); flex-shrink:0; }
+.sheet__submit{ width:100%; min-height:48px; border-radius:16px; font-weight:900; font-size:15px; color:#fff; background:var(--navy); }
+.sheet__submit:disabled{ opacity:.4; }
+.field-label{ font-size:13px; font-weight:900; margin-bottom:8px; }
+.text-input, .select-like, .date-input{ width:100%; border-radius:16px; border:2px solid rgba(23,55,99,.15); padding:12px; font-size:15px; }
+.text-input:focus, .date-input:focus{ outline:none; border-color:var(--ice); }
+.grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.grid-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+.select-wrap{ position:relative; }
+.select-wrap::after{ content:'▾'; position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--navy-soft); font-size:13px; pointer-events:none; }
+.select-input{ width:100%; border-radius:16px; border:2px solid rgba(23,55,99,.15); padding:12px; padding-right:36px; font-size:14px; background:#fff; color:var(--navy); appearance:none; -webkit-appearance:none; -moz-appearance:none; }
+.select-input:focus{ outline:none; border-color:var(--ice); }
+.classroom-manage-link{ display:inline-block; margin-top:8px; font-size:12px; font-weight:800; color:var(--ice-deep); text-decoration:underline; text-underline-offset:3px; padding:4px 2px; }
+.classroom-row{ display:flex; align-items:center; gap:10px; background:#fff; border-radius:14px; padding:10px 12px; box-shadow:0 1px 2px rgba(11,37,69,.06); }
+.classroom-row__body{ flex:1; min-width:0; }
+.classroom-row__name{ font-size:14px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.classroom-row__meta{ font-size:11px; color:var(--navy-soft); margin-top:2px; }
+.classroom-row__actions{ display:flex; gap:6px; flex-shrink:0; }
+.icon-btn{ width:36px; height:36px; border-radius:50%; background:var(--panel-gray); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+.icon-btn--danger{ color:var(--danger); }
+.classroom-list{ display:flex; flex-direction:column; gap:8px; }
+.classroom-empty{ text-align:center; padding:22px; font-size:13px; font-weight:700; color:var(--navy-soft); background:#fff; border-radius:14px; }
+.classroom-form-title{ font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:space-between; }
+.classroom-cancel-edit{ font-size:12px; font-weight:800; color:var(--navy-soft); text-decoration:underline; text-underline-offset:2px; }
+.advice-box{ border-radius:16px; padding:14px; border:2px solid var(--advice-border); background:var(--advice-bg); }
+.advice-box__title{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:900; color:var(--advice); }
+.advice-box__text{ font-size:13.5px; margin-top:6px; line-height:1.6; color:#5C4900; }
+.action-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.action-btn{ min-height:44px; border-radius:16px; padding:12px 6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-weight:800; font-size:13px; border:2px solid transparent; }
+.action-btn__icon{ font-size:20px; }
+.action-btn--line{ background:#06C755; color:#fff; }
+.action-btn--line.is-done{ background:var(--panel-gray); color:var(--navy-soft); }
+.action-btn--pay{ background:var(--panel-gray); color:var(--navy-soft); }
+.action-btn--pay.is-done{ background:var(--ok-bg); color:var(--ok); border-color:var(--ok); }
+.money-box{ border-radius:16px; background:var(--snow-deep); padding:14px; }
+.money-row{ display:flex; align-items:center; justify-content:between; justify-content:space-between; }
+.money-row + .money-row{ margin-top:12px; padding-top:12px; border-top:1px solid rgba(23,55,99,.1); }
+.money-row__label{ font-size:13px; font-weight:800; color:var(--navy-soft); }
+.money-row__value{ display:flex; align-items:center; gap:4px; }
+.fee-input{ width:100px; text-align:right; font-size:16px; font-weight:800; border:none; background:transparent; border-bottom:2px solid rgba(23,55,99,.3); border-radius:0; padding:2px 0; }
+.fee-input:focus{ outline:none; border-color:var(--ice); }
+.stepper{ display:flex; align-items:center; gap:8px; }
+.stepper__btn{ width:32px; height:32px; border-radius:50%; background:#fff; font-weight:900; display:flex; align-items:center; justify-content:center; }
+.split-input{ width:32px; text-align:center; font-weight:800; border:none; background:transparent; padding:0; }
+.per-person-note{ margin-top:8px; font-size:12px; font-weight:800; color:var(--rental); }
+.tag-wrap{ display:flex; flex-wrap:wrap; gap:8px; }
+.tag-chip{ min-height:44px; padding:9px 14px; border-radius:14px; font-size:13px; font-weight:800; border:2px solid var(--line-gray); background:#fff; color:var(--navy); }
+.tag-chip.is-selected{ background:var(--navy); border-color:var(--navy); color:#fff; }
+.notes-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.mic-btn{ width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff; background:var(--ice); }
+.mic-btn.is-recording{ background:var(--danger); animation:micPulse 1.4s infinite; }
+@keyframes micPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(196,41,28,.45);} 50%{ box-shadow:0 0 0 12px rgba(196,41,28,0);} }
+.mic-unsupported{ font-size:11px; color:var(--navy-soft); }
+.recording-hint{ font-size:11px; font-weight:800; color:var(--danger); margin-bottom:6px; }
+.notes-textarea{ width:100%; min-height:96px; border-radius:16px; border:2px solid rgba(23,55,99,.15); padding:12px; font-size:14px; line-height:1.6; resize:vertical; }
+.notes-textarea:focus{ outline:none; border-color:var(--ice); }
+.delete-link{ text-align:center; font-size:13px; font-weight:800; color:var(--danger); padding:8px 0; width:100%; }
+.type-select-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+.type-select-btn{ min-height:44px; border-radius:16px; padding:12px 4px; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:8px; border:2px solid #E3E9EE; background:#fff; }
+.type-select-btn.is-selected.sel-personal{ border-color:var(--personal); background:var(--personal-bg); }
+.type-select-btn.is-selected.sel-group{ border-color:var(--group); background:var(--group-bg); }
+.type-select-btn.is-selected.sel-rental{ border-color:var(--rental); background:var(--rental-bg); }
+.type-select-btn.is-selected.sel-kyoshitsu{ border-color:var(--kyoshitsu); background:var(--kyoshitsu-bg); }
+.type-select-btn__icon{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.type-select-btn__label{ font-size:12px; font-weight:800; }
+.rink-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.rink-btn{ min-height:44px; padding:10px 14px; border-radius:14px; font-size:13px; font-weight:800; border:2px solid #E3E9EE; background:#fff; color:var(--navy); }
+.rink-btn.is-selected{ background:var(--navy); border-color:var(--navy); color:#fff; }
+.finance-view{ padding:8px 16px 112px; }
+.finance-year{ display:flex; align-items:center; justify-content:space-between; padding:4px 4px 12px; }
+.year-nav{ display:flex; align-items:center; gap:8px; }
+.year-nav__btn{ width:36px; height:36px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(11,37,69,.08); font-weight:900; display:flex; align-items:center; justify-content:center; }
+.year-nav__label{ font-size:18px; font-weight:900; }
+.btn-csv{ min-height:44px; padding:10px 16px; border-radius:16px; font-size:13px; font-weight:900; color:#fff; background:var(--ice-deep); display:flex; align-items:center; gap:6px; }
+.summary-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.summary-card{ border-radius:16px; padding:14px; background:#fff; box-shadow:0 1px 2px rgba(11,37,69,.06), 0 6px 16px -8px rgba(11,37,69,.12); border:2px solid; }
+.summary-card--paid{ border-color:var(--ok); }
+.summary-card--unpaid{ border-color:var(--danger); }
+.summary-card__label{ font-size:12px; font-weight:800; color:var(--navy-soft); }
+.summary-card__value{ font-size:22px; font-weight:900; margin-top:4px; }
+.summary-card--paid .summary-card__value{ color:var(--ok); }
+.summary-card--unpaid .summary-card__value{ color:var(--danger); }
+.summary-card__count{ font-size:11px; color:var(--navy-soft); margin-top:2px; }
+.list-title{ font-size:13px; font-weight:900; margin:0 4px 8px; }
+.unpaid-empty{ text-align:center; padding:40px 20px; font-size:13px; font-weight:700; color:var(--navy-soft); background:#fff; border-radius:16px; box-shadow:0 1px 2px rgba(11,37,69,.06); }
+.unpaid-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+.unpaid-row{ width:100%; background:#fff; border-radius:16px; box-shadow:0 1px 2px rgba(11,37,69,.06); padding:10px 12px; display:flex; align-items:center; gap:12px; }
+.unpaid-row__body{ flex:1; min-width:0; text-align:left; }
+.unpaid-row__name{ font-size:13.5px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.unpaid-row__date{ font-size:11px; color:var(--navy-soft); margin-top:1px; }
+.unpaid-row__right{ text-align:right; flex-shrink:0; }
+.unpaid-row__fee{ font-size:14px; font-weight:900; }
+.unpaid-row__cta{ font-size:10px; font-weight:800; color:var(--danger); margin-top:1px; }
+.breakdown-card{ background:#fff; border-radius:16px; box-shadow:0 1px 2px rgba(11,37,69,.06); padding:14px; display:flex; flex-direction:column; gap:10px; }
+.breakdown-row{ display:flex; align-items:center; gap:10px; }
+.breakdown-row__icon{ width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
+.breakdown-row__label{ font-size:13px; font-weight:800; flex:1; }
+.breakdown-row__count{ font-size:12px; color:var(--navy-soft); }
+.breakdown-row__sum{ font-size:13px; font-weight:900; width:84px; text-align:right; }
+#toast-root{ position:fixed; left:0; right:0; bottom:92px; z-index:200; display:flex; justify-content:center; pointer-events:none; }
+.toast{ pointer-events:auto; max-width:88vw; padding:12px 16px; border-radius:16px; color:#fff; font-size:14px; font-weight:800; box-shadow:0 -8px 30px rgba(11,37,69,.25); animation:toastIn .2s ease-out; }
+@keyframes toastIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
+.toast--navy{ background:var(--navy); }
+.toast--ok{ background:var(--ok); }
+.toast--danger{ background:var(--danger); }</style>
 </head>
 <body>
 
-<div id="app-root"></div>
+<div class="app">
+  <div id="root"></div>
+</div>
 <div id="overlay-root"></div>
 <div id="classroom-overlay-root"></div>
 <div id="toast-root"></div>
 
-<script>
-(function(){
-  'use strict';
-
-  var LESSON_TYPES = {
-    personal:    { label:'個人レッスン', short:'個人', icon:'👤', cls:'type-personal', shape:'badge-shape-pill' },
-    rental:      { label:'貸切',         short:'貸切', icon:'⛸️', cls:'type-rental', shape:'badge-shape-rect' },
-    semi:        { label:'セミプライベート', short:'セミ', icon:'👥', cls:'type-rental', shape:'badge-shape-hexagon' },
-    kyoshitsu:   { label:'教室',         short:'教室', icon:'🏫', cls:'type-kyoshitsu', shape:'badge-shape-circle' },
-    choreography:{ label:'振付・曲かけ', short:'振付', icon:'🎵', cls:'type-choreography', shape:'badge-shape-pill' }
-  };
-  var TYPE_ORDER = ['personal','rental','semi','kyoshitsu','choreography'];
-
-  var RINKS = ['アクアリンクちば', '新横浜スケートセンター', '明治神宮外苑', '東大和スケートセンター', 'その他'];
-  var JSF_BADGES = ['無級','初級','1級','2級','3級','4級','5級','6級','7級','8級'];
-  var ISI_LEVELS = ['Pre-Alpha','Alpha','Beta','Gamma','Delta','Freestyle 1','Freestyle 2','Freestyle 3','Freestyle 4','Freestyle 5','Freestyle 6','Freestyle 7','Freestyle 8','Freestyle 9','Freestyle 10'];
-  var CATEGORIES = ['ノービスB','ノービスA','ジュニア','シニア','マスターズ','趣味・大人'];
-  var TAG_PRESETS = ['スピン強化', 'ジャンプ調整', '曲かけ練習', 'ステップ補強', '表現力', '大会直前', 'テスト対策'];
-
-  var KEY_LESSONS = 'trepeta_lessons_v1';
-  var KEY_PASSCODE = 'trepeta_passcode_v1';
-  var KEY_CLASSROOMS = 'trepeta_classrooms_v1';
-
+<script>(function(){
+  "use strict";
+  var STORAGE_KEY = 'torepeta_lessons_v1';
+  var memStore = {};
   function loadLessons(){
-    try {
-      var raw = localStorage.getItem(KEY_LESSONS);
-      return raw ? JSON.parse(raw) : getSeedLessons();
-    } catch(e) { return getSeedLessons(); }
+    try{
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if(raw !== null && raw !== undefined) return JSON.parse(raw);
+    }catch(e){  }
+    return memStore[STORAGE_KEY] || null;
   }
-  function saveLessons(data){
-    try { localStorage.setItem(KEY_LESSONS, JSON.stringify(data)); } catch(e){}
+  function saveLessons(lessons){
+    memStore[STORAGE_KEY] = lessons;
+    try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(lessons)); }catch(e){  }
   }
-  function loadPasscode(){
-    try { return localStorage.getItem(KEY_PASSCODE) || ''; } catch(e){ return ''; }
-  }
-  function savePasscode(pass){
-    try {
-      if(pass) localStorage.setItem(KEY_PASSCODE, pass);
-      else localStorage.removeItem(KEY_PASSCODE);
-    } catch(e){}
-  }
+  var CLASSROOM_STORAGE_KEY = 'torepeta_classrooms_v1';
   function loadClassrooms(){
-    try {
-      var raw = localStorage.getItem(KEY_CLASSROOMS);
-      return raw ? JSON.parse(raw) : getSeedClassrooms();
-    } catch(e){ return getSeedClassrooms(); }
+    try{
+      var raw = window.localStorage.getItem(CLASSROOM_STORAGE_KEY);
+      if(raw !== null && raw !== undefined) return JSON.parse(raw);
+    }catch(e){  }
+    return memStore[CLASSROOM_STORAGE_KEY] || null;
   }
-  function saveClassrooms(data){
-    try { localStorage.setItem(KEY_CLASSROOMS, JSON.stringify(data)); } catch(e){}
+  function saveClassrooms(list){
+    memStore[CLASSROOM_STORAGE_KEY] = list;
+    try{ window.localStorage.setItem(CLASSROOM_STORAGE_KEY, JSON.stringify(list)); }catch(e){  }
   }
-
+  var LESSON_TYPES = {
+    personal:  { label:'個人レッスン', short:'個人', cls:'type-personal', shape:'shape-circle', icon:'👤' },
+    group:     { label:'グループレッスン', short:'グループ', cls:'type-group', shape:'shape-round', icon:'👥' },
+    rental:    { label:'貸切・振付', short:'貸切/振付', cls:'type-rental', shape:'shape-hex', icon:'⛸️' },
+    kyoshitsu: { label:'教室', short:'教室', cls:'type-kyoshitsu', shape:'shape-square', icon:'🏫' }
+  };
+  var TYPE_ORDER = ['personal','group','rental','kyoshitsu'];
+  var TAG_PRESETS = [
+    '1A','2Lo','2Lz','2F','2A','3T','3S','3Lo','3Lz',
+    'FSSp','CSSp','LSp','StSq','ChSq',
+    '軸の意識','フリー脚','エッジ','踏切','タイミング','腕の使い方','体幹','ジャンプ矯正',
+    '曲かけ','振付確認','基礎練習','試合前チェック'
+  ];
+  var RINKS = ['メインリンク','サブリンク','外部リンク'];
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+  function pad2(n){ return String(n).padStart(2,'0'); }
   function todayStr(){
     var d = new Date();
-    var y = d.getFullYear();
-    var m = String(d.getMonth()+1).padStart(2,'0');
-    var day = String(d.getDate()).padStart(2,'0');
-    return y + '-' + m + '-' + day;
+    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
   }
-
-  function getSeedLessons(){
+  function addDays(dateStr, n){
+    var d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + n);
+    return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+  }
+  function fmtDateJp(dateStr){
+    var d = new Date(dateStr + 'T00:00:00');
+    var w = ['日','月','火','水','木','金','土'][d.getDay()];
+    return (d.getMonth()+1) + '月' + d.getDate() + '日（' + w + '）';
+  }
+  function yen(n){ return '¥' + Number(n||0).toLocaleString('ja-JP'); }
+  function esc(str){
+    return String(str==null ? '' : str).replace(/[&<>"']/g, function(ch){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch];
+    });
+  }
+  function seedData(){
     var t = todayStr();
+    var tmr = addDays(t, 1);
     return [
-      { id:'1', date:t, start:'09:00', end:'09:45', type:'personal', student:'佐藤 ひなた', rink:'アクアリンクちば', fee:5000, splitCount:1, contactStatus:'未連絡', paymentStatus:'未回収', tags:['ジャンプ調整'], level:{ jsf:'2級', isi:'', category:'ノービスB' }, notes:'アクセルの回転軸を意識', homework:'左足の締めを意識してバッククロス', createdAt:1000 },
-      { id:'2', date:t, start:'10:00', end:'11:00', type:'rental', student:'強化Aグループ', rink:'アクアリンクちば', fee:12000, splitCount:4, contactStatus:'連絡済', paymentStatus:'回収済', tags:['曲かけ練習'], level:{ jsf:'5級', isi:'', category:'ジュニア' }, notes:'曲かけ1本目まずまず', homework:'', createdAt:1001 },
-      { id:'3', date:t, start:'18:00', end:'19:00', type:'kyoshitsu', student:'夜間大人クラス', rink:'明治神宮外苑', fee:3000, splitCount:1, contactStatus:'連絡済', paymentStatus:'未回収', tags:['スピン強化'], level:{ jsf:'', isi:'Freestyle 1', category:'趣味・大人' }, notes:'', homework:'', createdAt:1002 }
+      { id: uid(), date:t, start:'09:00', end:'09:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:['3T','軸の意識'], notes:'踏切のタイミングが早い。助走から意識づけを継続。', homework:'家で片足立ちの軸バランス練習を毎日5分。', createdAt: Date.now()-1000 },
+      { id: uid(), date:t, start:'10:00', end:'10:45', type:'group', student:'ジュニアクラス（4名）', rink:'サブリンク', fee:2500, splitCount:1,
+        contactStatus:'連絡済', paymentStatus:'回収済', tags:['基礎練習','StSq'], notes:'', homework:'', createdAt: Date.now()-2000 },
+      { id: uid(), date:t, start:'13:00', end:'14:00', type:'rental', student:'鈴木 蓮 / 高橋 陸', rink:'メインリンク', fee:9000, splitCount:2,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:['曲かけ','振付確認'], notes:'', homework:'', createdAt: Date.now()-3000 },
+      { id: uid(), date:tmr, start:'16:00', end:'16:30', type:'personal', student:'佐藤 ひなた', rink:'メインリンク', fee:4000, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now() },
+      { id: uid(), date:tmr, start:'18:00', end:'19:00', type:'kyoshitsu', student:'大人スケート教室', rink:'サブリンク', fee:1500, splitCount:1,
+        contactStatus:'未連絡', paymentStatus:'未回収', tags:[], notes:'', homework:'', createdAt: Date.now()+1 }
     ];
   }
-
-  function getSeedClassrooms(){
+  function seedClassrooms(){
     return [
-      { id:'c1', name:'夜間大人クラス', start:'18:00', end:'19:00', rink:'明治神宮外苑' },
-      { id:'c2', name:'ジュニア選手育成B', start:'07:00', end:'08:30', rink:'アクアリンクちば' }
+      { id: uid(), name:'大人スケート教室', start:'18:00', end:'19:00', rink:'サブリンク' },
+      { id: uid(), name:'キッズスケート教室 初級', start:'16:30', end:'17:15', rink:'メインリンク' }
     ];
   }
-
-  var lessons = loadLessons();
-  var classroomMaster = loadClassrooms();
-  var savedPasscode = loadPasscode();
-  var isUnlocked = !savedPasscode;
-
+  var lessons = loadLessons() || seedData();
+  var classroomMaster = loadClassrooms() || seedClassrooms();
+  var selectedDate = todayStr();
   var currentTab = 'schedule';
   var viewMode = 'day';
-  var selectedDate = todayStr();
   var calYear = new Date().getFullYear();
   var calMonth = new Date().getMonth();
   var financeYear = new Date().getFullYear();
-
-  var rootEl = document.getElementById('app-root');
+  var toastTimer = null;
+  var rootEl = document.getElementById('root');
   var overlayRoot = document.getElementById('overlay-root');
   var classroomOverlayRoot = document.getElementById('classroom-overlay-root');
-
+  var toastRoot = document.getElementById('toast-root');
   function persist(){ saveLessons(lessons); }
   function persistClassrooms(){ saveClassrooms(classroomMaster); }
-
-  function esc(str){
-    if(str==null) return '';
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-  function yen(num){ return '¥' + Number(num||0).toLocaleString(); }
-  function uid(){ return Date.now().toString(36) + Math.random().toString(36).substr(2,5); }
-
-  function showToast(msg, type){
-    var el = document.createElement('div');
-    el.className = 'toast toast--' + (type||'ok');
-    el.textContent = msg;
-    document.getElementById('toast-root').appendChild(el);
-    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 2400);
-  }
-
   function copyToClipboard(text){
-    if(navigator.clipboard && navigator.clipboard.writeText){
-      return navigator.clipboard.writeText(text).then(function(){ return true; }).catch(function(){ return false; });
-    }
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    var ok = false;
-    try { ok = document.execCommand('copy'); } catch(e){}
-    document.body.removeChild(ta);
-    return Promise.resolve(ok);
-  }
-
-  function fmtDateJp(dateStr){
-    var parts = dateStr.split('-');
-    if(parts.length!==3) return dateStr;
-    var d = new Date(Number(parts[0]), Number(parts[1])-1, Number(parts[2]));
-    var days = ['日','月','火','水','木','金','土'];
-    return Number(parts[1]) + '月' + Number(parts[2]) + '日(' + days[d.getDay()] + ')';
-  }
-
-  function buildLineMessage(lesson){
-    var typeLabel = LESSON_TYPES[lesson.type] ? LESSON_TYPES[lesson.type].label : '';
-    var dateJp = fmtDateJp(lesson.date);
-    var feeStr = yen(lesson.fee);
-    if(lesson.type === 'rental' && lesson.splitCount > 1){
-      var per = Math.ceil(lesson.fee / lesson.splitCount);
-      feeStr += '（割り勘' + lesson.splitCount + '名：お一人 ' + yen(per) + '）';
-    }
-    return '【レッスン確定のご連絡】\n' +
-      '・日時：' + dateJp + ' ' + lesson.start + '〜' + lesson.end + '\n' +
-      '・種別：' + typeLabel + '\n' +
-      '・対象：' + lesson.student + '\n' +
-      '・リンク：' + lesson.rink + '\n' +
-      '・料金：' + feeStr + '\n\n' +
-      'よろしくお願いいたします！⛸️';
-  }
-
-  function renderTypeBadge(typeKey, size){
-    var t = LESSON_TYPES[typeKey] || LESSON_TYPES.personal;
-    var szCls = size ? ' type-badge--' + size : '';
-    return '<span class="type-badge ' + t.shape + ' ' + t.cls + szCls + '">' + t.short + '</span>';
-  }
-
-  function renderLockScreen(){
-    var html = '<div class="lock-screen">';
-    html += '<div class="lock-screen__icon">🔒</div>';
-    html += '<div class="lock-screen__title">トレペタ</div>';
-    html += '<div class="lock-screen__sub">パスワードを入力してください</div>';
-    html += '<input type="password" id="passcode-input" class="lock-screen__input mono" maxlength="8" pattern="[0-9]*" inputmode="numeric" autofocus>';
-    html += '<button class="lock-screen__btn tappable" id="btn-unlock">解除</button>';
-    html += '</div>';
-    rootEl.innerHTML = html;
-
-    function attempt(){
-      var val = document.getElementById('passcode-input').value;
-      if(val === savedPasscode){
-        isUnlocked = true;
-        renderShell();
+    return new Promise(function(resolve){
+      if(navigator.clipboard && window.isSecureContext){
+        navigator.clipboard.writeText(text).then(function(){ resolve(true); }).catch(function(){ resolve(fallbackCopy(text)); });
       } else {
-        showToast('パスワードが違います', 'danger');
+        resolve(fallbackCopy(text));
       }
-    }
-    document.getElementById('btn-unlock').addEventListener('click', attempt);
-    document.getElementById('passcode-input').addEventListener('keypress', function(e){
-      if(e.key === 'Enter') attempt();
     });
   }
-
-  function renderScheduleView(){
-    var html = '<div class="view-switcher">';
-    html += '<button class="view-btn tappable' + (viewMode==='day'?' is-active':'') + '" data-action="set-view" data-view="day">日表示</button>';
-    html += '<button class="view-btn tappable' + (viewMode==='month'?' is-active':'') + '" data-action="set-view" data-view="month">月表示</button>';
-    html += '</div>';
-
-    if(viewMode === 'day'){
-      html += renderDateStrip();
-      html += renderDayLessonList();
+  function fallbackCopy(text){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }catch(e){ return false; }
+  }
+  function buildLineMessage(lesson){
+    var typePhrase;
+    if(lesson.type === 'kyoshitsu'){
+      typePhrase = (lesson.student && lesson.student.trim()) ? lesson.student.trim() : '教室レッスン';
     } else {
-      html += renderCalendarMonth();
-      html += renderDayLessonList();
+      typePhrase = LESSON_TYPES[lesson.type].label;
     }
-    return html;
+    return fmtDateJp(lesson.date) + 'は ' + lesson.start + '〜' + lesson.end + ' ' + lesson.rink + 'で ' + typePhrase + 'です。よろしくお願いいたします';
   }
-
+  function showToast(msg, tone){
+    tone = tone || 'navy';
+    toastRoot.innerHTML = '<div class="toast toast--' + tone + '">' + esc(msg) + '</div>';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastRoot.innerHTML = ''; }, 2200);
+  }
   function renderDateStrip(){
-    var cur = new Date(selectedDate + 'T00:00:00');
-    var days = [];
-    for(var i=-14; i<=14; i++){
-      var d = new Date(cur);
-      d.setDate(d.getDate() + i);
-      var y = d.getFullYear();
-      var m = String(d.getMonth()+1).padStart(2,'0');
-      var day = String(d.getDate()).padStart(2,'0');
-      var key = y + '-' + m + '-' + day;
-      var w = ['日','月','火','水','木','金','土'][d.getDay()];
-      days.push({ key:key, num:d.getDate(), week:w, isToday: key===todayStr() });
-    }
     var html = '<div class="date-strip" id="date-strip">';
-    days.forEach(function(d){
-      var sel = d.key === selectedDate ? ' is-selected' : '';
-      var count = lessons.filter(function(l){ return l.date===d.key; }).length;
-      html += '<button class="date-chip tappable' + sel + '" data-action="select-date" data-date="' + d.key + '">';
-      html += '<span class="date-chip__day">' + d.week + '</span>';
-      html += '<span class="date-chip__num mono">' + d.num + '</span>';
-      html += '<div class="date-chip__dots">';
-      for(var k=0; k<Math.min(count,3); k++){ html += '<span class="date-chip__dot"></span>'; }
-      html += '</div></button>';
-    });
+    for(var i=-2;i<14;i++){
+      var key = addDays(todayStr(), i);
+      var d = new Date(key + 'T00:00:00');
+      var w = ['日','月','火','水','木','金','土'][d.getDay()];
+      var wCls = w==='日' ? 'is-sun' : (w==='土' ? 'is-sat' : '');
+      var isSel = key === selectedDate;
+      var isToday = key === todayStr();
+      var count = lessons.filter(function(l){ return l.date===key; }).length;
+      html += '<button class="date-chip tappable min-tap' + (isSel?' is-selected':'') + '" data-action="select-date" data-date="' + key + '">';
+      html += '<span class="date-chip__weekday ' + wCls + '">' + w + '</span>';
+      html += '<span class="date-chip__day">' + d.getDate() + '</span>';
+      if(isToday && !isSel) html += '<span class="date-chip__today-dot"></span>';
+      if(count>0) html += '<span class="date-chip__count">' + (isSel ? count + '件' : '●'.repeat(Math.min(count,3))) + '</span>';
+      html += '</button>';
+    }
     html += '</div>';
     return html;
   }
-
-  function renderCalendarMonth(){
-    var firstDay = new Date(calYear, calMonth, 1);
-    var startWeek = firstDay.getDay();
-    var startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - startWeek);
-
-    var html = '<div class="calendar-view">';
-    html += '<div class="calendar-header">';
-    html += '<button class="calendar-nav-btn tappable" data-action="cal-prev-month">‹</button>';
-    html += '<div class="calendar-header__title mono">' + calYear + '年 ' + (calMonth+1) + '月</div>';
-    html += '<button class="calendar-nav-btn tappable" data-action="cal-next-month">›</button>';
+  function renderTypeBadge(type, size){
+    var t = LESSON_TYPES[type];
+    return '<div class="type-badge type-badge--' + (size||'md') + ' ' + t.shape + ' ' + t.cls + '">' + t.icon + '</div>';
+  }
+  function renderLessonTile(l){
+    var t = LESSON_TYPES[l.type];
+    var contactOn = l.contactStatus === '連絡済';
+    var paidOn = l.paymentStatus === '回収済';
+    var html = '<div class="lesson-tile">';
+    html += '<div class="lesson-tile__accent accent-' + l.type + '"></div>';
+    html += '<button class="lesson-tile__main tappable" data-action="open-lesson" data-id="' + l.id + '">';
+    html += '<div class="lesson-tile__time"><span class="lesson-tile__time-start mono">' + esc(l.start) + '</span><span class="lesson-tile__time-end">〜' + esc(l.end) + '</span></div>';
+    html += renderTypeBadge(l.type, 'md');
+    html += '<div class="lesson-tile__body">';
+    html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + '</span><span class="lesson-tile__type-label ' + t.cls + '">' + t.short + '</span></div>';
+    html += '<div class="lesson-tile__sub">' + esc(l.rink) + ' ・ ' + yen(l.fee) + '</div>';
+    html += '<div class="lesson-tile__badges">';
+    html += '<span class="status-pill status-pill--contact' + (contactOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (contactOn?'連絡済':'未連絡') + '</span>';
+    html += '<span class="status-pill status-pill--payment' + (paidOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (paidOn?'回収済':'未回収') + '</span>';
+    if(l.tags && l.tags.length>0) html += '<span class="lesson-tile__tagcount">🏷 ' + l.tags.length + '件</span>';
+    html += '</div></div></button>';
+    html += '<div class="lesson-tile__actions"><button class="btn-line tappable min-tap' + (contactOn?' is-done':'') + '" data-action="quick-line" data-id="' + l.id + '"><span>💬</span><span>' + (contactOn?'LINE文をコピー':'LINE連絡') + '</span></button></div>';
     html += '</div>';
-    html += '<div class="calendar-grid">';
-    var weeks = ['日','月','火','水','木','金','土'];
-    weeks.forEach(function(w){ html += '<div class="calendar-day-head">' + w + '</div>'; });
-
-    var curr = new Date(startDate);
-    for(var cell=0; cell<35; cell++){
-      var y = curr.getFullYear();
-      var m = String(curr.getMonth()+1).padStart(2,'0');
-      var day = String(curr.getDate()).padStart(2,'0');
-      var key = y + '-' + m + '-' + day;
-
-      var isOther = curr.getMonth() !== calMonth;
-      var isSel = key === selectedDate;
-      var isTod = key === todayStr();
-
-      var dayLessons = lessons.filter(function(l){ return l.date===key; });
-
-      var cls = 'calendar-cell tappable';
-      if(isOther) cls += ' is-other-month';
-      if(isSel) cls += ' is-selected';
-      if(isTod) cls += ' is-today';
-
-      html += '<button class="' + cls + '" data-action="select-date" data-date="' + key + '">';
-      html += '<span class="calendar-cell__num mono">' + curr.getDate() + '</span>';
-      html += '<div class="calendar-cell__dots">';
-      dayLessons.forEach(function(l){
-        var t = LESSON_TYPES[l.type] || LESSON_TYPES.personal;
-        html += '<span class="calendar-cell__dot ' + t.cls + '"></span>';
-      });
-      html += '</div></button>';
-
-      curr.setDate(curr.getDate() + 1);
+    return html;
+  }
+  function renderViewToggle(){
+    var html = '<div class="view-toggle">';
+    html += '<button class="view-toggle__btn tappable min-tap' + (viewMode==='day'?' is-active':'') + '" data-action="set-view" data-view="day">日表示</button>';
+    html += '<button class="view-toggle__btn tappable min-tap' + (viewMode==='month'?' is-active':'') + '" data-action="set-view" data-view="month">月表示</button>';
+    html += '</div>';
+    return html;
+  }
+  function renderMonthCalendar(){
+    var year = calYear, month = calMonth;
+    var startWeekday = new Date(year, month, 1).getDay();
+    var daysInMonth = new Date(year, month+1, 0).getDate();
+    var html = '<div class="month-calendar">';
+    html += '<div class="month-calendar__nav"><button class="month-calendar__nav-btn tappable" data-action="cal-prev-month">‹</button><span class="month-calendar__label">' + year + '年' + (month+1) + '月</span><button class="month-calendar__nav-btn tappable" data-action="cal-next-month">›</button></div>';
+    html += '<div class="month-calendar__weekdays">';
+    ['日','月','火','水','木','金','土'].forEach(function(w, idx){
+      var cls = idx===0 ? 'is-sun' : (idx===6 ? 'is-sat' : '');
+      html += '<span class="month-calendar__weekday ' + cls + '">' + w + '</span>';
+    });
+    html += '</div><div class="month-calendar__grid">';
+    for(var i=0;i<startWeekday;i++){ html += '<div class="month-calendar__cell is-empty"></div>'; }
+    for(var day=1; day<=daysInMonth; day++){
+      var dateKey = year + '-' + pad2(month+1) + '-' + pad2(day);
+      var isSel = dateKey === selectedDate;
+      var isToday = dateKey === todayStr();
+      var count = lessons.filter(function(l){ return l.date===dateKey; }).length;
+      var wd = new Date(year, month, day).getDay();
+      var wdCls = wd===0 ? 'is-sun' : (wd===6 ? 'is-sat' : '');
+      html += '<button class="month-calendar__cell tappable' + (isSel?' is-selected':'') + (isToday&&!isSel?' is-today':'') + '" data-action="select-date" data-date="' + dateKey + '">';
+      html += '<span class="month-calendar__cell-day ' + wdCls + '">' + day + '</span>';
+      if(count>0) html += '<span class="month-calendar__cell-dot"></span>';
+      html += '</button>';
     }
     html += '</div></div>';
     return html;
   }
-
-  function renderDayLessonList(){
-    var dayLessons = lessons.filter(function(l){ return l.date === selectedDate; });
-    dayLessons.sort(function(a,b){ return a.start.localeCompare(b.start); });
-
-    var html = '<div class="section-title">' + fmtDateJp(selectedDate) + ' の予定 (' + dayLessons.length + '件)</div>';
+  function renderScheduleView(){
+    var dayLessons = lessons.filter(function(l){ return l.date===selectedDate; }).sort(function(a,b){ return a.start.localeCompare(b.start); });
+    var html = renderViewToggle();
+    html += (viewMode === 'month') ? renderMonthCalendar() : renderDateStrip();
+    html += '<div class="section-heading"><span class="section-heading__title">' + fmtDateJp(selectedDate) + '</span><span class="section-heading__meta">' + dayLessons.length + '件の予定</span></div>';
     if(dayLessons.length === 0){
-      html += '<div class="lesson-empty">予定はありません 🎉<br><span style="font-size:12px;opacity:0.7">右下の「＋」から追加できます</span></div>';
-      return html;
+      html += '<div class="lesson-list"><div class="empty-state"><div class="empty-state__icon">🧊</div><div class="empty-state__text">この日の予定はまだありません</div><button class="empty-state__btn tappable" data-action="open-add">＋ 予定を追加</button></div></div>';
+    } else {
+      html += '<div class="lesson-list">';
+      dayLessons.forEach(function(l){ html += renderLessonTile(l); });
+      html += '</div>';
     }
-    html += '<div class="lesson-list">';
-    dayLessons.forEach(function(l){
-      var isPaid = l.paymentStatus === '回収済';
-      var isContacted = l.contactStatus === '連絡済';
-      var lvl = l.level || {};
-
-      html += '<div class="lesson-card tappable" data-action="open-lesson" data-id="' + l.id + '">';
-      html += '<div class="lesson-card__head">';
-      html += renderTypeBadge(l.type, 'sm');
-      html += '<span class="lesson-card__time mono">' + esc(l.start) + ' 〜 ' + esc(l.end) + '</span>';
-      html += '</div>';
-      html += '<div class="lesson-card__body">';
-      html += '<div class="lesson-card__info">';
-      html += '<div class="lesson-card__name">' + esc(l.student) + '</div>';
-      html += '<div class="lesson-card__meta"><span>📍 ' + esc(l.rink) + '</span></div>';
-      
-      if(lvl.jsf || lvl.isi || lvl.category){
-        html += '<div class="lesson-card__level">';
-        if(lvl.jsf) html += '<span class="level-badge">JSF: ' + esc(lvl.jsf) + '</span>';
-        if(lvl.isi) html += '<span class="level-badge">ISI: ' + esc(lvl.isi) + '</span>';
-        if(lvl.category) html += '<span class="level-badge">' + esc(lvl.category) + '</span>';
-        html += '</div>';
-      }
-      html += '</div></div>';
-
-      html += '<div class="lesson-card__foot">';
-      html += '<div class="lesson-card__fee mono">' + yen(l.fee) + '</div>';
-      html += '<div class="lesson-card__actions">';
-      html += '<button class="btn-action' + (isContacted?' btn-action--done':'') + '" data-action="quick-line" data-id="' + l.id + '"><span>💬</span><span>' + (isContacted?'連絡済':'LINE') + '</span></button>';
-      html += '<span class="btn-action' + (isPaid?' btn-action--done':'') + '"><span>' + (isPaid?'✅':'💴') + '</span><span>' + (isPaid?'回収済':'未回収') + '</span></span>';
-      html += '</div></div>';
-      html += '</div>';
-    });
-    html += '</div>';
     return html;
   }
-
   function renderFinanceView(){
     var yearLessons = lessons.filter(function(l){ return l.date.indexOf(String(financeYear))===0; });
     var unpaid = yearLessons.filter(function(l){ return l.paymentStatus==='未回収'; });
@@ -913,7 +585,6 @@ body {
     html += '</div></div>';
     return html;
   }
-
   function renderHeader(){
     var todayUncontacted = lessons.filter(function(l){ return l.date===todayStr() && l.contactStatus==='未連絡'; }).length;
     var html = '<header class="app-header">';
@@ -922,13 +593,11 @@ body {
     if(currentTab==='schedule' && todayUncontacted>0){
       html += '<div class="app-header__alert">本日 未連絡 ' + todayUncontacted + '件</div>';
     }
-    html += '<button class="header-gear tappable min-tap" data-action="open-passcode-settings" title="パスワード設定">🔒</button>';
     html += '<button class="header-gear tappable min-tap" data-action="open-classroom-master" title="教室マスタを管理">⚙️</button>';
     html += '</div>';
     html += '</header>';
     return html;
   }
-
   function renderBottomNav(){
     var items = [ { key:'schedule', label:'予定', icon:'🗓️' }, { key:'finance', label:'収支・確定申告', icon:'💰' } ];
     var html = '<nav class="bottom-nav">';
@@ -941,17 +610,11 @@ body {
     html += '</nav>';
     return html;
   }
-
   function renderFab(){
     if(currentTab !== 'schedule') return '';
     return '<button class="fab tappable" data-action="open-add">＋</button>';
   }
-
   function renderShell(){
-    if(!isUnlocked){
-      renderLockScreen();
-      return;
-    }
     var html = renderHeader();
     html += '<main class="main-scroll">';
     html += (currentTab === 'schedule') ? renderScheduleView() : renderFinanceView();
@@ -965,7 +628,6 @@ body {
       if(sel) sel.scrollIntoView({ inline:'center', block:'nearest' });
     }
   }
-
   function selectDate(dateKey){ selectedDate = dateKey; renderShell(); }
   function switchTab(tab){ currentTab = tab; renderShell(); }
   function setViewMode(mode){
@@ -979,7 +641,6 @@ body {
   }
   function calPrevMonth(){ calMonth--; if(calMonth<0){ calMonth=11; calYear--; } renderShell(); }
   function calNextMonth(){ calMonth++; if(calMonth>11){ calMonth=0; calYear++; } renderShell(); }
-
   function quickLine(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
     if(!lesson) return;
@@ -995,7 +656,6 @@ body {
       }
     });
   }
-
   function togglePaymentFromFinance(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
     if(!lesson) return;
@@ -1004,22 +664,19 @@ body {
     renderShell();
     showToast('回収済みにしました', 'ok');
   }
-
   function changeFinanceYear(delta){ financeYear += delta; renderShell(); }
-
   function exportCsv(){
     var rows = lessons.filter(function(l){ return l.date.indexOf(String(financeYear))===0; });
     if(rows.length === 0){ showToast(financeYear + '年のデータがありません', 'danger'); return; }
-    var header = ['日付','開始','終了','種別','生徒名/グループ名','バッジテスト','ISI','区分','リンク','料金','割り勘人数','入金状況','連絡状況','カルテタグ'];
+    var header = ['日付','開始','終了','種別','生徒名/グループ名','リンク','料金','割り勘人数','入金状況','連絡状況','カルテタグ'];
     rows = rows.slice().sort(function(a,b){ return a.date.localeCompare(b.date) || a.start.localeCompare(b.start); });
     var lines = rows.map(function(l){
-      var lvl = l.level || {};
-      return [ l.date, l.start, l.end, LESSON_TYPES[l.type].label, l.student, lvl.jsf||'', lvl.isi||'', lvl.category||'', l.rink, l.fee, l.splitCount||1, l.paymentStatus, l.contactStatus, (l.tags||[]).join('/') ];
+      return [ l.date, l.start, l.end, LESSON_TYPES[l.type].label, l.student, l.rink, l.fee, l.splitCount||1, l.paymentStatus, l.contactStatus, (l.tags||[]).join('/') ];
     });
     var totalAll = rows.reduce(function(s,l){ return s+Number(l.fee||0); },0);
     var totalPaid = rows.filter(function(l){ return l.paymentStatus==='回収済'; }).reduce(function(s,l){ return s+Number(l.fee||0); },0);
     lines.push([]);
-    lines.push(['', '', '', '', '', '', '', '', '年間合計', totalAll, '', '回収済合計:' + totalPaid, '', '']);
+    lines.push(['', '', '', '', '', '年間合計', totalAll, '', '回収済合計:' + totalPaid, '', '']);
     function escCsv(v){
       var s = String(v==null ? '' : v);
       return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
@@ -1036,7 +693,6 @@ body {
     URL.revokeObjectURL(url);
     showToast(financeYear + '年分のCSVを出力しました', 'ok');
   }
-
   function createRecognizer(onFinalText){
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if(!SR) return null;
@@ -1053,7 +709,6 @@ body {
     };
     return rec;
   }
-
   function findPrevAdvice(lesson){
     var candidates = lessons.filter(function(l){
       return l.student === lesson.student && l.id !== lesson.id && (l.homework || l.notes) &&
@@ -1062,37 +717,18 @@ body {
     candidates.sort(function(a,b){ return (b.date+'T'+b.start).localeCompare(a.date+'T'+a.start); });
     return candidates[0] || null;
   }
-
   function openLessonModal(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
     if(!lesson) return;
     var t = LESSON_TYPES[lesson.type];
     var prev = findPrevAdvice(lesson);
     var perPersonInit = (lesson.type==='rental' && lesson.splitCount>1) ? Math.ceil(lesson.fee/lesson.splitCount) : null;
-    var lvl = lesson.level || { jsf:'', isi:'', category:'' };
-
     var html = '<div class="sheet-overlay" id="lesson-overlay">';
     html += '<div class="sheet-backdrop" data-action="close-sheet"></div>';
     html += '<div class="sheet">';
     html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
     html += '<div class="sheet__header">' + renderTypeBadge(lesson.type,'md') + '<div class="sheet__header-text"><div class="sheet__header-title">' + esc(lesson.student) + '</div><div class="sheet__header-sub mono">' + fmtDateJp(lesson.date) + ' ' + esc(lesson.start) + '〜' + esc(lesson.end) + ' ・ ' + esc(lesson.rink) + '</div></div><button class="sheet__close tappable" data-action="close-sheet">✕</button></div>';
     html += '<div class="sheet__body">';
-
-    /* 生徒レベル設定（モーダル内） */
-    html += '<div class="advice-box" style="background:#f0f4f8; border-color:#cbd5e0;">';
-    html += '<div class="advice-box__title" style="color:var(--primary);"><span>🎖️</span><span>生徒の級・レベル設定</span></div>';
-    html += '<div class="grid-3" style="margin-top:6px;">';
-    html += '<div><div class="field-label">バッジテスト</div><select id="edit-lvl-jsf" class="select-input"><option value="">なし</option>';
-    JSF_BADGES.forEach(function(b){ html += '<option value="' + b + '"' + (lvl.jsf===b?' selected':'') + '>' + b + '</option>'; });
-    html += '</select></div>';
-    html += '<div><div class="field-label">ISI級</div><select id="edit-lvl-isi" class="select-input"><option value="">なし</option>';
-    ISI_LEVELS.forEach(function(b){ html += '<option value="' + b + '"' + (lvl.isi===b?' selected':'') + '>' + b + '</option>'; });
-    html += '</select></div>';
-    html += '<div><div class="field-label">区分</div><select id="edit-lvl-cat" class="select-input"><option value="">なし</option>';
-    CATEGORIES.forEach(function(b){ html += '<option value="' + b + '"' + (lvl.category===b?' selected':'') + '>' + b + '</option>'; });
-    html += '</select></div>';
-    html += '</div></div>';
-
     if(prev){
       html += '<div class="advice-box"><div class="advice-box__title"><span>📌</span><span>前回（' + fmtDateJp(prev.date) + '）の宿題・アドバイス</span></div><div class="advice-box__text">' + esc(prev.homework || prev.notes) + '</div></div>';
     }
@@ -1124,9 +760,7 @@ body {
     overlayRoot.innerHTML = html;
     attachLessonModalListeners(lesson);
   }
-
   function closeModal(){ overlayRoot.innerHTML = ''; }
-
   function attachLessonModalListeners(lesson){
     var overlay = document.getElementById('lesson-overlay');
     overlay.addEventListener('click', function(e){
@@ -1172,7 +806,6 @@ body {
     }
     function currentFee(){ return Number(feeInput.value) || 0; }
     function currentSplit(){ return splitInput ? Math.max(1, Number(splitInput.value)||1) : 1; }
-
     document.getElementById('btn-line').addEventListener('click', function(){
       lesson.fee = currentFee();
       lesson.splitCount = currentSplit();
@@ -1191,7 +824,6 @@ body {
         }
       });
     });
-
     document.getElementById('btn-pay').addEventListener('click', function(){
       lesson.paymentStatus = lesson.paymentStatus === '回収済' ? '未回収' : '回収済';
       persist();
@@ -1202,7 +834,6 @@ body {
       btn.innerHTML = '<span class="action-btn__icon">' + (isDone?'✅':'💴') + '</span><span>' + (isDone?'回収済み':'未回収 → タップで回収') + '</span>';
       showToast(isDone ? '入金済みにしました' : '未回収に戻しました', 'navy');
     });
-
     var micBtn = document.getElementById('mic-btn');
     var recordingHint = document.getElementById('recording-hint');
     var notesTextarea = document.getElementById('notes-textarea');
@@ -1210,7 +841,6 @@ body {
     var recognizer = createRecognizer(function(text){
       notesTextarea.value = (notesTextarea.value ? notesTextarea.value + ' ' : '') + text;
     });
-
     if(!recognizer){
       micBtn.outerHTML = '<span class="mic-unsupported">🎤 音声入力非対応</span>';
     } else {
@@ -1228,11 +858,10 @@ body {
             recognizing = true;
             micBtn.classList.add('is-recording');
             recordingHint.style.display = '';
-          }catch(e){ }
+          }catch(e){  }
         }
       });
     }
-
     document.getElementById('btn-delete').addEventListener('click', function(){
       if(window.confirm('この予定を削除しますか？')){
         lessons = lessons.filter(function(l){ return l.id !== lesson.id; });
@@ -1242,25 +871,18 @@ body {
         showToast('予定を削除しました', 'navy');
       }
     });
-
     document.getElementById('btn-save-lesson').addEventListener('click', function(){
       lesson.fee = currentFee();
       lesson.splitCount = currentSplit();
       lesson.tags = currentTags();
       lesson.notes = notesTextarea.value;
       lesson.homework = document.getElementById('homework-textarea').value;
-      lesson.level = {
-        jsf: document.getElementById('edit-lvl-jsf').value,
-        isi: document.getElementById('edit-lvl-isi').value,
-        category: document.getElementById('edit-lvl-cat').value
-      };
       persist();
       renderShell();
       closeModal();
       showToast('カルテを保存しました', 'ok');
     });
   }
-
   function openAddSheet(){
     var defaultType = 'personal';
     var html = '<div class="sheet-overlay" id="add-overlay">';
@@ -1286,21 +908,6 @@ body {
     html += '<button type="button" class="classroom-manage-link tappable" data-action="open-classroom-master">＋ 教室マスタを編集する</button>';
     html += '</div>';
     html += '<div><div class="field-label" id="add-student-label">生徒名 / グループ名</div><input type="text" id="add-student" class="text-input" placeholder="例：佐藤 ひなた"></div>';
-
-    /* 生徒レベル入力項目 */
-    html += '<div><div class="field-label">生徒のレベル・区分（任意）</div>';
-    html += '<div class="grid-3">';
-    html += '<div><div class="field-label" style="font-weight:400;">バッジテスト</div><select id="add-lvl-jsf" class="select-input"><option value="">なし</option>';
-    JSF_BADGES.forEach(function(b){ html += '<option value="' + b + '">' + b + '</option>'; });
-    html += '</select></div>';
-    html += '<div><div class="field-label" style="font-weight:400;">ISI級</div><select id="add-lvl-isi" class="select-input"><option value="">なし</option>';
-    ISI_LEVELS.forEach(function(b){ html += '<option value="' + b + '">' + b + '</option>'; });
-    html += '</select></div>';
-    html += '<div><div class="field-label" style="font-weight:400;">区分</div><select id="add-lvl-cat" class="select-input"><option value="">なし</option>';
-    CATEGORIES.forEach(function(b){ html += '<option value="' + b + '">' + b + '</option>'; });
-    html += '</select></div>';
-    html += '</div></div>';
-
     html += '<div class="grid-3">';
     html += '<div><div class="field-label">日付</div><input type="date" id="add-date" class="date-input" value="' + selectedDate + '"></div>';
     html += '<div><div class="field-label">開始</div><input type="time" id="add-start" class="date-input" value="09:00"></div>';
@@ -1321,7 +928,6 @@ body {
     overlayRoot.innerHTML = html;
     attachAddSheetListeners();
   }
-
   function attachAddSheetListeners(){
     var overlay = document.getElementById('add-overlay');
     var selectedType = 'personal';
@@ -1337,7 +943,6 @@ body {
     var studentLabel = document.getElementById('add-student-label');
     var studentInputEl = document.getElementById('add-student');
     var allSelCls = TYPE_ORDER.map(function(k){ return 'sel-' + k; });
-
     typeGrid.addEventListener('click', function(e){
       var btn = e.target.closest('.type-select-btn');
       if(!btn) return;
@@ -1357,7 +962,6 @@ body {
         studentInputEl.placeholder = '例：佐藤 ひなた';
       }
     });
-
     var rinkRow = document.getElementById('rink-row');
     rinkRow.addEventListener('click', function(e){
       var btn = e.target.closest('.rink-btn');
@@ -1365,7 +969,6 @@ body {
       Array.prototype.forEach.call(rinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
       btn.classList.add('is-selected');
     });
-
     var classroomSelect = document.getElementById('add-classroom-select');
     classroomSelect.addEventListener('change', function(){
       var val = classroomSelect.value;
@@ -1380,16 +983,13 @@ body {
       });
       submitBtnRef.disabled = studentInputEl.value.trim().length === 0;
     });
-
     var addSplit = document.getElementById('add-split');
     document.getElementById('add-split-minus').addEventListener('click', function(){ addSplit.value = Math.max(1,(Number(addSplit.value)||1)-1); });
     document.getElementById('add-split-plus').addEventListener('click', function(){ addSplit.value = (Number(addSplit.value)||1)+1; });
-
     var studentInput = document.getElementById('add-student');
     var submitBtnRef = document.getElementById('btn-create-lesson');
     var submitBtn = submitBtnRef;
     studentInput.addEventListener('input', function(){ submitBtn.disabled = studentInput.value.trim().length === 0; });
-
     submitBtn.addEventListener('click', function(){
       if(studentInput.value.trim().length === 0) return;
       var rinkBtn = rinkRow.querySelector('.rink-btn.is-selected');
@@ -1406,11 +1006,6 @@ body {
         contactStatus: '未連絡',
         paymentStatus: '未回収',
         tags: [],
-        level: {
-          jsf: document.getElementById('add-lvl-jsf').value,
-          isi: document.getElementById('add-lvl-isi').value,
-          category: document.getElementById('add-lvl-cat').value
-        },
         notes: '',
         homework: '',
         createdAt: Date.now()
@@ -1423,7 +1018,6 @@ body {
       showToast('予定を追加しました', 'ok');
     });
   }
-
   function buildClassroomOptions(){
     var opts = '<option value="">— 選択してください —</option>';
     classroomMaster.forEach(function(c){
@@ -1431,7 +1025,6 @@ body {
     });
     return opts;
   }
-
   function refreshClassroomSelect(){
     var sel = document.getElementById('add-classroom-select');
     if(!sel) return;
@@ -1439,13 +1032,11 @@ body {
     sel.innerHTML = buildClassroomOptions();
     if(classroomMaster.some(function(c){ return c.id === current; })) sel.value = current;
   }
-
   function openClassroomMasterModal(){ renderClassroomMasterModal(null); }
   function closeClassroomMasterModal(){
     classroomOverlayRoot.innerHTML = '';
     refreshClassroomSelect();
   }
-
   function renderClassroomMasterModal(editId){
     var editing = editId ? classroomMaster.find(function(c){ return c.id === editId; }) : null;
     var html = '<div class="sheet-overlay" id="classroom-master-overlay">';
@@ -1490,7 +1081,6 @@ body {
     classroomOverlayRoot.innerHTML = html;
     attachClassroomMasterListeners(editId);
   }
-
   function attachClassroomMasterListeners(editId){
     var overlay = document.getElementById('classroom-master-overlay');
     overlay.addEventListener('click', function(e){
@@ -1513,7 +1103,6 @@ body {
         }
       }
     });
-
     var cmRinkRow = document.getElementById('cm-rink-row');
     cmRinkRow.addEventListener('click', function(e){
       var btn = e.target.closest('.rink-btn');
@@ -1521,7 +1110,6 @@ body {
       Array.prototype.forEach.call(cmRinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
       btn.classList.add('is-selected');
     });
-
     document.getElementById('btn-save-classroom').addEventListener('click', function(){
       var nameInput = document.getElementById('cm-name');
       var name = nameInput.value.trim();
@@ -1530,7 +1118,6 @@ body {
       var end = document.getElementById('cm-end').value || '19:00';
       var rinkBtn = cmRinkRow.querySelector('.rink-btn.is-selected');
       var rink = rinkBtn ? rinkBtn.dataset.rink : RINKS[0];
-
       if(editId){
         var target = classroomMaster.find(function(c){ return c.id === editId; });
         if(target){ target.name = name; target.start = start; target.end = end; target.rink = rink; }
@@ -1543,56 +1130,6 @@ body {
       showToast(editId ? '教室を更新しました' : '教室を登録しました', 'ok');
     });
   }
-
-  /* パスワード（ロック）設定モーダル */
-  function openPasscodeSettingsModal(){
-    var html = '<div class="sheet-overlay" id="passcode-modal-overlay">';
-    html += '<div class="sheet-backdrop" data-action="close-passcode-modal"></div>';
-    html += '<div class="sheet">';
-    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
-    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">🔒 アプリのパスワード設定</div></div><button class="sheet__close tappable" data-action="close-passcode-modal">✕</button></div>';
-    html += '<div class="sheet__body">';
-    html += '<div style="font-size:12px; color:var(--text-sub);">アプリ起動時または復帰時にパスワードを要求するように設定します。</div>';
-    html += '<div><div class="field-label">新しいパスワード（数字4〜8桁）</div><input type="password" id="setting-pass-1" class="text-input mono" pattern="[0-9]*" inputmode="numeric" placeholder="未設定にする場合は空欄"></div>';
-    html += '<div><div class="field-label">パスワード再入力</div><input type="password" id="setting-pass-2" class="text-input mono" pattern="[0-9]*" inputmode="numeric" placeholder="確認のためもう一度入力"></div>';
-    if(savedPasscode) {
-      html += '<button class="delete-link tappable" id="btn-remove-passcode">パスワード保護を解除（未設定にする）</button>';
-    }
-    html += '</div>';
-    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-save-passcode">保存する</button></div>';
-    html += '</div></div>';
-    classroomOverlayRoot.innerHTML = html;
-
-    var overlay = document.getElementById('passcode-modal-overlay');
-    overlay.addEventListener('click', function(e){
-      var actionEl = e.target.closest('[data-action]');
-      if(actionEl && actionEl.dataset.action === 'close-passcode-modal') classroomOverlayRoot.innerHTML = '';
-    });
-
-    document.getElementById('btn-save-passcode').addEventListener('click', function(){
-      var p1 = document.getElementById('setting-pass-1').value.trim();
-      var p2 = document.getElementById('setting-pass-2').value.trim();
-      if(p1 !== p2){
-        showToast('パスワードが一致しません', 'danger');
-        return;
-      }
-      savedPasscode = p1;
-      savePasscode(p1);
-      classroomOverlayRoot.innerHTML = '';
-      showToast(p1 ? 'パスワードを設定しました' : 'パスワードを解除しました', 'ok');
-    });
-
-    var btnRemove = document.getElementById('btn-remove-passcode');
-    if(btnRemove){
-      btnRemove.addEventListener('click', function(){
-        savedPasscode = '';
-        savePasscode('');
-        classroomOverlayRoot.innerHTML = '';
-        showToast('パスワード保護を解除しました', 'navy');
-      });
-    }
-  }
-
   rootEl.addEventListener('click', function(e){
     var el = e.target.closest('[data-action]');
     if(!el) return;
@@ -1610,11 +1147,8 @@ body {
     else if(action === 'cal-prev-month') calPrevMonth();
     else if(action === 'cal-next-month') calNextMonth();
     else if(action === 'open-classroom-master') openClassroomMasterModal();
-    else if(action === 'open-passcode-settings') openPasscodeSettingsModal();
   });
-
   renderShell();
-})();
-</script>
+})();</script>
 </body>
 </html>
