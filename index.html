@@ -381,7 +381,6 @@ h1,h2,h3,p{ margin:0; }
   };
   var TYPE_ORDER = ['personal','group','rental','kyoshitsu'];
 
-  // カテゴリ分けタグプリセット（シングル・ダンス統合）
   var TAG_CATEGORIES = [
     {
       id: 'single',
@@ -420,11 +419,11 @@ h1,h2,h3,p{ margin:0; }
     }
   ];
 
-  // 全タグリスト（互換性保持用）
   var TAG_PRESETS = TAG_CATEGORIES.reduce(function(acc, cat){ return acc.concat(cat.tags); }, []);
 
   var RINKS = ['明治神宮', '東伏見', '東大和', '埼玉', '東神奈川', 'アクアリンク', '新横浜', 'その他', 'メインリンク', 'サブリンク', '外部リンク'];
   var RENMEI_LEVELS = ['—','無級','初級','1級','2級','3級','4級','5級','6級','7級','8級'];
+  var DANCE_LEVELS = ['—','プレブロンズ','ブロンズ','プレシルバー','シルバー','プレゴールド','ゴールド'];
   var ISI_LEVELS = ['—','Pre-Alpha','Alpha','Beta','Gamma','Delta','Freestyle 1','Freestyle 2','Freestyle 3','Freestyle 4','Freestyle 5','Freestyle 6','Freestyle 7','Freestyle 8','Freestyle 9','Freestyle 10'];
   var CATEGORIES = ['—','初心者','初級','中級','上級','選手'];
 
@@ -481,8 +480,8 @@ h1,h2,h3,p{ margin:0; }
   }
   function seedStudents(){
     return [
-      { id: uid(), name:'佐藤 ひなた', renmei:'3級', isi:'Freestyle 1', category:'中級', rink:'明治神宮', fee:4000, contact:'090-xxxx-xxxx', memo:'軸を意識' },
-      { id: uid(), name:'鈴木 蓮', renmei:'初級', isi:'—', category:'初級', rink:'東伏見', fee:4000, contact:'', memo:'' }
+      { id: uid(), name:'佐藤 ひなた', renmei:'3級', dance:'プレシルバー', isi:'Freestyle 1', category:'中級', rink:'明治神宮', fee:4000, contact:'090-xxxx-xxxx', memo:'軸を意識' },
+      { id: uid(), name:'鈴木 蓮', renmei:'初級', dance:'ブロンズ', isi:'—', category:'初級', rink:'東伏見', fee:4000, contact:'', memo:'' }
     ];
   }
 
@@ -632,6 +631,7 @@ h1,h2,h3,p{ margin:0; }
     if(!st) return '';
     var parts = [];
     if(st.renmei && st.renmei !== '—') parts.push(st.renmei);
+    if(st.dance && st.dance !== '—') parts.push('ダンス:' + st.dance);
     if(st.isi && st.isi !== '—') parts.push(st.isi);
     if(st.category && st.category !== '—') parts.push(st.category);
     return parts.length > 0 ? ' <span style="font-size:0.8em;color:#0284c7;font-weight:normal;">[' + esc(parts.join('/')) + ']</span>' : '';
@@ -927,7 +927,7 @@ h1,h2,h3,p{ margin:0; }
   }
 
   /* =========================================================
-     10. LESSON DETAIL MODAL (カテゴリタブ付きタグ選択)
+     10. LESSON DETAIL MODAL
      ========================================================= */
   function openLessonModal(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
@@ -956,7 +956,6 @@ h1,h2,h3,p{ margin:0; }
     html += '<div class="per-person-note" id="per-person-note" style="' + (perPersonInit===null?'display:none':'') + '">お一人あたり ' + (perPersonInit!==null ? yen(perPersonInit) : '') + '</div>';
     html += '</div>';
 
-    // カテゴリタブ付きカルテタグUI
     html += '<div><div class="field-label">カルテタグ（タブ切替で選択）</div>';
     html += '<div class="tag-category-tabs" id="tag-category-tabs" style="display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:4px;">';
     TAG_CATEGORIES.forEach(function(cat, idx){
@@ -998,7 +997,6 @@ h1,h2,h3,p{ margin:0; }
       }
     });
 
-    // タブ切替イベント
     var catTabs = document.getElementById('tag-category-tabs');
     if(catTabs){
       catTabs.addEventListener('click', function(e){
@@ -1353,7 +1351,7 @@ h1,h2,h3,p{ margin:0; }
     html += '<div class="sheet__body">';
 
     html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-passcode-setting"><span style="font-size:20px;margin-right:12px;">🔒</span><span style="font-weight:bold;color:#1e293b;">暗証番号（アプリロック）設定</span></button>';
-    html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-student-master"><span style="font-size:20px;margin-right:12px;">👥</span><span style="font-weight:bold;color:#1e293b;">生徒マスタ管理（連盟級・ISI級・区分）</span></button>';
+    html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-student-master"><span style="font-size:20px;margin-right:12px;">👥</span><span style="font-weight:bold;color:#1e293b;">生徒マスタ管理（連盟級・ダンス級・ISI級等）</span></button>';
     html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-classroom-master"><span style="font-size:20px;margin-right:12px;">🏫</span><span style="font-weight:bold;color:#1e293b;">教室マスタ管理</span></button>';
     html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-backup-modal"><span style="font-size:20px;margin-right:12px;">💾</span><span style="font-weight:bold;color:#1e293b;">データバックアップ / 復元</span></button>';
 
@@ -1405,6 +1403,7 @@ h1,h2,h3,p{ margin:0; }
     };
   }
 
+  // 生徒マスタ管理モーダル（ダンス級を追加）
   function openStudentMasterModal(editId){
     var editing = editId ? studentMaster.find(function(s){ return s.id === editId; }) : null;
     var html = '<div class="sheet-overlay" id="student-master-overlay">';
@@ -1430,11 +1429,17 @@ h1,h2,h3,p{ margin:0; }
     html += '<div style="font-weight:bold;margin-bottom:8px;">' + (editing ? '生徒情報を編集' : '新しい生徒を登録') + '</div>';
     html += '<div><div class="field-label">生徒氏名</div><input type="text" id="sm-name" class="text-input" value="' + (editing?esc(editing.name):'') + '" placeholder="例：佐藤 ひなた"></div>';
 
-    html += '<div class="grid-3" style="margin-top:10px;">';
-    html += '<div><div class="field-label">日本連盟級</div><select id="sm-renmei" class="select-input">';
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;">';
+    html += '<div><div class="field-label">日本連盟級（シングル）</div><select id="sm-renmei" class="select-input">';
     RENMEI_LEVELS.forEach(function(l){ html += '<option value="' + l + '"' + (editing&&editing.renmei===l?' selected':'') + '>' + l + '</option>'; });
     html += '</select></div>';
 
+    html += '<div><div class="field-label">ダンス級（課題）</div><select id="sm-dance" class="select-input">';
+    DANCE_LEVELS.forEach(function(d){ html += '<option value="' + d + '"' + (editing&&editing.dance===d?' selected':'') + '>' + d + '</option>'; });
+    html += '</select></div>';
+    html += '</div>';
+
+    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;">';
     html += '<div><div class="field-label">ISI級</div><select id="sm-isi" class="select-input">';
     ISI_LEVELS.forEach(function(l){ html += '<option value="' + l + '"' + (editing&&editing.isi===l?' selected':'') + '>' + l + '</option>'; });
     html += '</select></div>';
@@ -1482,6 +1487,7 @@ h1,h2,h3,p{ margin:0; }
       var data = {
         name: name,
         renmei: document.getElementById('sm-renmei').value,
+        dance: document.getElementById('sm-dance').value,
         isi: document.getElementById('sm-isi').value,
         category: document.getElementById('sm-cat').value,
         rink: document.getElementById('sm-rink').value,
@@ -1711,5 +1717,6 @@ h1,h2,h3,p{ margin:0; }
   checkLockStatus();
 
 })();</script>
+  
 </body>
 </html>
