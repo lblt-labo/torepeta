@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -304,7 +302,19 @@ h1,h2,h3,p{ margin:0; }
 @keyframes toastIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
 .toast--navy{ background:var(--navy); }
 .toast--ok{ background:var(--ok); }
-.toast--danger{ background:var(--danger); }</style>
+.toast--danger{ background:var(--danger); }
+
+/* カスタム追加UI */
+.header-help{ width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.16); color:#fff; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.uncontacted-banner{ background:var(--danger-bg); border:1.5px solid var(--danger); color:var(--danger); font-size:13px; font-weight:800; padding:10px 16px; margin:8px 16px 0; border-radius:12px; display:flex; align-items:center; gap:8px; }
+.pwa-banner{ position:fixed; bottom:70px; left:16px; right:16px; max-width:528px; margin:0 auto; background:var(--navy); color:#fff; padding:12px 16px; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,0.3); z-index:90; display:flex; align-items:center; justify-content:space-between; font-size:12px; font-weight:700; }
+.pwa-banner button{ background:rgba(255,255,255,0.2); color:#fff; border:none; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:800; }
+.status-btn-group{ display:flex; gap:6px; margin-top:8px; }
+.status-btn{ flex:1; padding:6px 0; border-radius:8px; font-size:11px; font-weight:800; border:1px solid var(--line-gray); background:var(--panel-gray); color:var(--navy-soft); text-align:center; }
+.status-btn.is-active-uncontacted{ background:var(--danger-bg); color:var(--danger); border-color:var(--danger); }
+.status-btn.is-active-contacted{ background:var(--ok-bg); color:var(--ok); border-color:var(--ok); }
+.status-btn.is-active-none{ background:#e2e8f0; color:#64748b; border-color:#cbd5e1; }
+</style>
 </head>
 <body>
 
@@ -637,6 +647,39 @@ h1,h2,h3,p{ margin:0; }
     return parts.length > 0 ? ' <span style="font-size:0.8em;color:#0284c7;font-weight:normal;">[' + esc(parts.join('/')) + ']</span>' : '';
   }
 
+  function changeStatus(id, newStatus){
+    var lesson = lessons.find(function(l){ return l.id === id; });
+    if(lesson){
+      lesson.contactStatus = newStatus;
+      persist();
+      renderShell();
+    }
+  }
+
+  function openHelpModal(){
+    var html = '<div class="sheet-overlay" id="help-overlay">';
+    html += '<div class="sheet-backdrop" data-action="close-help"></div>';
+    html += '<div class="sheet">';
+    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">❓ トレペタの使い方</div></div><button class="sheet__close tappable" data-action="close-help">✕</button></div>';
+    html += '<div class="sheet__body" style="font-size:14px; line-height:1.6;">';
+    html += '<p><strong>1. 予定の追加と管理</strong><br>右下の「＋」ボタンから簡単にレッスンの予定を追加できます。</p>';
+    html += '<p><strong>2. 連絡ステータスとLINE送信</strong><br>予定ごとの「🔴未連絡」「🟢送信済み」「⚪不要」ボタンで連絡状態を一元管理。「LINE連絡」を押すと案内文章をコピーできます。</p>';
+    html += '<p><strong>3. 指導カルテとアドバイス</strong><br>予定をタップすると指導メモやカルテタグを保存できます。前回の指導内容や宿題も自動で確認可能です。</p>';
+    html += '<p><strong>4. リスト管理（設定）</strong><br>⚙️マークから生徒リストや教室リストの登録・暗証番号ロック・データバックアップが行えます。</p>';
+    html += '</div>';
+    html += '<div class="sheet__footer"><button class="sheet__submit tappable" data-action="close-help">閉じる</button></div>';
+    html += '</div></div>';
+    overlayRoot.innerHTML = html;
+
+    var overlay = document.getElementById('help-overlay');
+    overlay.onclick = function(e){
+      if(e.target.closest('[data-action="close-help"]') || e.target.classList.contains('sheet-backdrop')){
+        overlayRoot.innerHTML = '';
+      }
+    };
+  }
+
   /* =========================================================
      8. SCHEDULE & TILE RENDERING
      ========================================================= */
@@ -668,7 +711,9 @@ h1,h2,h3,p{ margin:0; }
 
   function renderLessonTile(l){
     var t = LESSON_TYPES[l.type];
-    var contactOn = l.contactStatus === '連絡済';
+    var contactOn = l.contactStatus === '連絡済' || l.contactStatus === '送信済み';
+    var isUncontacted = l.contactStatus === '未連絡' || !l.contactStatus;
+    var isNone = l.contactStatus === '不要';
     var paidOn = l.paymentStatus === '回収済';
     var levelTag = getStudentLevelTag(l.student);
 
@@ -681,11 +726,21 @@ h1,h2,h3,p{ margin:0; }
     html += '<div class="lesson-tile__title-row"><span class="lesson-tile__student">' + esc(l.student) + levelTag + '</span><span class="lesson-tile__type-label ' + t.cls + '">' + t.short + '</span></div>';
     html += '<div class="lesson-tile__sub">' + esc(l.rink) + ' ・ ' + yen(l.fee) + '</div>';
     html += '<div class="lesson-tile__badges">';
-    html += '<span class="status-pill status-pill--contact' + (contactOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (contactOn?'連絡済':'未連絡') + '</span>';
+    var statusLabel = isUncontacted ? '未連絡' : (contactOn ? '送信済み' : '不要');
+    html += '<span class="status-pill status-pill--contact' + (contactOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + statusLabel + '</span>';
     html += '<span class="status-pill status-pill--payment' + (paidOn?' is-on':'') + '"><span class="status-pill__dot"></span>' + (paidOn?'回収済':'未回収') + '</span>';
     if(l.tags && l.tags.length>0) html += '<span class="lesson-tile__tagcount">🏷 ' + l.tags.length + '件</span>';
     html += '</div></div></button>';
-    html += '<div class="lesson-tile__actions"><button class="btn-line tappable min-tap' + (contactOn?' is-done':'') + '" data-action="quick-line" data-id="' + l.id + '"><span>💬</span><span>' + (contactOn?'LINE文をコピー':'LINE連絡') + '</span></button></div>';
+    
+    html += '<div class="lesson-tile__actions">';
+    html += '<button class="btn-line tappable min-tap' + (contactOn?' is-done':'') + '" data-action="quick-line" data-id="' + l.id + '"><span>💬</span><span>' + (contactOn?'LINE文をコピー':'LINE連絡') + '</span></button>';
+    html += '<div class="status-btn-group">';
+    html += '<button class="status-btn ' + (isUncontacted ? 'is-active-uncontacted' : '') + '" data-action="set-status" data-id="' + l.id + '" data-status="未連絡">🔴 未連絡</button>';
+    html += '<button class="status-btn ' + (contactOn ? 'is-active-contacted' : '') + '" data-action="set-status" data-id="' + l.id + '" data-status="送信済み">🟢 送信済み</button>';
+    html += '<button class="status-btn ' + (isNone ? 'is-active-none' : '') + '" data-action="set-status" data-id="' + l.id + '" data-status="不要">⚪ 不要</button>';
+    html += '</div>';
+    html += '</div>';
+    
     html += '</div>';
     return html;
   }
@@ -729,8 +784,12 @@ h1,h2,h3,p{ margin:0; }
 
   function renderScheduleView(){
     var dayLessons = lessons.filter(function(l){ return l.date===selectedDate; }).sort(function(a,b){ return a.start.localeCompare(b.start); });
+    var uncontactedCount = dayLessons.filter(function(l){ return l.contactStatus === '未連絡' || !l.contactStatus; }).length;
     var html = renderViewToggle();
     html += (viewMode === 'month') ? renderMonthCalendar() : renderDateStrip();
+    if(uncontactedCount > 0){
+      html += '<div class="uncontacted-banner">⚠️ 未連絡の予定が ' + uncontactedCount + ' 件あります</div>';
+    }
     html += '<div class="section-heading"><span class="section-heading__title">' + fmtDateJp(selectedDate) + '</span><span class="section-heading__meta">' + dayLessons.length + '件の予定</span></div>';
     if(dayLessons.length === 0){
       html += '<div class="lesson-list"><div class="empty-state"><div class="empty-state__icon">🧊</div><div class="empty-state__text">この日の予定はまだありません</div><button class="empty-state__btn tappable" data-action="open-add">＋ 予定を追加</button></div></div>';
@@ -784,13 +843,14 @@ h1,h2,h3,p{ margin:0; }
   }
 
   function renderHeader(){
-    var todayUncontacted = lessons.filter(function(l){ return l.date===todayStr() && l.contactStatus==='未連絡'; }).length;
+    var todayUncontacted = lessons.filter(function(l){ return l.date===todayStr() && (l.contactStatus==='未連絡' || !l.contactStatus); }).length;
     var html = '<header class="app-header">';
     html += '<div class="app-header__brand"><div class="app-header__logo">⛸️</div><div><div class="app-header__title">トレペタ</div><div class="app-header__subtitle">for Figure Skating Coaches</div></div></div>';
     html += '<div class="app-header__right">';
     if(currentTab==='schedule' && todayUncontacted>0){
       html += '<div class="app-header__alert">本日 未連絡 ' + todayUncontacted + '件</div>';
     }
+    html += '<button class="header-help tappable min-tap" data-action="open-help" title="使い方">❓</button>';
     html += '<button class="header-gear tappable min-tap" data-action="open-integrated-settings" title="設定">⚙️</button>';
     html += '</div>';
     html += '</header>';
@@ -815,12 +875,19 @@ h1,h2,h3,p{ margin:0; }
     return '<button class="fab tappable" data-action="open-add">＋</button>';
   }
 
+  function renderPwaBanner(){
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if(isStandalone) return '';
+    return '<div class="pwa-banner" id="pwa-banner"><span>📱 ホーム画面に追加してアプリとして使えます</span><button onclick="document.getElementById(\'pwa-banner\').remove()">閉じる</button></div>';
+  }
+
   function renderShell(){
     var html = renderHeader();
     html += '<main class="main-scroll">';
     html += (currentTab === 'schedule') ? renderScheduleView() : renderFinanceView();
     html += '</main>';
     html += renderFab();
+    html += renderPwaBanner();
     html += renderBottomNav();
     rootEl.innerHTML = html;
     if(currentTab === 'schedule' && viewMode === 'day'){
@@ -852,9 +919,6 @@ h1,h2,h3,p{ margin:0; }
     var msg = buildLineMessage(lesson);
     copyToClipboard(msg).then(function(ok){
       if(ok){
-        lesson.contactStatus = '連絡済';
-        persist();
-        renderShell();
         showToast('LINE文をコピーしました📋', 'ok');
       } else {
         showToast('コピーに失敗しました', 'danger');
@@ -944,8 +1008,9 @@ h1,h2,h3,p{ margin:0; }
     if(prev){
       html += '<div class="advice-box"><div class="advice-box__title"><span>📌</span><span>前回（' + fmtDateJp(prev.date) + '）の宿題・アドバイス</span></div><div class="advice-box__text">' + esc(prev.homework || prev.notes) + '</div></div>';
     }
+    var isContacted = lesson.contactStatus === '連絡済' || lesson.contactStatus === '送信済み';
     html += '<div class="action-grid">';
-    html += '<button class="action-btn action-btn--line tappable min-tap' + (lesson.contactStatus==='連絡済'?' is-done':'') + '" id="btn-line" data-action="modal-line"><span class="action-btn__icon">💬</span><span>' + (lesson.contactStatus==='連絡済'?'連絡済（再コピー）':'LINE連絡文をコピー') + '</span></button>';
+    html += '<button class="action-btn action-btn--line tappable min-tap' + (isContacted?' is-done':'') + '" id="btn-line" data-action="modal-line"><span class="action-btn__icon">💬</span><span>' + (isContacted?'送信済み（再コピー）':'LINE連絡文をコピー') + '</span></button>';
     html += '<button class="action-btn action-btn--pay tappable min-tap' + (lesson.paymentStatus==='回収済'?' is-done':'') + '" id="btn-pay" data-action="modal-pay"><span class="action-btn__icon">' + (lesson.paymentStatus==='回収済'?'✅':'💴') + '</span><span>' + (lesson.paymentStatus==='回収済'?'回収済み':'未回収 → タップで回収') + '</span></button>';
     html += '</div>';
     html += '<div class="money-box">';
@@ -1065,12 +1130,6 @@ h1,h2,h3,p{ margin:0; }
       var msg = buildLineMessage(lesson);
       copyToClipboard(msg).then(function(ok){
         if(ok){
-          lesson.contactStatus = '連絡済';
-          persist();
-          renderShell();
-          var btn = document.getElementById('btn-line');
-          btn.classList.add('is-done');
-          btn.innerHTML = '<span class="action-btn__icon">💬</span><span>連絡済（再コピー）</span>';
           showToast('LINE文をコピーしました📋', 'ok');
         } else {
           showToast('コピーに失敗しました', 'danger');
@@ -1166,14 +1225,14 @@ h1,h2,h3,p{ margin:0; }
     html += '</div></div>';
 
     html += '<div id="student-select-block" style="margin-top:10px;">';
-    html += '<div class="field-label">生徒マスタから自動入力</div>';
+    html += '<div class="field-label">生徒リストから自動入力</div>';
     html += '<div class="select-wrap"><select id="add-student-master-select" class="select-input">' + buildStudentOptions() + '</select></div>';
     html += '</div>';
 
     html += '<div id="classroom-select-block" style="display:none;margin-top:10px;">';
     html += '<div class="field-label">登録済みの教室から選択（任意）</div>';
     html += '<div class="select-wrap"><select id="add-classroom-select" class="select-input">' + buildClassroomOptions() + '</select></div>';
-    html += '<button type="button" class="classroom-manage-link tappable" data-action="open-classroom-master">＋ 教室マスタを編集する</button>';
+    html += '<button type="button" class="classroom-manage-link tappable" data-action="open-classroom-master">＋ 教室リストを編集する</button>';
     html += '</div>';
 
     html += '<div style="margin-top:10px;"><div class="field-label" id="add-student-label">生徒名 / グループ名</div><input type="text" id="add-student" class="text-input" placeholder="例：佐藤 ひなた"></div>';
@@ -1347,12 +1406,12 @@ h1,h2,h3,p{ margin:0; }
     html += '<div class="sheet-backdrop" data-action="close-integrated-settings"></div>';
     html += '<div class="sheet">';
     html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
-    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">⚙️ 設定・マスタ管理</div></div><button class="sheet__close tappable" data-action="close-integrated-settings">✕</button></div>';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">⚙️ 設定</div></div><button class="sheet__close tappable" data-action="close-integrated-settings">✕</button></div>';
     html += '<div class="sheet__body">';
 
     html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-passcode-setting"><span style="font-size:20px;margin-right:12px;">🔒</span><span style="font-weight:bold;color:#1e293b;">暗証番号（アプリロック）設定</span></button>';
-    html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-student-master"><span style="font-size:20px;margin-right:12px;">👥</span><span style="font-weight:bold;color:#1e293b;">生徒マスタ管理（連盟級・ダンス級・ISI級等）</span></button>';
-    html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-classroom-master"><span style="font-size:20px;margin-right:12px;">🏫</span><span style="font-weight:bold;color:#1e293b;">教室マスタ管理</span></button>';
+    html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-student-master"><span style="font-size:20px;margin-right:12px;">👥</span><span style="font-weight:bold;color:#1e293b;">生徒リスト（連盟級・ダンス級・ISI級等）</span></button>';
+    html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-classroom-master"><span style="font-size:20px;margin-right:12px;">🏫</span><span style="font-weight:bold;color:#1e293b;">教室リスト</span></button>';
     html += '<button class="action-btn tappable" style="width:100%;margin-bottom:12px;justify-content:flex-start;padding:12px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;" data-action="open-backup-modal"><span style="font-size:20px;margin-right:12px;">💾</span><span style="font-weight:bold;color:#1e293b;">データバックアップ / 復元</span></button>';
 
     html += '</div></div></div>';
@@ -1363,220 +1422,450 @@ h1,h2,h3,p{ margin:0; }
       var btn = e.target.closest('[data-action]');
       if(!btn) return;
       var act = btn.dataset.action;
-      if(act === 'close-integrated-settings'){ classroomOverlayRoot.innerHTML = ''; }
-      else if(act === 'open-passcode-setting'){ openPasscodeSettingModal(); }
-      else if(act === 'open-student-master'){ openStudentMasterModal(); }
-      else if(act === 'open-classroom-master'){ openClassroomMasterModal(); }
-      else if(act === 'open-backup-modal'){ openBackupModal(); }
+      if(act === 'close-integrated-settings' || e.target.classList.contains('sheet-backdrop')){
+        classroomOverlayRoot.innerHTML = '';
+      } else if(act === 'open-passcode-setting'){
+        openPasscodeModal();
+      } else if(act === 'open-student-master'){
+        openStudentMasterModal();
+      } else if(act === 'open-classroom-master'){
+        openClassroomMasterModal();
+      } else if(act === 'open-backup-modal'){
+        openBackupModal();
+      }
     };
   }
 
-  function openPasscodeSettingModal(){
+  function openPasscodeModal(){
     var html = '<div class="sheet-overlay" id="passcode-setting-overlay">';
     html += '<div class="sheet-backdrop" data-action="close-submodal"></div>';
     html += '<div class="sheet">';
+    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
     html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">🔒 暗証番号設定</div></div><button class="sheet__close tappable" data-action="close-submodal">✕</button></div>';
     html += '<div class="sheet__body">';
-    html += '<div style="margin-bottom:12px;font-size:14px;color:#64748b;">4桁の数字を入力してください。空にして保存するとロックが無効になります。</div>';
-    html += '<input type="password" id="passcode-input" maxlength="4" class="text-input" style="font-size:24px;letter-spacing:8px;text-align:center;" value="' + esc(passcode) + '" placeholder="0000">';
+    html += '<div><div class="field-label">4桁の数字を入力（空欄で解除）</div>';
+    html += '<input type="password" id="passcode-input" maxlength="4" class="text-input" placeholder="例：1234" value="' + esc(passcode) + '" pattern="[0-9]*" inputmode="numeric"></div>';
     html += '</div>';
-    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="save-passcode-btn">保存する</button></div>';
+    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-save-passcode">設定を保存</button></div>';
     html += '</div></div>';
-    overlayRoot.innerHTML = html;
+
+    var container = document.createElement('div');
+    container.innerHTML = html;
+    classroomOverlayRoot.appendChild(container.firstChild);
 
     var overlay = document.getElementById('passcode-setting-overlay');
     overlay.onclick = function(e){
-      var btn = e.target.closest('[data-action]');
-      if(btn && btn.dataset.action === 'close-submodal') overlayRoot.innerHTML = '';
+      if(e.target.closest('[data-action="close-submodal"]') || e.target.classList.contains('sheet-backdrop')){
+        overlay.remove();
+      }
     };
 
-    document.getElementById('save-passcode-btn').onclick = function(){
+    document.getElementById('btn-save-passcode').onclick = function(){
       var val = document.getElementById('passcode-input').value.trim();
-      if(val.length > 0 && val.length !== 4){
-        showToast('4桁で入力してください', 'danger');
+      if(val.length > 0 && !/^\d{4}$/.test(val)){
+        showToast('4桁の数字を入力してください', 'danger');
         return;
       }
       passcode = val;
       savePasscode(passcode);
-      overlayRoot.innerHTML = '';
-      showToast(passcode ? '暗証番号を設定しました' : 'ロックを解除しました', 'ok');
+      showToast(passcode ? '暗証番号を設定しました' : '暗証番号を解除しました', 'ok');
+      overlay.remove();
     };
   }
 
-  // 生徒マスタ管理モーダル（ダンス級を追加）
-  function openStudentMasterModal(editId){
-    var editing = editId ? studentMaster.find(function(s){ return s.id === editId; }) : null;
+  function openStudentMasterModal(){
+    var editingId = null;
+    function renderStudentList(){
+      var html = '';
+      if(studentMaster.length === 0){
+        html = '<div class="classroom-empty">登録済みの生徒はいません</div>';
+      } else {
+        studentMaster.forEach(function(s){
+          var meta = [];
+          if(s.renmei && s.renmei !== '—') meta.push('連盟:' + s.renmei);
+          if(s.dance && s.dance !== '—') meta.push('ダンス:' + s.dance);
+          if(s.isi && s.isi !== '—') meta.push('ISI:' + s.isi);
+          if(s.category && s.category !== '—') meta.push(s.category);
+          if(s.rink) meta.push(s.rink);
+          if(s.fee) meta.push(yen(s.fee));
+
+          html += '<div class="classroom-row">';
+          html += '<div class="classroom-row__body"><div class="classroom-row__name">' + esc(s.name) + '</div><div class="classroom-row__meta">' + esc(meta.join(' ・ ')) + '</div></div>';
+          html += '<div class="classroom-row__actions">';
+          html += '<button class="icon-btn tappable" data-st-edit="' + s.id + '">✏️</button>';
+          html += '<button class="icon-btn icon-btn--danger tappable" data-st-del="' + s.id + '">🗑️</button>';
+          html += '</div></div>';
+        });
+      }
+      return html;
+    }
+
     var html = '<div class="sheet-overlay" id="student-master-overlay">';
     html += '<div class="sheet-backdrop" data-action="close-submodal"></div>';
     html += '<div class="sheet">';
-    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">👥 生徒マスタ管理</div></div><button class="sheet__close tappable" data-action="close-submodal">✕</button></div>';
+    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">👥 生徒リスト</div></div><button class="sheet__close tappable" data-action="close-submodal">✕</button></div>';
     html += '<div class="sheet__body">';
 
-    if(studentMaster.length > 0){
-      html += '<div class="classroom-list" style="margin-bottom:16px;">';
-      studentMaster.forEach(function(s){
-        var tag = getStudentLevelTag(s.name);
-        html += '<div class="classroom-row">';
-        html += '<div class="classroom-row__body"><div class="classroom-row__name">' + esc(s.name) + tag + '</div><div class="classroom-row__meta">' + esc(s.rink||'—') + ' ・ ' + yen(s.fee) + '</div></div>';
-        html += '<div class="classroom-row__actions">';
-        html += '<button class="icon-btn tappable" data-action="edit-student" data-id="' + s.id + '">✏️</button>';
-        html += '<button class="icon-btn icon-btn--danger tappable" data-action="delete-student" data-id="' + s.id + '">🗑</button>';
-        html += '</div></div>';
-      });
-      html += '</div>';
-    }
+    html += '<div class="classroom-form" style="background:var(--panel-gray);padding:12px;border-radius:16px;">';
+    html += '<div class="classroom-form-title"><span id="st-form-heading">＋ 新しい生徒を追加</span><button class="classroom-cancel-edit tappable" id="st-cancel-edit" style="display:none;">キャンセル</button></div>';
+    html += '<div style="margin-top:8px;"><div class="field-label">生徒名</div><input type="text" id="st-name" class="text-input" placeholder="例：佐藤 ひなた"></div>';
 
-    html += '<div style="font-weight:bold;margin-bottom:8px;">' + (editing ? '生徒情報を編集' : '新しい生徒を登録') + '</div>';
-    html += '<div><div class="field-label">生徒氏名</div><input type="text" id="sm-name" class="text-input" value="' + (editing?esc(editing.name):'') + '" placeholder="例：佐藤 ひなた"></div>';
-
-    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;">';
-    html += '<div><div class="field-label">日本連盟級（シングル）</div><select id="sm-renmei" class="select-input">';
-    RENMEI_LEVELS.forEach(function(l){ html += '<option value="' + l + '"' + (editing&&editing.renmei===l?' selected':'') + '>' + l + '</option>'; });
-    html += '</select></div>';
-
-    html += '<div><div class="field-label">ダンス級（課題）</div><select id="sm-dance" class="select-input">';
-    DANCE_LEVELS.forEach(function(d){ html += '<option value="' + d + '"' + (editing&&editing.dance===d?' selected':'') + '>' + d + '</option>'; });
-    html += '</select></div>';
+    html += '<div class="grid-2" style="margin-top:8px;">';
+    html += '<div><div class="field-label">バッジテスト（シングル）</div><div class="select-wrap"><select id="st-renmei" class="select-input">' + RENMEI_LEVELS.map(function(x){ return '<option value="' + x + '">' + x + '</option>'; }).join('') + '</select></div></div>';
+    html += '<div><div class="field-label">アイスダンス級</div><div class="select-wrap"><select id="st-dance" class="select-input">' + DANCE_LEVELS.map(function(x){ return '<option value="' + x + '">' + x + '</option>'; }).join('') + '</select></div></div>';
     html += '</div>';
 
-    html += '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;">';
-    html += '<div><div class="field-label">ISI級</div><select id="sm-isi" class="select-input">';
-    ISI_LEVELS.forEach(function(l){ html += '<option value="' + l + '"' + (editing&&editing.isi===l?' selected':'') + '>' + l + '</option>'; });
-    html += '</select></div>';
-
-    html += '<div><div class="field-label">区分</div><select id="sm-cat" class="select-input">';
-    CATEGORIES.forEach(function(c){ html += '<option value="' + c + '"' + (editing&&editing.category===c?' selected':'') + '>' + c + '</option>'; });
-    html += '</select></div>';
+    html += '<div class="grid-2" style="margin-top:8px;">';
+    html += '<div><div class="field-label">ISI級</div><div class="select-wrap"><select id="st-isi" class="select-input">' + ISI_LEVELS.map(function(x){ return '<option value="' + x + '">' + x + '</option>'; }).join('') + '</select></div></div>';
+    html += '<div><div class="field-label">区分・レベル</div><div class="select-wrap"><select id="st-category" class="select-input">' + CATEGORIES.map(function(x){ return '<option value="' + x + '">' + x + '</option>'; }).join('') + '</select></div></div>';
     html += '</div>';
 
-    html += '<div class="grid-2" style="margin-top:10px;">';
-    html += '<div><div class="field-label">ホームリンク</div><select id="sm-rink" class="select-input">';
-    RINKS.forEach(function(r){ html += '<option value="' + r + '"' + (editing&&editing.rink===r?' selected':'') + '>' + r + '</option>'; });
-    html += '</select></div>';
-    html += '<div><div class="field-label">基本料金</div><input type="number" id="sm-fee" class="fee-input mono" value="' + (editing?editing.fee:4000) + '"></div>';
+    html += '<div class="grid-2" style="margin-top:8px;">';
+    html += '<div><div class="field-label">メインリンク</div><div class="select-wrap"><select id="st-rink" class="select-input"><option value="">— 選択 —</option>' + RINKS.map(function(x){ return '<option value="' + x + '">' + x + '</option>'; }).join('') + '</select></div></div>';
+    html += '<div><div class="field-label">基本指導料</div><input type="number" id="st-fee" class="text-input" placeholder="例：4000"></div>';
     html += '</div>';
 
-    html += '<div style="margin-top:10px;"><div class="field-label">連絡先・メモ</div><input type="text" id="sm-memo" class="text-input" value="' + (editing?esc(editing.memo):'') + '" placeholder="連絡先や特記事項"></div>';
+    html += '<div style="margin-top:8px;"><div class="field-label">連絡先・メモ</div><input type="text" id="st-memo" class="text-input" placeholder="例：保護者連絡先や注意点"></div>';
 
+    html += '<button class="sheet__submit tappable" id="st-submit-btn" style="margin-top:12px;min-height:40px;font-size:13px;">登録する</button>';
     html += '</div>';
-    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="save-student-btn">' + (editing ? '更新する' : '登録する') + '</button></div>';
-    html += '</div></div>';
-    overlayRoot.innerHTML = html;
+
+    html += '<div class="classroom-list" id="st-list-container">' + renderStudentList() + '</div>';
+
+    html += '</div></div></div>';
+
+    var container = document.createElement('div');
+    container.innerHTML = html;
+    classroomOverlayRoot.appendChild(container.firstChild);
 
     var overlay = document.getElementById('student-master-overlay');
+    var listContainer = document.getElementById('st-list-container');
+    var formHeading = document.getElementById('st-form-heading');
+    var cancelEditBtn = document.getElementById('st-cancel-edit');
+    var submitBtn = document.getElementById('st-submit-btn');
+
+    var inputName = document.getElementById('st-name');
+    var selectRenmei = document.getElementById('st-renmei');
+    var selectDance = document.getElementById('st-dance');
+    var selectIsi = document.getElementById('st-isi');
+    var selectCategory = document.getElementById('st-category');
+    var selectRink = document.getElementById('st-rink');
+    var inputFee = document.getElementById('st-fee');
+    var inputMemo = document.getElementById('st-memo');
+
+    function resetForm(){
+      editingId = null;
+      formHeading.textContent = '＋ 新しい生徒を追加';
+      cancelEditBtn.style.display = 'none';
+      submitBtn.textContent = '登録する';
+      inputName.value = '';
+      selectRenmei.value = '—';
+      selectDance.value = '—';
+      selectIsi.value = '—';
+      selectCategory.value = '—';
+      selectRink.value = '';
+      inputFee.value = '';
+      inputMemo.value = '';
+    }
+
+    cancelEditBtn.onclick = resetForm;
+
     overlay.onclick = function(e){
-      var btn = e.target.closest('[data-action]');
-      if(!btn) return;
-      var act = btn.dataset.action;
-      if(act === 'close-submodal') overlayRoot.innerHTML = '';
-      else if(act === 'edit-student') openStudentMasterModal(btn.dataset.id);
-      else if(act === 'delete-student'){
-        if(confirm('この生徒を削除しますか？')){
-          studentMaster = studentMaster.filter(function(s){ return s.id !== btn.dataset.id; });
+      if(e.target.closest('[data-action="close-submodal"]') || e.target.classList.contains('sheet-backdrop')){
+        overlay.remove();
+        renderShell();
+        return;
+      }
+
+      var editBtn = e.target.closest('[data-st-edit]');
+      if(editBtn){
+        var id = editBtn.dataset.stEdit;
+        var st = studentMaster.find(function(x){ return x.id === id; });
+        if(st){
+          editingId = id;
+          formHeading.textContent = '✏️ 生徒情報を編集';
+          cancelEditBtn.style.display = '';
+          submitBtn.textContent = '変更を保存';
+          inputName.value = st.name || '';
+          selectRenmei.value = st.renmei || '—';
+          selectDance.value = st.dance || '—';
+          selectIsi.value = st.isi || '—';
+          selectCategory.value = st.category || '—';
+          selectRink.value = st.rink || '';
+          inputFee.value = st.fee || '';
+          inputMemo.value = st.memo || '';
+        }
+        return;
+      }
+
+      var delBtn = e.target.closest('[data-st-del]');
+      if(delBtn){
+        var idDel = delBtn.dataset.stDel;
+        if(window.confirm('この生徒を削除しますか？')){
+          studentMaster = studentMaster.filter(function(x){ return x.id !== idDel; });
           persistStudents();
-          openStudentMasterModal(null);
-          renderShell();
+          listContainer.innerHTML = renderStudentList();
+          if(editingId === idDel) resetForm();
+          showToast('生徒を削除しました', 'navy');
         }
       }
     };
 
-    document.getElementById('save-student-btn').onclick = function(){
-      var name = document.getElementById('sm-name').value.trim();
-      if(!name){ showToast('氏名を入力してください', 'danger'); return; }
-
-      var data = {
-        name: name,
-        renmei: document.getElementById('sm-renmei').value,
-        dance: document.getElementById('sm-dance').value,
-        isi: document.getElementById('sm-isi').value,
-        category: document.getElementById('sm-cat').value,
-        rink: document.getElementById('sm-rink').value,
-        fee: Number(document.getElementById('sm-fee').value) || 0,
-        memo: document.getElementById('sm-memo').value.trim()
-      };
-
-      if(editId){
-        var target = studentMaster.find(function(s){ return s.id === editId; });
-        if(target){ Object.assign(target, data); }
-      } else {
-        data.id = uid();
-        studentMaster.push(data);
+    submitBtn.onclick = function(){
+      var nameVal = inputName.value.trim();
+      if(!nameVal){
+        showToast('生徒名を入力してください', 'danger');
+        return;
       }
+
+      if(editingId){
+        var st = studentMaster.find(function(x){ return x.id === editingId; });
+        if(st){
+          st.name = nameVal;
+          st.renmei = selectRenmei.value;
+          st.dance = selectDance.value;
+          st.isi = selectIsi.value;
+          st.category = selectCategory.value;
+          st.rink = selectRink.value;
+          st.fee = Number(inputFee.value) || 0;
+          st.memo = inputMemo.value.trim();
+        }
+        showToast('生徒情報を更新しました', 'ok');
+      } else {
+        studentMaster.push({
+          id: uid(),
+          name: nameVal,
+          renmei: selectRenmei.value,
+          dance: selectDance.value,
+          isi: selectIsi.value,
+          category: selectCategory.value,
+          rink: selectRink.value,
+          fee: Number(inputFee.value) || 0,
+          memo: inputMemo.value.trim()
+        });
+        showToast('生徒を追加しました', 'ok');
+      }
+
       persistStudents();
-      overlayRoot.innerHTML = '';
-      renderShell();
-      showToast(editId ? '生徒情報を更新しました' : '生徒を登録しました', 'ok');
+      listContainer.innerHTML = renderStudentList();
+      resetForm();
+    };
+  }
+
+  function openClassroomMasterModal(){
+    var editingId = null;
+
+    function renderList(){
+      var html = '';
+      if(classroomMaster.length === 0){
+        html = '<div class="classroom-empty">登録済みの教室はありません</div>';
+      } else {
+        classroomMaster.forEach(function(c){
+          html += '<div class="classroom-row">';
+          html += '<div class="classroom-row__body"><div class="classroom-row__name">' + esc(c.name) + '</div><div class="classroom-row__meta">' + esc(c.start) + '〜' + esc(c.end) + ' ・ ' + esc(c.rink) + '</div></div>';
+          html += '<div class="classroom-row__actions">';
+          html += '<button class="icon-btn tappable" data-cr-edit="' + c.id + '">✏️</button>';
+          html += '<button class="icon-btn icon-btn--danger tappable" data-cr-del="' + c.id + '">🗑️</button>';
+          html += '</div></div>';
+        });
+      }
+      return html;
+    }
+
+    var html = '<div class="sheet-overlay" id="classroom-master-overlay">';
+    html += '<div class="sheet-backdrop" data-action="close-submodal"></div>';
+    html += '<div class="sheet">';
+    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">🏫 教室リスト</div></div><button class="sheet__close tappable" data-action="close-submodal">✕</button></div>';
+    html += '<div class="sheet__body">';
+
+    html += '<div class="classroom-form" style="background:var(--panel-gray);padding:12px;border-radius:16px;">';
+    html += '<div class="classroom-form-title"><span id="cr-form-heading">＋ 新しい教室を追加</span><button class="classroom-cancel-edit tappable" id="cr-cancel-edit" style="display:none;">キャンセル</button></div>';
+    html += '<div style="margin-top:8px;"><div class="field-label">教室名</div><input type="text" id="cr-name" class="text-input" placeholder="例：大人スケート教室"></div>';
+    html += '<div class="grid-2" style="margin-top:8px;">';
+    html += '<div><div class="field-label">開始時間</div><input type="time" id="cr-start" class="date-input" value="18:00"></div>';
+    html += '<div><div class="field-label">終了時間</div><input type="time" id="cr-end" class="date-input" value="19:00"></div>';
+    html += '</div>';
+    html += '<div style="margin-top:8px;"><div class="field-label">リンク</div><div class="select-wrap"><select id="cr-rink" class="select-input">' + RINKS.map(function(r){ return '<option value="' + r + '">' + r + '</option>'; }).join('') + '</select></div></div>';
+    html += '<button class="sheet__submit tappable" id="cr-submit-btn" style="margin-top:12px;min-height:40px;font-size:13px;">登録する</button>';
+    html += '</div>';
+
+    html += '<div class="classroom-list" id="cr-list-container">' + renderList() + '</div>';
+
+    html += '</div></div></div>';
+
+    var container = document.createElement('div');
+    container.innerHTML = html;
+    classroomOverlayRoot.appendChild(container.firstChild);
+
+    var overlay = document.getElementById('classroom-master-overlay');
+    var listContainer = document.getElementById('cr-list-container');
+    var formHeading = document.getElementById('cr-form-heading');
+    var cancelEditBtn = document.getElementById('cr-cancel-edit');
+    var submitBtn = document.getElementById('cr-submit-btn');
+
+    var inputName = document.getElementById('cr-name');
+    var inputStart = document.getElementById('cr-start');
+    var inputEnd = document.getElementById('cr-end');
+    var selectRink = document.getElementById('cr-rink');
+
+    function resetForm(){
+      editingId = null;
+      formHeading.textContent = '＋ 新しい教室を追加';
+      cancelEditBtn.style.display = 'none';
+      submitBtn.textContent = '登録する';
+      inputName.value = '';
+      inputStart.value = '18:00';
+      inputEnd.value = '19:00';
+      selectRink.value = RINKS[0];
+    }
+
+    cancelEditBtn.onclick = resetForm;
+
+    overlay.onclick = function(e){
+      if(e.target.closest('[data-action="close-submodal"]') || e.target.classList.contains('sheet-backdrop')){
+        overlay.remove();
+        refreshClassroomSelect();
+        return;
+      }
+
+      var editBtn = e.target.closest('[data-cr-edit]');
+      if(editBtn){
+        var id = editBtn.dataset.crEdit;
+        var c = classroomMaster.find(function(x){ return x.id === id; });
+        if(c){
+          editingId = id;
+          formHeading.textContent = '✏️ 教室情報を編集';
+          cancelEditBtn.style.display = '';
+          submitBtn.textContent = '変更を保存';
+          inputName.value = c.name || '';
+          inputStart.value = c.start || '18:00';
+          inputEnd.value = c.end || '19:00';
+          selectRink.value = c.rink || RINKS[0];
+        }
+        return;
+      }
+
+      var delBtn = e.target.closest('[data-cr-del]');
+      if(delBtn){
+        var idDel = delBtn.dataset.crDel;
+        if(window.confirm('この教室を削除しますか？')){
+          classroomMaster = classroomMaster.filter(function(x){ return x.id !== idDel; });
+          persistClassrooms();
+          listContainer.innerHTML = renderList();
+          if(editingId === idDel) resetForm();
+          showToast('教室を削除しました', 'navy');
+        }
+      }
+    };
+
+    submitBtn.onclick = function(){
+      var nameVal = inputName.value.trim();
+      if(!nameVal){
+        showToast('教室名を入力してください', 'danger');
+        return;
+      }
+
+      if(editingId){
+        var c = classroomMaster.find(function(x){ return x.id === editingId; });
+        if(c){
+          c.name = nameVal;
+          c.start = inputStart.value;
+          c.end = inputEnd.value;
+          c.rink = selectRink.value;
+        }
+        showToast('教室情報を更新しました', 'ok');
+      } else {
+        classroomMaster.push({
+          id: uid(),
+          name: nameVal,
+          start: inputStart.value,
+          end: inputEnd.value,
+          rink: selectRink.value
+        });
+        showToast('教室を追加しました', 'ok');
+      }
+
+      persistClassrooms();
+      listContainer.innerHTML = renderList();
+      resetForm();
     };
   }
 
   function openBackupModal(){
-    var html = '<div class="sheet-overlay" id="backup-overlay">';
+    var html = '<div class="sheet-overlay" id="backup-modal-overlay">';
     html += '<div class="sheet-backdrop" data-action="close-submodal"></div>';
     html += '<div class="sheet">';
-    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">💾 バックアップ / 復元</div></div><button class="sheet__close tappable" data-action="close-submodal">✕</button></div>';
+    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
+    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">💾 データバックアップ / 復元</div></div><button class="sheet__close tappable" data-action="close-submodal">✕</button></div>';
     html += '<div class="sheet__body">';
 
-    html += '<div style="margin-bottom:20px;">';
-    html += '<div style="font-weight:bold;margin-bottom:6px;">データバックアップ</div>';
-    html += '<div style="font-size:13px;color:#64748b;margin-bottom:10px;">現在の全データ（予定・マスタ・設定）をJSONファイルとしてダウンロードします。</div>';
-    html += '<button class="sheet__submit tappable" id="export-json-btn">バックアップファイルを保存</button>';
-    html += '</div>';
+    html += '<div style="margin-bottom:16px;"><div class="field-label">データのエクスポート</div><p style="font-size:12px;color:var(--navy-soft);margin-bottom:8px;">すべての予定・カルテ・生徒・教室データをJSONファイルとして保存します。</p><button class="sheet__submit tappable" id="btn-export-json" style="background:var(--ice-deep);">バックアップファイルを保存</button></div>';
 
-    html += '<div style="border-top:1px solid #e2e8f0;padding-top:16px;">';
-    html += '<div style="font-weight:bold;margin-bottom:6px;">データ復元</div>';
-    html += '<div style="font-size:13px;color:#64748b;margin-bottom:10px;">保存したバックアップファイル（JSON）を選択してデータを復元します。</div>';
-    html += '<input type="file" id="import-json-file" accept=".json" style="display:none;">';
-    html += '<button class="action-btn tappable" id="import-json-btn" style="width:100%;justify-content:center;background:#f1f5f9;color:#0f172a;font-weight:bold;">復元ファイルを選択</button>';
-    html += '</div>';
+    html += '<div><div class="field-label">データの復元（インポート）</div><p style="font-size:12px;color:var(--navy-soft);margin-bottom:8px;">以前保存したバックアップJSONファイルを選択して復元します。</p><input type="file" id="import-file-input" accept=".json" style="display:none;"><button class="sheet__submit tappable" id="btn-import-json" style="background:var(--navy);">ファイルを選択して復元</button></div>';
 
     html += '</div></div></div>';
-    overlayRoot.innerHTML = html;
 
-    var overlay = document.getElementById('backup-overlay');
+    var container = document.createElement('div');
+    container.innerHTML = html;
+    classroomOverlayRoot.appendChild(container.firstChild);
+
+    var overlay = document.getElementById('backup-modal-overlay');
     overlay.onclick = function(e){
-      var btn = e.target.closest('[data-action]');
-      if(btn && btn.dataset.action === 'close-submodal') overlayRoot.innerHTML = '';
+      if(e.target.closest('[data-action="close-submodal"]') || e.target.classList.contains('sheet-backdrop')){
+        overlay.remove();
+      }
     };
 
-    document.getElementById('export-json-btn').onclick = function(){
-      var backupData = {
-        version: 1,
-        exportedAt: new Date().toISOString(),
+    document.getElementById('btn-export-json').onclick = function(){
+      var data = {
         lessons: lessons,
         classrooms: classroomMaster,
         students: studentMaster,
-        passcode: passcode
+        exportedAt: new Date().toISOString()
       };
-      var jsonStr = JSON.stringify(backupData, null, 2);
-      var blob = new Blob([jsonStr], { type: 'application/json' });
+      var json = JSON.stringify(data, null, 2);
+      var blob = new Blob([json], { type: 'application/json' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;
       a.download = 'torepeta_backup_' + todayStr() + '.json';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
       showToast('バックアップを出力しました', 'ok');
     };
 
-    var fileInput = document.getElementById('import-json-file');
-    document.getElementById('import-json-btn').onclick = function(){ fileInput.click(); };
+    var fileInput = document.getElementById('import-file-input');
+    document.getElementById('btn-import-json').onclick = function(){
+      fileInput.click();
+    };
 
     fileInput.onchange = function(e){
       var file = e.target.files[0];
       if(!file) return;
       var reader = new FileReader();
       reader.onload = function(evt){
-        try{
+        try {
           var data = JSON.parse(evt.target.result);
-          if(data.lessons) { lessons = data.lessons; persist(); }
-          if(data.classrooms) { classroomMaster = data.classrooms; persistClassrooms(); }
-          if(data.students) { studentMaster = data.students; persistStudents(); }
-          if(data.passcode !== undefined) { passcode = data.passcode; savePasscode(passcode); }
-          overlayRoot.innerHTML = '';
-          classroomOverlayRoot.innerHTML = '';
+          if(data.lessons && Array.isArray(data.lessons)){
+            lessons = data.lessons;
+            persist();
+          }
+          if(data.classrooms && Array.isArray(data.classrooms)){
+            classroomMaster = data.classrooms;
+            persistClassrooms();
+          }
+          if(data.students && Array.isArray(data.students)){
+            studentMaster = data.students;
+            persistStudents();
+          }
+          showToast('データを復元しました', 'ok');
+          overlay.remove();
           renderShell();
-          showToast('データを完全に復元しました', 'ok');
-        }catch(err){
+        } catch(err){
           showToast('ファイルの読み込みに失敗しました', 'danger');
         }
       };
@@ -1585,143 +1874,33 @@ h1,h2,h3,p{ margin:0; }
   }
 
   /* =========================================================
-     13. CLASSROOM MASTER MODAL
+     13. INITIALIZATION & GLOBAL DELEGATION
      ========================================================= */
-  function openClassroomMasterModal(){ renderClassroomMasterModal(null); }
-  function closeClassroomMasterModal(){
-    classroomOverlayRoot.innerHTML = '';
-    refreshClassroomSelect();
-  }
+  document.addEventListener('click', function(e){
+    var actionEl = e.target.closest('[data-action]');
+    if(!actionEl) return;
+    var action = actionEl.dataset.action;
 
-  function renderClassroomMasterModal(editId){
-    var editing = editId ? classroomMaster.find(function(c){ return c.id === editId; }) : null;
-    var html = '<div class="sheet-overlay" id="classroom-master-overlay">';
-    html += '<div class="sheet-backdrop" data-action="close-classroom-master"></div>';
-    html += '<div class="sheet">';
-    html += '<div class="sheet__grabber-row"><div class="sheet__grabber"></div></div>';
-    html += '<div class="sheet__header"><div class="sheet__header-text"><div class="sheet__header-title">教室マスタを管理</div><div class="sheet__header-sub">名称・時間・場所を登録しておくと予定作成が早くなります</div></div><button class="sheet__close tappable" data-action="close-classroom-master">✕</button></div>';
-    html += '<div class="sheet__body">';
-    html += '<div><div class="field-label">登録済みの教室</div>';
-    if(classroomMaster.length === 0){
-      html += '<div class="classroom-empty">まだ登録がありません</div>';
-    } else {
-      html += '<div class="classroom-list">';
-      classroomMaster.forEach(function(c){
-        html += '<div class="classroom-row">';
-        html += '<div class="classroom-row__body"><div class="classroom-row__name">' + esc(c.name) + '</div><div class="classroom-row__meta mono">' + esc(c.start) + '〜' + esc(c.end) + ' ・ ' + esc(c.rink) + '</div></div>';
-        html += '<div class="classroom-row__actions">';
-        html += '<button class="icon-btn tappable" data-action="edit-classroom-row" data-id="' + c.id + '">✏️</button>';
-        html += '<button class="icon-btn icon-btn--danger tappable" data-action="delete-classroom-row" data-id="' + c.id + '">🗑</button>';
-        html += '</div></div>';
-      });
-      html += '</div>';
-    }
-    html += '</div>';
-    html += '<div>';
-    html += '<div class="classroom-form-title">' + (editing ? '教室を編集' : '新しい教室を登録') + (editing ? '<span class="classroom-cancel-edit tappable" data-action="cancel-edit-classroom">キャンセル</span>' : '') + '</div>';
-    html += '<div style="margin-top:10px;"><div class="field-label">教室名</div><input type="text" id="cm-name" class="text-input" placeholder="例：大人スケート教室" value="' + (editing ? esc(editing.name) : '') + '"></div>';
-    html += '<div class="grid-2" style="margin-top:12px;">';
-    html += '<div><div class="field-label">開始</div><input type="time" id="cm-start" class="date-input" value="' + (editing ? esc(editing.start) : '18:00') + '"></div>';
-    html += '<div><div class="field-label">終了</div><input type="time" id="cm-end" class="date-input" value="' + (editing ? esc(editing.end) : '19:00') + '"></div>';
-    html += '</div>';
-    html += '<div style="margin-top:12px;"><div class="field-label">リンク</div><div class="rink-row" id="cm-rink-row">';
-    RINKS.slice(0, 8).forEach(function(r, idx){
-      var isSel = editing ? (editing.rink === r) : (idx === 0);
-      html += '<button class="rink-btn tappable min-tap' + (isSel?' is-selected':'') + '" data-rink="' + esc(r) + '">' + esc(r) + '</button>';
-    });
-    html += '</div></div>';
-    html += '</div>';
-    html += '</div>';
-    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-save-classroom">' + (editing ? 'この内容で更新する' : 'この内容で登録する') + '</button></div>';
-    html += '</div></div>';
-    classroomOverlayRoot.innerHTML = html;
-    attachClassroomMasterListeners(editId);
-  }
-
-  function attachClassroomMasterListeners(editId){
-    var overlay = document.getElementById('classroom-master-overlay');
-    overlay.addEventListener('click', function(e){
-      var actionEl = e.target.closest('[data-action]');
-      if(!actionEl) return;
-      var action = actionEl.dataset.action;
-      if(action === 'close-classroom-master'){
-        closeClassroomMasterModal();
-      } else if(action === 'edit-classroom-row'){
-        renderClassroomMasterModal(actionEl.dataset.id);
-      } else if(action === 'cancel-edit-classroom'){
-        renderClassroomMasterModal(null);
-      } else if(action === 'delete-classroom-row'){
-        if(window.confirm('この教室をマスタから削除しますか？（過去の予定データは残ります）')){
-          classroomMaster = classroomMaster.filter(function(c){ return c.id !== actionEl.dataset.id; });
-          persistClassrooms();
-          renderClassroomMasterModal(null);
-          refreshClassroomSelect();
-          showToast('教室を削除しました', 'navy');
-        }
-      }
-    });
-
-    var cmRinkRow = document.getElementById('cm-rink-row');
-    cmRinkRow.addEventListener('click', function(e){
-      var btn = e.target.closest('.rink-btn');
-      if(!btn) return;
-      Array.prototype.forEach.call(cmRinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
-      btn.classList.add('is-selected');
-    });
-
-    document.getElementById('btn-save-classroom').addEventListener('click', function(){
-      var nameInput = document.getElementById('cm-name');
-      var name = nameInput.value.trim();
-      if(!name){ showToast('教室名を入力してください', 'danger'); return; }
-      var start = document.getElementById('cm-start').value || '18:00';
-      var end = document.getElementById('cm-end').value || '19:00';
-      var rinkBtn = cmRinkRow.querySelector('.rink-btn.is-selected');
-      var rink = rinkBtn ? rinkBtn.dataset.rink : RINKS[0];
-      if(editId){
-        var target = classroomMaster.find(function(c){ return c.id === editId; });
-        if(target){ target.name = name; target.start = start; target.end = end; target.rink = rink; }
-      } else {
-        classroomMaster.push({ id: uid(), name: name, start: start, end: end, rink: rink });
-      }
-      persistClassrooms();
-      refreshClassroomSelect();
-      renderClassroomMasterModal(null);
-      showToast(editId ? '教室を更新しました' : '教室を登録しました', 'ok');
-    });
-  }
-
-  /* =========================================================
-     14. GLOBAL EVENT LISTENERS & INITIALIZATION
-     ========================================================= */
-  rootEl.addEventListener('click', function(e){
-    var el = e.target.closest('[data-action]');
-    if(!el) return;
-    var action = el.dataset.action;
-    if(action === 'select-date') selectDate(el.dataset.date);
-    else if(action === 'switch-tab') switchTab(el.dataset.tab);
-    else if(action === 'open-lesson') openLessonModal(el.dataset.id);
-    else if(action === 'quick-line') quickLine(el.dataset.id);
-    else if(action === 'toggle-payment') togglePaymentFromFinance(el.dataset.id);
-    else if(action === 'open-add') openAddSheet();
-    else if(action === 'export-csv') exportCsv();
-    else if(action === 'year-prev') changeFinanceYear(-1);
-    else if(action === 'year-next') changeFinanceYear(1);
-    else if(action === 'set-view') setViewMode(el.dataset.view);
-    else if(action === 'cal-prev-month') calPrevMonth();
-    else if(action === 'cal-next-month') calNextMonth();
-    else if(action === 'open-classroom-master') openClassroomMasterModal();
-    else if(action === 'open-integrated-settings') openIntegratedSettingsModal();
+    if(action === 'select-date'){ selectDate(actionEl.dataset.date); }
+    else if(action === 'switch-tab'){ switchTab(actionEl.dataset.tab); }
+    else if(action === 'set-view'){ setViewMode(actionEl.dataset.view); }
+    else if(action === 'cal-prev-month'){ calPrevMonth(); }
+    else if(action === 'cal-next-month'){ calNextMonth(); }
+    else if(action === 'open-add'){ openAddSheet(); }
+    else if(action === 'open-lesson'){ openLessonModal(actionEl.dataset.id); }
+    else if(action === 'quick-line'){ quickLine(actionEl.dataset.id); }
+    else if(action === 'toggle-payment'){ togglePaymentFromFinance(actionEl.dataset.id); }
+    else if(action === 'year-prev'){ changeFinanceYear(-1); }
+    else if(action === 'year-next'){ changeFinanceYear(1); }
+    else if(action === 'export-csv'){ exportCsv(); }
+    else if(action === 'open-integrated-settings'){ openIntegratedSettingsModal(); }
+    else if(action === 'set-status'){ changeStatus(actionEl.dataset.id, actionEl.dataset.status); }
+    else if(action === 'open-help'){ openHelpModal(); }
   });
 
-  renderShell();
   checkLockStatus();
+  renderShell();
 
 })();</script>
-  <footer style="text-align: center; font-size: 0.75rem; color: #888; margin-top: 3rem; padding: 1rem 0.5rem 10rem; line-height: 1.5;">
-  <p style="margin-bottom: 0.5rem;">【ご利用について】</p>
-  <p style="margin-bottom: 0.5rem;">本アプリは、使用される方の毎日を楽しく、快適にする目的で開発されたWEBアプリケーションです。</p>
-  <p style="margin-bottom: 0.5rem;">動作確認には万全を期しておりますが、端末環境やブラウザの仕様変更等に伴うデータ損失やトラブルについて開発者は一切の責任を負いかねます。</p>
-  <p>ご意見・不具合のご報告は X（<a href="https://x.com/lblt_labo" target="_blank" rel="noopener" style="color: #666; text-decoration: underline;">@lblt_labo</a>）までお願いいたします。</p>
-</footer>
 </body>
 </html>
