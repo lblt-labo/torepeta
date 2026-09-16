@@ -991,7 +991,7 @@ h1,h2,h3,p{ margin:0; }
   }
 
   /* =========================================================
-     10. LESSON DETAIL MODAL
+     10. LESSON DETAIL MODAL (編集機能拡張版)
      ========================================================= */
   function openLessonModal(id){
     var lesson = lessons.find(function(l){ return l.id===id; });
@@ -1013,11 +1013,43 @@ h1,h2,h3,p{ margin:0; }
     html += '<button class="action-btn action-btn--line tappable min-tap' + (isContacted?' is-done':'') + '" id="btn-line" data-action="modal-line"><span class="action-btn__icon">💬</span><span>' + (isContacted?'送信済み（再コピー）':'LINE連絡文をコピー') + '</span></button>';
     html += '<button class="action-btn action-btn--pay tappable min-tap' + (lesson.paymentStatus==='回収済'?' is-done':'') + '" id="btn-pay" data-action="modal-pay"><span class="action-btn__icon">' + (lesson.paymentStatus==='回収済'?'✅':'💴') + '</span><span>' + (lesson.paymentStatus==='回収済'?'回収済み':'未回収 → タップで回収') + '</span></button>';
     html += '</div>';
+
+    /* --- 予定情報の直接変更（編集）セクション --- */
+    html += '<div style="background:var(--panel-gray);padding:12px;border-radius:16px;display:flex;flex-direction:column;gap:10px;">';
+    html += '<div class="field-label" style="margin-bottom:0;">🗓️ 予定情報の変更</div>';
+    
+    html += '<div><div class="field-label">レッスン種別</div><div class="type-select-grid" id="edit-type-grid">';
+    TYPE_ORDER.forEach(function(key){
+      var item = LESSON_TYPES[key];
+      var selCls = 'sel-' + key;
+      var isSel = key === lesson.type;
+      html += '<button class="type-select-btn tappable min-tap' + (isSel?' is-selected '+selCls:'') + '" data-type="' + key + '" data-selcls="' + selCls + '">';
+      html += '<div class="type-select-btn__icon type-badge ' + item.shape + ' ' + item.cls + '" style="width:32px;height:32px;font-size:15px;">' + item.icon + '</div>';
+      html += '<span class="type-select-btn__label ' + item.cls + '" style="background:none;border:none;">' + item.short + '</span>';
+      html += '</button>';
+    });
+    html += '</div></div>';
+
+    html += '<div><div class="field-label">生徒名 / グループ名</div><input type="text" id="edit-student" class="text-input" value="' + esc(lesson.student) + '"></div>';
+
+    html += '<div class="grid-3">';
+    html += '<div><div class="field-label">日付</div><input type="date" id="edit-date" class="date-input" value="' + esc(lesson.date) + '"></div>';
+    html += '<div><div class="field-label">開始</div><input type="time" id="edit-start" class="date-input" value="' + esc(lesson.start) + '"></div>';
+    html += '<div><div class="field-label">終了</div><input type="time" id="edit-end" class="date-input" value="' + esc(lesson.end) + '"></div>';
+    html += '</div>';
+
+    html += '<div><div class="field-label">リンク</div><div class="rink-row" id="edit-rink-row">';
+    RINKS.slice(0, 8).forEach(function(r){
+      var isSelRink = (r === lesson.rink);
+      html += '<button class="rink-btn tappable min-tap' + (isSelRink?' is-selected':'') + '" data-rink="' + esc(r) + '">' + esc(r) + '</button>';
+    });
+    html += '</div></div>';
+    html += '</div>';
+    /* ------------------------------------------ */
+
     html += '<div class="money-box">';
     html += '<div class="money-row"><span class="money-row__label">料金</span><span class="money-row__value"><span class="mono">¥</span><input type="number" id="fee-input" class="fee-input mono" value="' + Number(lesson.fee||0) + '"></span></div>';
-    if(lesson.type === 'rental'){
-      html += '<div class="money-row"><span class="money-row__label">割り勘人数</span><div class="stepper"><button class="stepper__btn tappable" id="split-minus">−</button><input type="number" id="split-input" class="split-input mono" min="1" value="' + (lesson.splitCount||1) + '"><button class="stepper__btn tappable" id="split-plus">＋</button></div></div>';
-    }
+    html += '<div class="money-row" id="edit-split-row" style="' + (lesson.type==='rental'?'':'display:none;') + '"><span class="money-row__label">割り勘人数</span><div class="stepper"><button class="stepper__btn tappable" id="split-minus">−</button><input type="number" id="split-input" class="split-input mono" min="1" value="' + (lesson.splitCount||1) + '"><button class="stepper__btn tappable" id="split-plus">＋</button></div></div>';
     html += '<div class="per-person-note" id="per-person-note" style="' + (perPersonInit===null?'display:none':'') + '">お一人あたり ' + (perPersonInit!==null ? yen(perPersonInit) : '') + '</div>';
     html += '</div>';
 
@@ -1045,7 +1077,7 @@ h1,h2,h3,p{ margin:0; }
     html += '<div><div class="field-label">次回への宿題・アドバイス（次回自動表示）</div><textarea class="notes-textarea" id="homework-textarea" placeholder="次回の頭に表示される宿題を書いておく" style="min-height:76px;">' + esc(lesson.homework||'') + '</textarea></div>';
     html += '<button class="delete-link tappable" id="btn-delete">この予定を削除する</button>';
     html += '</div>';
-    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-save-lesson">カルテを保存</button></div>';
+    html += '<div class="sheet__footer"><button class="sheet__submit tappable" id="btn-save-lesson">カルテ・予定の変更を保存</button></div>';
     html += '</div></div>';
     overlayRoot.innerHTML = html;
     attachLessonModalListeners(lesson);
@@ -1061,6 +1093,35 @@ h1,h2,h3,p{ margin:0; }
         closeModal();
       }
     });
+
+    /* --- 種別選択とリンク選択のイベント監視 --- */
+    var selectedType = lesson.type;
+    var editTypeGrid = document.getElementById('edit-type-grid');
+    var editSplitRow = document.getElementById('edit-split-row');
+    var allSelCls = TYPE_ORDER.map(function(k){ return 'sel-' + k; });
+
+    if(editTypeGrid){
+      editTypeGrid.addEventListener('click', function(e){
+        var btn = e.target.closest('.type-select-btn');
+        if(!btn) return;
+        Array.prototype.forEach.call(editTypeGrid.querySelectorAll('.type-select-btn'), function(el){
+          el.classList.remove.apply(el.classList, ['is-selected'].concat(allSelCls));
+        });
+        btn.classList.add('is-selected', btn.dataset.selcls);
+        selectedType = btn.dataset.type;
+        if(editSplitRow) editSplitRow.style.display = (selectedType === 'rental') ? '' : 'none';
+      });
+    }
+
+    var editRinkRow = document.getElementById('edit-rink-row');
+    if(editRinkRow){
+      editRinkRow.addEventListener('click', function(e){
+        var btn = e.target.closest('.rink-btn');
+        if(!btn) return;
+        Array.prototype.forEach.call(editRinkRow.querySelectorAll('.rink-btn'), function(el){ el.classList.remove('is-selected'); });
+        btn.classList.add('is-selected');
+      });
+    }
 
     var catTabs = document.getElementById('tag-category-tabs');
     if(catTabs){
@@ -1091,7 +1152,7 @@ h1,h2,h3,p{ margin:0; }
       if(!splitInput) return;
       var fee = Number(feeInput.value) || 0;
       var split = Math.max(1, Number(splitInput.value) || 1);
-      if(split > 1){
+      if(split > 1 && selectedType === 'rental'){
         perPersonNote.style.display = '';
         perPersonNote.textContent = 'お一人あたり ' + yen(Math.ceil(fee/split));
       } else {
@@ -1127,6 +1188,21 @@ h1,h2,h3,p{ margin:0; }
     document.getElementById('btn-line').addEventListener('click', function(){
       lesson.fee = currentFee();
       lesson.splitCount = currentSplit();
+      
+      // LINEメッセージ用に編集値の一時反映
+      var editStudent = document.getElementById('edit-student');
+      var editDate = document.getElementById('edit-date');
+      var editStart = document.getElementById('edit-start');
+      var editEnd = document.getElementById('edit-end');
+      var editRinkBtn = editRinkRow ? editRinkRow.querySelector('.rink-btn.is-selected') : null;
+      
+      if(editStudent && editStudent.value.trim()) lesson.student = editStudent.value.trim();
+      if(editDate && editDate.value) lesson.date = editDate.value;
+      if(editStart && editStart.value) lesson.start = editStart.value;
+      if(editEnd && editEnd.value) lesson.end = editEnd.value;
+      if(editRinkBtn) lesson.rink = editRinkBtn.dataset.rink;
+      lesson.type = selectedType;
+
       var msg = buildLineMessage(lesson);
       copyToClipboard(msg).then(function(ok){
         if(ok){
@@ -1189,15 +1265,36 @@ h1,h2,h3,p{ margin:0; }
     });
 
     document.getElementById('btn-save-lesson').addEventListener('click', function(){
+      var editStudent = document.getElementById('edit-student');
+      var editDate = document.getElementById('edit-date');
+      var editStart = document.getElementById('edit-start');
+      var editEnd = document.getElementById('edit-end');
+      var editRinkBtn = editRinkRow ? editRinkRow.querySelector('.rink-btn.is-selected') : null;
+
+      if(editStudent && editStudent.value.trim().length === 0){
+        showToast('生徒名を入力してください', 'danger');
+        return;
+      }
+
+      // 編集項目の更新保存
+      lesson.type = selectedType;
+      if(editStudent) lesson.student = editStudent.value.trim();
+      if(editDate) lesson.date = editDate.value || todayStr();
+      if(editStart) lesson.start = editStart.value || '09:00';
+      if(editEnd) lesson.end = editEnd.value || '09:30';
+      if(editRinkBtn) lesson.rink = editRinkBtn.dataset.rink;
+
       lesson.fee = currentFee();
       lesson.splitCount = currentSplit();
       lesson.tags = currentTags();
       lesson.notes = notesTextarea.value;
       lesson.homework = document.getElementById('homework-textarea').value;
+
       persist();
+      selectedDate = lesson.date; // 変更後の日付へ自動移動
       renderShell();
       closeModal();
-      showToast('カルテを保存しました', 'ok');
+      showToast('変更内容とカルテを保存しました', 'ok');
     });
   }
 
